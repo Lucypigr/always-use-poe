@@ -1,4 +1,9 @@
 import { AREAS } from '../data/areas';
+import { BUILDS, type BuildDef } from '../data/builds';
+import { CLASS_BY_ID } from '../data/classes';
+import { GEM_BY_ID } from '../data/gems';
+import { UNIQUE_BY_ID } from '../data/uniques';
+import { createUnique } from '../items/generate';
 import { CURRENCY } from '../data/currency';
 import { SKILL_KEYS } from '../game/character';
 import { addItem } from '../items/grid';
@@ -168,6 +173,7 @@ export class Modals {
       h('div', { class: 'row-buttons' },
         h('button', { onclick: () => this.close() }, '繼續'),
         h('button', { onclick: () => this.help() }, '操作與指南'),
+        h('button', { onclick: () => this.builds() }, '流派指南'),
       ),
       h('div', { class: 'row-buttons' }, h('button', { onclick: () => {
         this.close();
@@ -191,6 +197,7 @@ export class Modals {
             tr(['背包工具列'], '開啟背包時，下方可切換「拿取 / 使用 / 快速移動 / 查看」，取代滑鼠右鍵與 Ctrl+點擊'),
             tr(['天賦樹'], '拖曳平移、雙指縮放；點擊天賦查看，再點一次配置（已配置的再點一次為重置）'),
             tr(['回城'], '使用傳送卷軸開啟回城傳送門'),
+            tr(['流派指南'], '在「選單」中開啟，查看各種流派的核心技能與傳奇裝備'),
             tr(['任務'], '開啟任務日誌。城鎮中頭上有「！」的人物有新任務，「？」代表可以領取獎勵'),
             tr(['直向'], '請將手機橫放遊玩；橫放時點擊畫面會自動進入全螢幕'),
           )
@@ -199,6 +206,7 @@ export class Modals {
         tr([k('RMB'), ' ', k('空白'), ' ', k('Q'), k('W'), k('E'), k('R'), k('T'), ' ', k('MMB')], '技能欄位（按住可連續施放，會朝游標或游標下的怪物施放）。點擊技能列上的欄位可更換技能。'),
         tr([k('Shift'), '+', k('技能')], '原地施放不移動'),
         tr([k('J')], '任務日誌'),
+        tr([k('B')], '流派指南：各種流派的核心技能、輔助寶石與傳奇裝備'),
         tr([k('1'), '–', k('5')], '飲用藥劑'),
         tr([k('I'), ' ', k('C'), ' ', k('P')], '背包、角色資訊、天賦樹'),
         tr([k('Tab')], '切換覆蓋地圖'),
@@ -215,6 +223,55 @@ export class Modals {
       h('h3', { style: 'color:#c8aa6e' }, '劇情與任務'),
       h('p', {}, '與暮港的居民交談以接受任務。任務目標包括擊敗首領、在區域中尋找任務物品（金色標籤）以及獵殺具名的稀有怪物。完成後回到任務發布者身邊領取寶石、通貨、天賦點數或特殊抉擇等獎勵。'),
       h('p', {}, '首次擊敗每個區域的首領可獲得 1 天賦點並解鎖下一區域。後期章節抗性會受到懲罰（-20%、-40%，終局為 -60%），記得把抗性堆到 75% 上限。擊敗「被遺棄者王座」後，可在地圖裝置使用地圖：地圖詞綴會讓怪物更強，但提高物品數量與稀有度。'),
+      h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')),
+    ));
+  }
+
+  /** Build guide (B): PoE-style build archetypes and the gems / uniques that enable them. */
+  builds(selected?: BuildDef): void {
+    const GEM_TEXT: Record<string, string> = { R: '#ff7070', G: '#70e070', B: '#80a0ff' };
+    const gem = (id: string) => {
+      const g = GEM_BY_ID[id];
+      return h('span', { class: 'bg-gem', style: `color:${GEM_TEXT[g.color]}`, title: g.description }, g.name);
+    };
+    const list = h('div', { class: 'build-list' });
+    for (const b of BUILDS) {
+      const row = h('div', { class: `build-row${b === selected ? ' sel' : ''}` },
+        h('div', { class: 'bl-name' }, b.name),
+        h('div', { class: 'bl-poe' }, b.poe),
+      );
+      row.addEventListener('click', () => this.builds(b));
+      list.append(row);
+    }
+    const detail = h('div', { class: 'build-detail' });
+    const b = selected ?? BUILDS[0];
+    const tip = h('div', { class: 'bd-tip' });
+    const uniques = h('div', { class: 'bd-line' });
+    for (const id of b.uniques) {
+      const u = UNIQUE_BY_ID[id];
+      const el = h('span', { class: 'bg-unique' }, u.name);
+      el.addEventListener('click', () => {
+        tip.replaceChildren(tooltipEl(buildTooltip(createUnique(u, 60), this.ui.tctx), true));
+      });
+      el.addEventListener('mouseenter', () => !this.ui.touch && tip.replaceChildren(tooltipEl(buildTooltip(createUnique(u, 60), this.ui.tctx), true)));
+      uniques.append(el);
+    }
+    detail.append(...[
+      h('h3', {}, b.name),
+      h('div', { class: 'bl-poe' }, `參考：${b.poe}`),
+      h('p', {}, b.summary),
+      h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '推薦職業'), ...b.classes.map((c) => h('span', {}, CLASS_BY_ID[c].name))),
+      h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '主技能'), gem(b.skill)),
+      h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '連結輔助'), ...b.supports.map(gem)),
+      b.extra ? h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '其他寶石'), ...b.extra.map(gem)) : null,
+      h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '傳奇裝備'), uniques),
+      b.keystones ? h('div', { class: 'bd-line' }, h('span', { class: 'bd-k' }, '核心天賦'), ...b.keystones.map((k) => h('span', { class: 'bg-ks' }, k))) : null,
+      h('ul', {}, ...b.tips.map((t) => h('li', {}, t))),
+      tip,
+    ].filter((x) => x !== null));
+    this.show('builds', h('div', { class: 'builds' },
+      h('h2', {}, '流派指南'),
+      h('div', { class: 'build-wrap' }, list, detail),
       h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')),
     ));
   }

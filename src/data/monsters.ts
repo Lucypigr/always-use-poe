@@ -205,6 +205,8 @@ export const MONSTERS: MonsterDef[] = [
   }),
   // Player minion
   m({ id: 'bone_warrior', name: '骸骨戰士', model: 'skeleton', color: '#e8e0c8', life: 1, damage: 1, speed: 5.2, attackSpeed: 1.3 }),
+  m({ id: 'raging_spirit', name: '憤怒之靈', model: 'wraith', color: '#ff7a2a', life: 0.35, damage: 0.75, speed: 8, attackSpeed: 1.6, scale: 0.6, radius: 0.3, flying: true, types: { fire: 1 } }),
+  m({ id: 'zombie_minion', name: '殭屍', model: 'zombie', color: '#7a8a6a', life: 2.4, damage: 1.3, speed: 3.6, attackSpeed: 0.9, scale: 1.15, radius: 0.55 }),
 ];
 
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(MONSTERS.map((x) => [x.id, x]));

@@ -92,9 +92,9 @@ export interface QuestDef {
   reward: QuestReward;
 }
 
-const SKILLS_STR = ['crushing_blow', 'sweeping_cleave', 'earthshatter', 'magma_strike'];
-const SKILLS_DEX = ['split_shot', 'venom_strike', 'rime_blades', 'storm_arrow'];
-const SKILLS_INT = ['fireball', 'frost_nova', 'chain_lightning', 'sparkstorm', 'raise_bones'];
+const SKILLS_STR = ['crushing_blow', 'bone_breaker', 'sweeping_cleave', 'earthshatter', 'magma_strike', 'righteous_fire'];
+const SKILLS_DEX = ['split_shot', 'double_strike', 'ice_shot', 'venom_strike', 'rime_blades', 'storm_arrow', 'lacerate', 'toxic_rain'];
+const SKILLS_INT = ['fireball', 'freezing_pulse', 'raging_spirits', 'frost_nova', 'chain_lightning', 'sparkstorm', 'raise_bones', 'raise_zombie', 'essence_drain', 'contagion', 'blade_vortex', 'kinetic_blast'];
 
 export const QUESTS: QuestDef[] = [
   // ------------------------------------------------------------------ Act 1 — 流放之岸
@@ -108,7 +108,7 @@ export const QUESTS: QuestDef[] = [
       '只要它還在，暮港就不得安寧。去溺亡海岸，殺了它。',
     ],
     outro: ['潮水……安靜下來了。你真的做到了。', '這些寶石是從被沖上岸的屍體身上找到的。挑一顆吧，願它比它的前主人更走運。'],
-    reward: { gems: [...SKILLS_STR.slice(0, 2), ...SKILLS_DEX.slice(0, 2), ...SKILLS_INT.slice(0, 2)] },
+    reward: { gems: [...SKILLS_STR.slice(0, 2), ...SKILLS_DEX.slice(0, 3), ...SKILLS_INT.slice(0, 3)] },
   },
   {
     id: 'a1_mercy', name: '慈悲任務', act: 1, giver: 'nessa', requires: ['a1_enemy_gate'],
@@ -119,7 +119,7 @@ export const QUESTS: QuestDef[] = [
       '有艘走私船擱淺在泥灘窪地，船上應該還有一箱藥品。拜託你，把它帶回來。',
     ],
     outro: ['是藥！這些夠塔克雷撐過這個冬天了。', '謝謝你，流放者。這是我僅有的東西，希望對你有用。'],
-    reward: { gems: ['added_fire', 'added_cold', 'life_leech_support', 'faster_attacks', 'faster_casting', 'lesser_volley'], currency: [['transmute', 2]] },
+    reward: { gems: ['added_fire', 'added_cold', 'life_leech_support', 'faster_attacks', 'faster_casting', 'lesser_volley', 'chance_to_bleed', 'arcane_surge'], currency: [['transmute', 2]] },
   },
   {
     id: 'a1_dirty_job', name: '骯髒的差事', act: 1, giver: 'tarkleigh', requires: ['a1_enemy_gate'],
@@ -135,7 +135,7 @@ export const QUESTS: QuestDef[] = [
     task: '在泥灘窪地找到三塊符文石',
     intro: ['泥灘裡埋著三塊古老的符文石。拼在一起，據說能打開通往森林深處的舊水道。', '找到它們。別被那些鴕獸踩扁了。'],
     outro: ['就是這三塊。你看，符文拼起來是一扇門的形狀。', '拿著這個，你會需要比拳頭更好用的東西。'],
-    reward: { gems: [...SKILLS_STR.slice(2), ...SKILLS_DEX.slice(2), ...SKILLS_INT.slice(2)] },
+    reward: { gems: [...SKILLS_STR.slice(2), ...SKILLS_DEX.slice(3), ...SKILLS_INT.slice(3)] },
   },
   {
     id: 'a1_dweller', name: '深淵的居住者', act: 1, giver: 'tarkleigh', main: true,
@@ -154,7 +154,7 @@ export const QUESTS: QuestDef[] = [
       '現在他成了「林地守衛」——一頭披著樹皮的怪物。他擋住了往東的唯一道路。',
     ],
     outro: ['東邊的路通了。你離這片海岸越來越遠了，流放者——這是好事，也是壞事。', '選一個吧，接下來的路只會更難走。'],
-    reward: { gems: ['leap_slam', 'dash_strike', 'flame_step', 'multistrike', 'echoing_spell'] },
+    reward: { gems: ['leap_slam', 'dash_strike', 'flame_step', 'flicker_strike', 'multistrike', 'echoing_spell', 'increased_duration', 'minion_speed'] },
   },
   {
     id: 'a1_siren', name: '海妖的歌聲', act: 1, giver: 'nessa', requires: ['a1_dweller'],
@@ -187,7 +187,7 @@ export const QUESTS: QuestDef[] = [
       '墓穴之主已經站起來了。在他帶著亡者走出墓穴之前，阻止他。',
     ],
     outro: ['墓穴重新沉睡了。但那些黑衣人……他們拿走了什麼？我有不好的預感。'],
-    reward: { gems: ['brutal_force', 'searing_heat', 'piercing_shots', 'forking', 'controlled_ruin', 'minion_might'] },
+    reward: { gems: ['brutal_force', 'searing_heat', 'piercing_shots', 'forking', 'controlled_ruin', 'minion_might', 'void_manipulation', 'vicious_projectiles', 'deadly_ailments', 'efficacy'] },
   },
   {
     id: 'a2_sharp_cruel', name: '利齒與殘酷', act: 2, giver: 'yeena', main: true,
@@ -195,7 +195,7 @@ export const QUESTS: QuestDef[] = [
     task: '擊敗蜘蛛巢穴的巢母',
     intro: ['森林東邊的洞窟被絲網封住了。巢母——「織網者」——在那裡產下了無數的子嗣。', '我們的獵人一個個消失在網裡。替他們報仇。'],
     outro: ['織網者死了。獵人們終於可以回家了——至少是那些還活著的。'],
-    reward: { gems: ['arrow_rain', 'cinderfall', 'bulwark', 'winters_grasp', 'ashen_fury'] },
+    reward: { gems: ['arrow_rain', 'cinderfall', 'bulwark', 'winters_grasp', 'ashen_fury', 'cyclone', 'tornado_shot', 'ice_crash', 'swift_affliction', 'pulverise'] },
   },
   {
     id: 'a2_white_beast', name: '大白獸', act: 2, giver: 'yeena', requires: ['a2_intruders'],
@@ -239,7 +239,7 @@ export const QUESTS: QuestDef[] = [
     task: '擊敗廢墟要塞的墮落騎士奧德里克',
     intro: ['盜匪只是症狀。要塞的主人——墮落騎士奧德里克——才是根源。', '他替帝國看守這片土地，死後依然在執行命令。他的命令只有一個：不讓任何流放者離開。'],
     outro: ['奧德里克的劍斷了。流放者，你已經走得比任何人都遠。', '但黑衣人去了東方——去了大祭司的城市。我感覺得到，更大的黑暗在那裡等著你。'],
-    reward: { gems: ['greater_volley', 'melee_splash', 'increased_aoe', 'concentrated_effect', 'elemental_focus', 'crit_strikes'] },
+    reward: { gems: ['greater_volley', 'melee_splash', 'increased_aoe', 'concentrated_effect', 'elemental_focus', 'crit_strikes', 'fire_penetration', 'cold_penetration', 'lightning_penetration'] },
   },
 
   // ------------------------------------------------------------------ Act 3 — 大祭司之城

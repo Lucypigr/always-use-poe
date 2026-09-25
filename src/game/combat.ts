@@ -37,6 +37,7 @@ export interface HitInfo {
   culling: boolean;
   vsChilledMore: number;
   knockback: number;
+  ailmentDur?: number;
 }
 
 export interface HitResult {
@@ -84,6 +85,7 @@ export function rollHit(s: SkillStats, source: Actor | null, rng: RNG, mult = 1)
     culling: s.culling,
     vsChilledMore: s.vsChilledMore,
     knockback: s.knockback ? 1 : 0,
+    ailmentDur: s.ailmentDur,
   };
 }
 
@@ -165,7 +167,7 @@ export function applyHit(target: Actor, hit: HitInfo, rng: RNG): HitResult {
 function applyAilments(target: Actor, hit: HitInfo, rng: RNG): void {
   const st = target.stats;
   const maxLife = Math.max(1, st.maxLife + st.maxES);
-  const dur = target.ailmentDurationMult;
+  const dur = target.ailmentDurationMult * (hit.ailmentDur ?? 1);
   const immuneFreeze = target.buffs.some((b) => b.freezeImmune);
   const immuneBleed = target.buffs.some((b) => b.bleedImmune);
   const { fire, cold, lightning, phys, chaos } = hit.damage;

@@ -61,6 +61,7 @@ export type StatKey =
   // keystone flags
   | 'ks_blood_pact' | 'ks_unerring' | 'ks_hollow_vessel' | 'ks_ironclad' | 'ks_phantom_step'
   | 'ks_arcane_ward' | 'ks_close_quarters' | 'ks_elemental_overload' | 'ks_wrath_of_ages'
+  | 'headhunter'
   // item-local stats (never applied to the character directly)
   | 'local_phys_min' | 'local_phys_max' | 'local_phys_inc' | 'local_fire_min' | 'local_fire_max'
   | 'local_cold_min' | 'local_cold_max' | 'local_lightning_min' | 'local_lightning_max'

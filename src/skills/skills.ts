@@ -187,6 +187,8 @@ export interface SkillStats {
   knockback: boolean;
   splash: boolean;
   vsChilledMore: number;
+  /** Multiplier on the duration of ailments this skill inflicts. */
+  ailmentDur?: number;
   closeQuarters: boolean;
   range: number;
   averageHit: number;
@@ -394,6 +396,7 @@ export function computeSkillStats(skill: SkillInstance, stats: CharacterStats): 
     knockback: s.has('knockback'),
     splash: s.has('splash'),
     vsChilledMore: s.more('damage_vs_chilled'),
+    ailmentDur: Math.max(0.1, 1 + s.inc('ailment_duration') / 100),
     closeQuarters: s.has('ks_close_quarters'),
     range,
     averageHit: avgHit,

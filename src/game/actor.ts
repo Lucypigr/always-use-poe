@@ -27,6 +27,8 @@ export interface Buff {
   manaPerSec?: number;
   freezeImmune?: boolean;
   bleedImmune?: boolean;
+  /** Name shown in the HUD buff list. */
+  label?: string;
 }
 
 export interface TravelState {

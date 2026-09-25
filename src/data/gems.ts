@@ -16,7 +16,7 @@ export type SkillTag =
 
 export type BehaviourId =
   | 'melee' | 'slam' | 'strike_projectile' | 'leap' | 'dash' | 'projectile' | 'nova' | 'chain' | 'rain'
-  | 'summon' | 'blink' | 'aura';
+  | 'summon' | 'blink' | 'aura' | 'flicker' | 'spin';
 
 export type GemColor = 'R' | 'G' | 'B';
 
@@ -52,6 +52,8 @@ export interface ActiveSkillDef {
   weapons?: WeaponClass[];
   /** Aura stats also apply to allies (minions). */
   auraAffectsAllies?: boolean;
+  /** Summons: monster definition of the minion (default: bone warrior). */
+  minion?: string;
 }
 
 export interface SupportDef {
@@ -344,6 +346,206 @@ export const GEMS: GemDef[] = [
       levelText: (l) => [`每秒回復 ${L(3, 20)(l)} 魔力`],
     },
     quality: [inc('mana_regen', 1)], qualityText: '增加 {0}% 魔力回復速度',
+  },
+
+  // ============================================================================ BUILD SKILLS — red
+  {
+    id: 'bone_breaker', name: '碎骨', color: 'R', reqLevel: 4,
+    tags: ['attack', 'melee', 'strike', 'area', 'physical'],
+    description: '粉碎單一敵人，衝擊波同時震傷其周圍的敵人。',
+    active: {
+      behaviour: 'melee', weaponDamage: [140, 230], attackSpeedMult: 0.9, manaCost: [6, 11], params: { arc: 0 },
+      levelStats: (l) => [flag('splash'), more('area_damage', L(0, 30)(l))],
+      levelText: (l) => [`造成 ${L(140, 230)(l)}% 基礎攻擊傷害`, '衝擊波傷害目標周圍的敵人', `總增 ${L(0, 30)(l)}% 範圍傷害`],
+    },
+    quality: [inc('attack_speed', 0.5)], qualityText: '增加 {0}% 攻擊速度',
+  },
+  {
+    id: 'cyclone', name: '旋風斬', color: 'R', reqLevel: 28,
+    tags: ['attack', 'melee', 'area'],
+    description: '持續旋轉並朝游標方向移動，不斷斬擊周圍所有敵人。',
+    active: {
+      behaviour: 'spin', weaponDamage: [55, 85], attackSpeedMult: 2.4, manaCost: [3, 5], params: { radius: 1.9, step: 1.1 },
+      levelStats: (l) => [inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => [`造成 ${L(55, 85)(l)}% 基礎攻擊傷害`, '旋轉時會移動', `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('area_of_effect', 0.5)], qualityText: '增加 {0}% 效果範圍',
+  },
+  {
+    id: 'ice_crash', name: '冰霜爆擊', color: 'R', reqLevel: 28,
+    tags: ['attack', 'melee', 'slam', 'area', 'cold'],
+    description: '以冰封的武器猛擊地面，對大片扇形區域造成冰冷傷害。',
+    active: {
+      behaviour: 'slam', weaponDamage: [180, 280], attackSpeedMult: 0.75, manaCost: [8, 14], conversion: { cold: 50 }, params: { angle: 80, length: 4.2 },
+      levelText: (l) => [`造成 ${L(180, 280)(l)}% 基礎攻擊傷害`, '50% 物理傷害轉換為冰冷傷害'],
+    },
+    quality: [inc('cold_damage', 1)], qualityText: '增加 {0}% 冰冷傷害',
+  },
+  {
+    id: 'righteous_fire', name: '正義之火', color: 'R', reqLevel: 16,
+    tags: ['spell', 'area', 'fire'],
+    description: '以烈焰包圍自身（切換）。持續燒灼周圍敵人，也會燒傷你自己；傷害取決於你的最大生命與能量護盾。',
+    active: {
+      behaviour: 'aura', castTime: 0.5, manaCost: [0, 0], params: { rf: 1, radius: 2.6 },
+      levelStats: (l) => [more('spell_damage', L(20, 40)(l))],
+      levelText: (l) => [
+        `每秒對周圍敵人造成最大生命與能量護盾 ${L(40, 70)(l)}% 的火焰傷害`,
+        '每秒對自己造成最大生命與能量護盾 24% 的火焰傷害（受火焰抗性減免）',
+        `法術傷害總增 ${L(20, 40)(l)}%`,
+        '在城鎮中不會燃燒',
+      ],
+    },
+    quality: [inc('burning_damage', 1)], qualityText: '增加 {0}% 燃燒傷害',
+  },
+
+  // ============================================================================ BUILD SKILLS — green
+  {
+    id: 'flicker_strike', name: '閃現打擊', color: 'G', reqLevel: 10,
+    tags: ['attack', 'melee', 'strike'],
+    description: '瞬間傳送到附近的敵人身旁並攻擊。',
+    active: {
+      behaviour: 'flicker', weaponDamage: [120, 190], attackSpeedMult: 1.1, manaCost: [8, 12], params: { range: 11 },
+      levelText: (l) => [`造成 ${L(120, 190)(l)}% 基礎攻擊傷害`, '傳送至游標附近的敵人'],
+    },
+    quality: [inc('damage', 1)], qualityText: '增加 {0}% 傷害',
+  },
+  {
+    id: 'double_strike', name: '雙重打擊', color: 'G', reqLevel: 1,
+    tags: ['attack', 'melee', 'strike'],
+    description: '對目標快速連擊兩次。',
+    active: {
+      behaviour: 'melee', weaponDamage: [105, 160], manaCost: [5, 8], params: { arc: 0 },
+      levelStats: () => [flat('repeats', 1)],
+      levelText: (l) => [`造成 ${L(105, 160)(l)}% 基礎攻擊傷害`, '每次使用攻擊兩次'],
+    },
+    quality: [inc('crit_chance', 1)], qualityText: '增加 {0}% 暴擊率',
+  },
+  {
+    id: 'lacerate', name: '撕裂', color: 'G', reqLevel: 12,
+    tags: ['attack', 'melee', 'area', 'physical'],
+    description: '向前方揮出寬廣的刀氣，使敵人流血。',
+    active: {
+      behaviour: 'melee', weaponDamage: [90, 140], attackSpeedMult: 0.85, manaCost: [6, 10], params: { arc: 120, radius: 3.2 },
+      levelStats: (l) => [flat('bleed_chance', L(25, 40)(l)), more('bleed_damage', L(0, 30)(l))],
+      levelText: (l) => [`造成 ${L(90, 140)(l)}% 基礎攻擊傷害`, `${L(25, 40)(l)}% 機率造成流血`, `總增 ${L(0, 30)(l)}% 流血傷害`],
+    },
+    quality: [inc('bleed_damage', 1)], qualityText: '增加 {0}% 流血傷害',
+  },
+  {
+    id: 'tornado_shot', name: '龍捲射擊', color: 'G', reqLevel: 28,
+    tags: ['attack', 'projectile', 'bow'],
+    description: '射出會穿透並在命中時分裂的箭矢。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [95, 150], manaCost: [7, 11], weapons: BOW,
+      params: { count: 1, spread: 0, speed: 26, range: 16, size: 0.25, visual: 1 },
+      levelStats: () => [flag('fork'), flat('pierce', 1)],
+      levelText: (l) => [`造成 ${L(95, 150)(l)}% 基礎攻擊傷害`, '箭矢穿透 1 名敵人', '箭矢命中時分裂'],
+    },
+    quality: [inc('projectile_damage', 1)], qualityText: '增加 {0}% 投射物傷害',
+  },
+  {
+    id: 'toxic_rain', name: '毒雨', color: 'G', reqLevel: 12,
+    tags: ['attack', 'area', 'bow', 'chaos', 'duration'],
+    description: '向天空射出淬毒的箭雨，落地處的敵人必定中毒。',
+    active: {
+      behaviour: 'rain', weaponDamage: [45, 70], manaCost: [8, 12], weapons: BOW, conversion: { chaos: 50 },
+      params: { radius: 2.4, impacts: 6, impactRadius: 1.1, duration: 1.2, visual: 1 },
+      levelStats: (l) => [flat('poison_chance', 100), more('poison_damage', L(20, 60)(l))],
+      levelText: (l) => [`每支箭造成 ${L(45, 70)(l)}% 基礎攻擊傷害`, '50% 物理傷害轉換為混沌傷害', '擊中必定中毒', `總增 ${L(20, 60)(l)}% 中毒傷害`],
+    },
+    quality: [inc('poison_damage', 1)], qualityText: '增加 {0}% 中毒傷害',
+  },
+  {
+    id: 'ice_shot', name: '冰霜射擊', color: 'G', reqLevel: 1,
+    tags: ['attack', 'projectile', 'area', 'bow', 'cold'],
+    description: '射出冰霜箭矢，命中時在周圍炸開冰霧。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [100, 160], manaCost: [6, 10], weapons: BOW, conversion: { cold: 60 },
+      params: { count: 1, spread: 0, speed: 28, range: 15, size: 0.3, explodeRadius: 1.5 },
+      levelText: (l) => [`造成 ${L(100, 160)(l)}% 基礎攻擊傷害`, '60% 物理傷害轉換為冰冷傷害', '命中時炸開冰霧'],
+    },
+    quality: [inc('area_of_effect', 0.5)], qualityText: '增加 {0}% 效果範圍',
+  },
+
+  // ============================================================================ BUILD SKILLS — blue
+  {
+    id: 'essence_drain', name: '精華吸取', color: 'B', reqLevel: 12,
+    tags: ['spell', 'projectile', 'chaos', 'duration'],
+    description: '射出吸取生命精華的投射物，命中時造成強力的混沌持續傷害。',
+    active: {
+      behaviour: 'projectile', castTime: 0.75, crit: 5, baseDamage: { chaos: [0.8, 1.2] }, damageScale: 0.5, effectiveness: 0.7,
+      manaCost: [6, 20], params: { count: 1, spread: 0, speed: 16, range: 14, size: 0.35 },
+      levelStats: (l) => [flat('poison_chance', 100), more('poison_damage', L(80, 160)(l))],
+      levelText: (l) => ['擊中時必定施加混沌持續傷害（中毒）', `總增 ${L(80, 160)(l)}% 持續傷害`],
+    },
+    quality: [inc('dot_damage', 1)], qualityText: '增加 {0}% 持續傷害',
+  },
+  {
+    id: 'contagion', name: '傳染', color: 'B', reqLevel: 12,
+    tags: ['spell', 'area', 'chaos', 'duration'],
+    description: '在目標區域釋放瘟疫，使範圍內所有敵人中毒。',
+    active: {
+      behaviour: 'rain', castTime: 0.6, crit: 5, baseDamage: { chaos: [0.8, 1.2] }, damageScale: 0.35, effectiveness: 0.6,
+      manaCost: [6, 18], params: { radius: 0, impacts: 1, impactRadius: 2.4, duration: 0 },
+      levelStats: (l) => [flat('poison_chance', 100), more('poison_damage', L(40, 100)(l)), inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => ['範圍內的敵人必定中毒', `總增 ${L(40, 100)(l)}% 持續傷害`, `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('area_of_effect', 1)], qualityText: '增加 {0}% 效果範圍',
+  },
+  {
+    id: 'raging_spirits', name: '召喚憤怒之靈', color: 'B', reqLevel: 4,
+    tags: ['spell', 'minion', 'fire', 'duration'],
+    description: '召喚一個會衝向敵人的燃燒頭顱，短暫存在後消散。',
+    active: {
+      behaviour: 'summon', castTime: 0.5, manaCost: [6, 14], minion: 'raging_spirit', params: { count: 1, max: 12, duration: 6 },
+      levelText: (l) => ['每次施放召喚 1 個憤怒之靈', '最多 12 個憤怒之靈', '持續 6 秒', `召喚物等級 ${Math.min(80, 1 + (l - 1) * 3.6) | 0}`],
+    },
+    quality: [inc('minion_speed', 1)], qualityText: '召喚物移動與攻擊速度增加 {0}%',
+  },
+  {
+    id: 'raise_zombie', name: '召喚殭屍', color: 'B', reqLevel: 1,
+    tags: ['spell', 'minion'],
+    description: '喚起堅韌的殭屍為你擋在前線。',
+    active: {
+      behaviour: 'summon', castTime: 0.9, manaCost: [12, 28], minion: 'zombie_minion', params: { count: 1, max: 3 },
+      levelText: (l) => ['召喚 1 隻殭屍', '最多 3 隻殭屍', `召喚物等級 ${Math.min(80, 1 + (l - 1) * 3.6) | 0}`],
+    },
+    quality: [inc('minion_life', 1)], qualityText: '召喚物最大生命增加 {0}%',
+  },
+  {
+    id: 'freezing_pulse', name: '冰凍脈衝', color: 'B', reqLevel: 1,
+    tags: ['spell', 'projectile', 'cold'],
+    description: '射出穿透所有敵人的冰冷脈衝。',
+    active: {
+      behaviour: 'projectile', castTime: 0.55, crit: 6, baseDamage: { cold: [0.8, 1.2] }, damageScale: 0.8, effectiveness: 1.2,
+      manaCost: [5, 16], params: { count: 1, spread: 0, speed: 30, range: 11, size: 0.45 },
+      levelStats: (l) => [flat('pierce', 99), flat('freeze_chance', L(15, 30)(l))],
+      levelText: (l) => ['穿透所有敵人', `${L(15, 30)(l)}% 機率冰凍`],
+    },
+    quality: [inc('projectile_speed', 1)], qualityText: '增加 {0}% 投射物速度',
+  },
+  {
+    id: 'kinetic_blast', name: '動能爆破', color: 'B', reqLevel: 12,
+    tags: ['attack', 'projectile', 'area'],
+    description: '用法杖射出動能球，命中時爆炸波及周圍敵人。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [140, 200], manaCost: [6, 10], weapons: ['wand'],
+      params: { count: 1, spread: 0, speed: 22, range: 13, size: 0.3, explodeRadius: 1.8 },
+      levelText: (l) => [`造成 ${L(140, 200)(l)}% 基礎攻擊傷害`, '命中時爆炸'],
+    },
+    quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'blade_vortex', name: '刀刃漩渦', color: 'B', reqLevel: 12,
+    tags: ['spell', 'area', 'physical'],
+    description: '召喚環繞你旋轉的虛幻刀刃，切割周圍的敵人。',
+    active: {
+      behaviour: 'nova', castTime: 0.45, crit: 6, baseDamage: { phys: [0.8, 1.2] }, damageScale: 0.45, effectiveness: 0.5,
+      manaCost: [4, 12], params: { radius: 2.2 },
+      levelStats: (l) => [flat('bleed_chance', 10), inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => ['刀刃切割你周圍的敵人', '10% 機率造成流血', `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
   },
 
   // ============================================================================ SUPPORTS — red
@@ -672,6 +874,137 @@ export const GEMS: GemDef[] = [
       text: (l) => [`穿透 ${pct(L(10, 19)(l))} 元素抗性`],
     },
     quality: [inc('elemental_damage', 0.5)], qualityText: '增加 {0}% 元素傷害',
+  },
+  // ============================================================================ BUILD SUPPORTS
+  {
+    id: 'pulverise', name: '粉碎（輔）', color: 'R', reqLevel: 18, tags: ['attack', 'melee', 'area'],
+    description: '被輔助的近戰範圍技能造成更多範圍傷害，但攻擊較慢。',
+    support: {
+      anyOf: ['area'], noneOf: ['spell', 'projectile', 'bow', 'aura', 'minion'], manaMult: 1.4,
+      stats: (l) => [more('area_damage', L(30, 49)(l)), more('attack_speed', -15)],
+      text: (l) => [`總增 ${L(30, 49)(l)}% 範圍傷害`, '總減 15% 攻擊速度'],
+    },
+    quality: [inc('area_damage', 0.5)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'chance_to_bleed', name: '流血（輔）', color: 'R', reqLevel: 1, tags: ['attack', 'physical'],
+    description: '被輔助的攻擊可能使敵人流血。',
+    support: {
+      anyOf: ['attack'], manaMult: 1.1,
+      stats: (l) => [flat('bleed_chance', 25), more('bleed_damage', L(15, 34)(l))],
+      text: (l) => ['25% 機率造成流血', `總增 ${L(15, 34)(l)}% 流血傷害`],
+    },
+    quality: [inc('bleed_damage', 1)], qualityText: '增加 {0}% 流血傷害',
+  },
+  {
+    id: 'fire_penetration', name: '火焰穿透（輔）', color: 'R', reqLevel: 31, tags: ['fire'],
+    description: '被輔助的技能穿透敵人的火焰抗性。',
+    support: {
+      anyOf: ['fire'], noneOf: ['aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [flat('fire_pen', L(18, 37)(l))],
+      text: (l) => [`穿透 ${pct(L(18, 37)(l))} 火焰抗性`],
+    },
+    quality: [inc('fire_damage', 0.5)], qualityText: '增加 {0}% 火焰傷害',
+  },
+  {
+    id: 'increased_duration', name: '增加持續時間（輔）', color: 'R', reqLevel: 8, tags: ['duration'],
+    description: '被輔助的技能效果持續更久。',
+    support: {
+      anyOf: ['duration', 'minion'], noneOf: ['aura'], manaMult: 1.2,
+      stats: (l) => [inc('skill_duration', L(40, 59)(l))],
+      text: (l) => [`增加 ${L(40, 59)(l)}% 技能效果持續時間`],
+    },
+    quality: [inc('skill_duration', 0.5)], qualityText: '增加 {0}% 技能效果持續時間',
+  },
+  {
+    id: 'void_manipulation', name: '虛空操控（輔）', color: 'G', reqLevel: 8, tags: ['chaos'],
+    description: '被輔助的技能造成更多混沌傷害，但元素傷害降低。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1.2,
+      stats: (l) => [more('chaos_damage', L(20, 39)(l)), more('elemental_damage', -25)],
+      text: (l) => [`總增 ${L(20, 39)(l)}% 混沌傷害`, '總減 25% 元素傷害'],
+    },
+    quality: [inc('chaos_damage', 0.5)], qualityText: '增加 {0}% 混沌傷害',
+  },
+  {
+    id: 'deadly_ailments', name: '致命異常（輔）', color: 'G', reqLevel: 18, tags: [],
+    description: '被輔助的技能造成的流血、點燃、中毒等持續傷害大幅提升。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [more('dot_damage', L(30, 49)(l))],
+      text: (l) => [`總增 ${L(30, 49)(l)}% 持續傷害`],
+    },
+    quality: [inc('dot_damage', 0.5)], qualityText: '增加 {0}% 持續傷害',
+  },
+  {
+    id: 'swift_affliction', name: '迅速折磨（輔）', color: 'G', reqLevel: 24, tags: ['duration'],
+    description: '被輔助的技能持續傷害更高，但異常狀態持續時間縮短。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1.25,
+      stats: (l) => [more('dot_damage', L(25, 44)(l)), inc('ailment_duration', -30)],
+      text: (l) => [`總增 ${L(25, 44)(l)}% 持續傷害`, '異常狀態持續時間減少 30%'],
+    },
+    quality: [inc('dot_damage', 0.5)], qualityText: '增加 {0}% 持續傷害',
+  },
+  {
+    id: 'minion_speed', name: '召喚物速度（輔）', color: 'G', reqLevel: 8, tags: ['minion'],
+    description: '被輔助的召喚物移動與攻擊更快。',
+    support: {
+      anyOf: ['minion'], manaMult: 1.2,
+      stats: (l) => [inc('minion_speed', L(25, 44)(l)), more('minion_damage', L(0, 19)(l))],
+      text: (l) => [`召喚物移動與攻擊速度增加 ${L(25, 44)(l)}%`, `召喚物傷害總增 ${L(0, 19)(l)}%`],
+    },
+    quality: [inc('minion_speed', 0.5)], qualityText: '召喚物移動與攻擊速度增加 {0}%',
+  },
+  {
+    id: 'vicious_projectiles', name: '惡毒投射物（輔）', color: 'G', reqLevel: 18, tags: ['projectile', 'physical'],
+    description: '被輔助的投射物造成更多物理傷害。',
+    support: {
+      anyOf: ['projectile'], manaMult: 1.3,
+      stats: (l) => [more('phys_damage', L(25, 44)(l)), more('dot_damage', L(0, 19)(l))],
+      text: (l) => [`總增 ${L(25, 44)(l)}% 物理傷害`, `總增 ${L(0, 19)(l)}% 持續傷害`],
+    },
+    quality: [inc('phys_damage', 0.5)], qualityText: '增加 {0}% 物理傷害',
+  },
+  {
+    id: 'cold_penetration', name: '冰冷穿透（輔）', color: 'G', reqLevel: 31, tags: ['cold'],
+    description: '被輔助的技能穿透敵人的冰冷抗性。',
+    support: {
+      anyOf: ['cold'], noneOf: ['aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [flat('cold_pen', L(18, 37)(l))],
+      text: (l) => [`穿透 ${pct(L(18, 37)(l))} 冰冷抗性`],
+    },
+    quality: [inc('cold_damage', 0.5)], qualityText: '增加 {0}% 冰冷傷害',
+  },
+  {
+    id: 'efficacy', name: '功效（輔）', color: 'B', reqLevel: 18, tags: ['spell', 'duration'],
+    description: '被輔助的法術持續傷害更高、效果持續更久。',
+    support: {
+      anyOf: ['spell'], noneOf: ['minion'], manaMult: 1.3,
+      stats: (l) => [more('dot_damage', L(25, 44)(l)), inc('skill_duration', L(0, 19)(l))],
+      text: (l) => [`總增 ${L(25, 44)(l)}% 持續傷害`, `增加 ${L(0, 19)(l)}% 技能效果持續時間`],
+    },
+    quality: [inc('dot_damage', 0.5)], qualityText: '增加 {0}% 持續傷害',
+  },
+  {
+    id: 'arcane_surge', name: '秘術增強（輔）', color: 'B', reqLevel: 1, tags: ['spell'],
+    description: '被輔助的法術傷害與施放速度提升。',
+    support: {
+      anyOf: ['spell'], noneOf: ['aura', 'minion'], manaMult: 1.1,
+      stats: (l) => [more('spell_damage', L(10, 19)(l)), inc('cast_speed', 10)],
+      text: (l) => [`總增 ${L(10, 19)(l)}% 法術傷害`, '增加 10% 施法速度'],
+    },
+    quality: [inc('spell_damage', 0.5)], qualityText: '增加 {0}% 法術傷害',
+  },
+  {
+    id: 'lightning_penetration', name: '閃電穿透（輔）', color: 'B', reqLevel: 31, tags: ['lightning'],
+    description: '被輔助的技能穿透敵人的閃電抗性。',
+    support: {
+      anyOf: ['lightning'], noneOf: ['aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [flat('lightning_pen', L(18, 37)(l))],
+      text: (l) => [`穿透 ${pct(L(18, 37)(l))} 閃電抗性`],
+    },
+    quality: [inc('lightning_damage', 0.5)], qualityText: '增加 {0}% 閃電傷害',
   },
 ];
 

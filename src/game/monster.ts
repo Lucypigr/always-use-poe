@@ -38,6 +38,9 @@ export class Monster extends Actor {
   pending: PendingAction | null = null;
   home: Vec2;
   isMinion = false;
+  /** Minions: uid of the skill that summoned it, and seconds left to live (0 = permanent). */
+  summonUid = '';
+  lifetime = 0;
   /** Named quest target: quest id and target index. */
   questId = '';
   questIndex = -1;

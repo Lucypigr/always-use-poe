@@ -32,6 +32,7 @@ Progress (characters, stash, settings) is saved to `localStorage` automatically.
 | Right click, Space, Q W E R T, Middle click | Skill slots (hold to keep using; aimed at the cursor / monster under it). Click a skill-bar slot to change it |
 | Shift + skill | Use the skill in place |
 | J | Quest journal |
+| B | Build guide (流派指南) |
 | 1–5 | Drink flasks |
 | I / C / P | Inventory / Character sheet / Passive tree |
 | Tab | Overlay map |
@@ -89,6 +90,31 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
 - Quest tracker under the minimap, quest journal (J), and a prologue for new characters.
   Older saves get their quests for already-beaten bosses marked ready to hand in.
 
+## Builds (流派)
+
+A build guide in game (**B**, or 選單 → 流派指南; data in `src/data/builds.ts`) lists 11 archetypes
+modelled on popular Path of Exile builds, each with its main skill, linked supports, extra gems,
+enabling uniques and keystones:
+
+| Build | Modelled on | Key gems | Key uniques |
+| --- | --- | --- | --- |
+| 正義之火 | Righteous Fire Juggernaut / Chieftain | 正義之火 + 功效, 致命異常 | 卡翁之心 (Kaom's Heart), 鳳凰崛起 (Rise of the Phoenix), 不朽之軀 |
+| 碎骨 | Boneshatter Juggernaut | 碎骨 + 蠻力, 粉碎 | 深淵之冠 (Abyssus), 卡翁之心 |
+| 旋風斬 | Cyclone Slayer | 旋風斬 + 粉碎 | 星鑄 (Starforge), 巨獸之腹 (Belly of the Beast) |
+| 閃現打擊 | Flicker Strike Berserker | 閃現打擊 + 衝擊波, 多重打擊 | 悖論之刃 (Paradoxica), 獵首者 (Headhunter) |
+| 撕裂流血 | Bleed Gladiator | 撕裂 + 流血, 致命異常 | 血腥之握 |
+| 閃電箭 / 龍捲射擊 | Lightning Arrow / Tornado Shot Deadeye | 風暴箭, 龍捲射擊 + 閃電穿透 | 伏特裂隙 (Voltaxic Rift), 龍牙 |
+| 毒雨 | Toxic Rain Pathfinder | 毒雨 + 虛空操控, 迅速折磨 | 羽雨 (Quill Rain), 瘟疫之喉 |
+| 精華吸取 | Essence Drain / Contagion Occultist | 精華吸取, 傳染 + 功效 | 虛空電池 (Void Battery), 虛空絲袍 |
+| 憤怒之靈 | Summon Raging Spirits Necromancer | 召喚憤怒之靈, 召喚殭屍 + 召喚物速度 | 飲魂之面, 尤爾之骨 (Bones of Ullr) |
+| 動能爆破 | Kinetic Blast Elementalist | 動能爆破 + 多重投射 | 星落動能 |
+| 冰凍脈衝 | Freezing Pulse Hierophant | 冰凍脈衝 + 冰冷穿透 | 霜縛之心 |
+
+New mechanics behind them: Righteous Fire (burns enemies and yourself by % of life + ES),
+Flicker Strike (teleport-strike), Cyclone (spin while moving), temporary / per-skill-capped
+minions (raging spirits, zombies), Headhunter (steal a rare monster's modifiers for 20 s),
+skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's Heart).
+
 ## Systems (and how they map to Path of Exile)
 
 ### Items
@@ -103,7 +129,7 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
   **corruption** (with corrupted implicits and white sockets), **unidentified** drops.
 - **320+ bases**: 12 weapon classes, 6 defence types × 5 armour slots × 6 tiers, jewellery, quivers,
   life/mana/hybrid/utility flasks (with flask prefixes/suffixes), and **maps**.
-- **20 uniques** with build-enabling mechanics (a 6-link white-socket robe, a keystone chest, +1
+- **37 uniques** with build-enabling mechanics (Kaom's Heart, Headhunter, Starforge, Quill Rain, Rise of the Phoenix…) (a 6-link white-socket robe, a keystone chest, +1
   projectile bow, minion wand…).
 
 ### Currency (original names, familiar behaviour)
@@ -132,9 +158,9 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
 | Orb of Unlearning | Regret | Passive refund point |
 
 ### Gems, sockets and links
-- **23 active skills** (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+- **40 active skills** (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
   novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
-  and **31 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
+  and **44 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
   controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).
 - Supports only affect active gems in **linked sockets** and only if the skill has matching
   **tags** (a projectile support won't support a melee strike). Supports add **mana multipliers**.

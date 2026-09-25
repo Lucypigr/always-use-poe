@@ -202,6 +202,10 @@ export class Input {
       case 'p':
         ui.togglePanel('passives');
         break;
+      case 'b':
+        if (ui.modals.isOpen) ui.modals.close();
+        else ui.modals.builds();
+        break;
       case 'j':
         if (ui.modals.isOpen) ui.modals.close();
         else ui.story.journal();

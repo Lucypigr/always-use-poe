@@ -114,7 +114,7 @@ describe('content coverage', () => {
     game.area.monsters = [];
     const p = game.player;
     for (const def of MONSTERS) {
-      if (def.id === 'bone_warrior') continue;
+      if (['bone_warrior', 'raging_spirit', 'zombie_minion'].includes(def.id)) continue;
       const m = new Monster(def, 30, def.boss ? 'unique' : 'rare', game.map.nearestFloor({ x: p.pos.x + 3, y: p.pos.y }), 'enemy', game.rng);
       m.aggro = true;
       game.area.monsters.push(m);

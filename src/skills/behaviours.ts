@@ -281,6 +281,41 @@ export function executeBehaviour(host: SkillHost, behaviour: BehaviourId | 'char
       host.teleport(caster, dest);
       break;
     }
+    case 'flicker': {
+      // teleport next to an enemy near the cursor (or the closest one) and strike it
+      const range = params.range ?? 10;
+      const cands = host.hostiles(team).filter((a) => dist(caster.pos, a.pos) <= range && host.map.los(caster.pos, a.pos));
+      const pick = ctx.targetActor && !ctx.targetActor.dead && cands.includes(ctx.targetActor) ? ctx.targetActor : cands.sort((a, b) => dist(a.pos, ctx.target) - dist(b.pos, ctx.target))[0];
+      if (!pick) {
+        host.vfx({ type: 'swing', pos: caster.pos, angle: facing, arc: 70 * DEG, radius: stats.range + caster.radius, color: ctx.color });
+        break;
+      }
+      const back = normalize({ x: caster.pos.x - pick.pos.x, y: caster.pos.y - pick.pos.y });
+      const dest = host.map.nearestFloor({ x: pick.pos.x + back.x * (pick.radius + caster.radius + 0.2), y: pick.pos.y + back.y * (pick.radius + caster.radius + 0.2) });
+      host.vfx({ type: 'blink', from: { ...caster.pos }, to: dest, color: ctx.color });
+      host.teleport(caster, dest);
+      caster.facing = angleTo(caster.pos, pick.pos);
+      host.vfx({ type: 'swing', pos: caster.pos, angle: caster.facing, arc: 90 * DEG, radius: stats.range + caster.radius, color: ctx.color });
+      host.hit(pick, stats, caster);
+      if (stats.splash) {
+        const r = 1.6 * stats.areaMult;
+        for (const a of actorsInCircle(host, team, pick.pos, r)) if (a !== pick) host.hit(a, stats, caster, 0.7);
+      }
+      break;
+    }
+    case 'spin': {
+      // Cyclone: hit everything around, then drift toward the cursor
+      const r = (params.radius ?? 2) * stats.areaMult + caster.radius * 0.5;
+      for (const a of actorsInCircle(host, team, caster.pos, r)) host.hit(a, stats, caster);
+      host.vfx({ type: 'swing', pos: caster.pos, angle: facing + Math.PI, arc: Math.PI * 2, radius: r, color: ctx.color });
+      const step = Math.min(params.step ?? 1, dist(caster.pos, ctx.target));
+      if (step > 0.2) {
+        const dir = normalize({ x: ctx.target.x - caster.pos.x, y: ctx.target.y - caster.pos.y });
+        const d = Math.min(step, host.map.raycast(caster.pos, dir.x, dir.y, step));
+        if (d > 0.1) host.travel(caster, { x: caster.pos.x + dir.x * d, y: caster.pos.y + dir.y * d }, Math.max(0.06, stats.actionTime * 0.35), {});
+      }
+      break;
+    }
     case 'summon':
     case 'aura':
       // handled by the game (they create entities / toggle state rather than dealing damage)

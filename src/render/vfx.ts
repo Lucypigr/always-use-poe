@@ -203,6 +203,20 @@ export class VfxManager {
         P.ring(e.pos.x, e.pos.y, e.radius * 0.9, Math.min(60, Math.round(e.radius * 10)), new THREE.Color(e.color));
         break;
       }
+      case 'burn': {
+        const m = new THREE.Mesh(new THREE.RingGeometry(0.7, 1, 32), this.basic(e.color, 0.45));
+        m.rotation.x = -Math.PI / 2;
+        m.position.set(e.pos.x, 0.15, e.pos.y);
+        m.scale.setScalar(e.radius);
+        this.add(m, 0.5, (f, o) => ((o as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = 0.45 * (1 - f)));
+        const c = new THREE.Color(e.color);
+        for (let i = 0; i < 8; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const d = Math.random() * e.radius;
+          P.emit(e.pos.x + Math.cos(a) * d, 0.2, e.pos.y + Math.sin(a) * d, 1, { color: c, speed: 0.4, up: 2.2, life: 0.6, size: 0.3 });
+        }
+        break;
+      }
       case 'explosion': {
         const s = glowSprite(e.color, e.radius * 2.5);
         s.position.set(e.pos.x, 0.8, e.pos.y);

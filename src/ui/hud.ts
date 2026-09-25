@@ -354,6 +354,7 @@ export class Hud {
       if (sk) this.buffs.append(h('span', { class: 'buff' }, sk.gem.name));
     }
     for (const b of p.buffs) {
+      if (b.label) this.buffs.append(h('span', { class: 'buff' }, `${b.label} ${b.time.toFixed(1)}s`));
       if (!b.id.startsWith('flask:')) continue;
       const it = Object.values(g.char.equipment).find((x) => x && `flask:${x.uid}` === b.id);
       if (it) this.buffs.append(h('span', { class: 'buff' }, `${displayName(it)} ${b.time.toFixed(1)}s`));

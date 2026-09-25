@@ -99,4 +99,6 @@ export type VfxEvent =
   | { type: 'death'; pos: Vec2; color: string; big: boolean }
   | { type: 'text'; pos: Vec2; text: string; color: string; big?: boolean }
   | { type: 'flask'; pos: Vec2; color: string }
-  | { type: 'summon'; pos: Vec2 };
+  | { type: 'summon'; pos: Vec2 }
+  /** Silent burning ring (Righteous Fire). */
+  | { type: 'burn'; pos: Vec2; radius: number; color: string };

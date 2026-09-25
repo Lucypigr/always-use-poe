@@ -14,7 +14,7 @@ import { executeBehaviour, type SkillContext, type SkillHost } from '../skills/b
 import { addGemXp, levelGem } from '../skills/gemUtil';
 import { computeMinionStats, computeSkillStats, resolveSkills, type SkillStats } from '../skills/skills';
 import { computeCharacterStats } from '../stats/character';
-import { more, type StatMod } from '../stats/stats';
+import { flat, inc, more, type StatMod } from '../stats/stats';
 import { NPC_BY_ID, QUEST_BY_ID, type NpcId, type QuestDef } from '../data/quests';
 import { createCurrency, createGem } from '../items/generate';
 import type { Actor, Team } from './actor';
@@ -24,6 +24,7 @@ import { applyHit, rollHit } from './combat';
 import { newEntityId, type AreaEffect, type GroundItem, type Interactable, type Projectile, type ProjectileVisual, type VfxEvent } from './entities';
 import { questReward, rollDrops } from './loot';
 import { makeMinion, Monster, monsterDef } from './monster';
+import type { RareMonsterMod } from '../data/monsters';
 import { findPath } from './path';
 import { Player } from './player';
 import { activeQuestsIn, advanceQuest, npcLabel, questBonusMods, questGoal, questProgress, questStates, refreshQuests } from './quests';
@@ -496,6 +497,7 @@ export class Game implements SkillHost {
     this.updateMonsters(dt);
     this.updateProjectiles(dt);
     this.updateEffects(dt);
+    this.updateRighteousFire(dt);
     // pools & damage over time
     const hadBuffs = this.player.buffs.length;
     this.player.tickPools(dt);
@@ -721,16 +723,22 @@ export class Game implements SkillHost {
     const sk = this.player.skills.get(uid);
     if (!sk) return;
     const ms = computeMinionStats(sk, monsterLife, monsterDamage);
-    const mine = this.area.monsters.filter((m) => m.isMinion && !m.dead);
+    const def = monsterDef(sk.gem.active?.minion ?? 'bone_warrior');
+    // each summoning skill has its own minion limit
+    const mine = this.area.monsters.filter((m) => m.isMinion && !m.dead && (m.summonUid || uid) === uid);
     const count = sk.gem.active?.params.count ?? 1;
+    const duration = (sk.gem.active?.params.duration ?? 0) * (this.player.skillStats.get(uid)?.durationMult ?? 1);
     for (let i = 0; i < count; i++) {
       if (mine.length >= ms.max) {
         const oldest = mine.shift()!;
         oldest.dead = true;
       }
       const pos = this.map.nearestFloor({ x: this.player.pos.x + Math.cos(this.player.facing) * 1.5 + this.rng.float(-1, 1), y: this.player.pos.y + Math.sin(this.player.facing) * 1.5 + this.rng.float(-1, 1) });
-      const m = new Monster(monsterDef('bone_warrior'), ms.level, 'normal', pos, 'player', this.rng);
-      makeMinion(m, ms.life, ms.damage, ms.attackSpeed, ms.moveSpeed, this.player.id);
+      const m = new Monster(def, ms.level, 'normal', pos, 'player', this.rng);
+      const speed = def.speed / 5.2;
+      makeMinion(m, Math.round(ms.life * def.life), [Math.round(ms.damage[0] * def.damage), Math.round(ms.damage[1] * def.damage)], ms.attackSpeed * (def.attackSpeed / 1.3), ms.moveSpeed * speed, this.player.id);
+      m.summonUid = uid;
+      m.lifetime = duration;
       this.area.monsters.push(m);
       mine.push(m);
       this.vfx({ type: 'summon', pos });
@@ -747,6 +755,11 @@ export class Game implements SkillHost {
     const active: Monster[] = [];
     for (const m of area.monsters) {
       if (m.dead) continue;
+      if (m.lifetime > 0 && (m.lifetime -= dt) <= 0) {
+        // temporary minions (raging spirits) fade away
+        m.dead = true;
+        continue;
+      }
       const d = dist(m.pos, p.pos);
       if (d > 32 && !m.aggro && !m.isMinion) continue;
       active.push(m);
@@ -1158,6 +1171,65 @@ export class Game implements SkillHost {
   // Kills, experience, loot
   // ------------------------------------------------------------------------------------------
 
+  // ------------------------------------------------------------------------------------------
+  // Build mechanics: Righteous Fire, Headhunter
+  // ------------------------------------------------------------------------------------------
+
+  private rfTimer = 0;
+
+  /** Righteous Fire: burn everything around you (and yourself) based on your life and energy shield. */
+  private updateRighteousFire(dt: number): void {
+    const p = this.player;
+    if (p.dead || this.area.town) return;
+    const uid = this.char.activeAuras.find((u) => p.skills.get(u)?.gem.active?.params.rf);
+    const sk = uid ? p.skills.get(uid) : undefined;
+    if (!sk) return;
+    const st = p.skillStats.get(uid!);
+    const pool = p.stats.maxLife + p.stats.maxES;
+    const s = sk.sheet;
+    const keys = ['damage', 'fire_damage', 'elemental_damage', 'burning_damage', 'dot_damage', 'spell_damage', 'area_damage'] as const;
+    const mult = Math.max(0, 1 + s.inc(...keys) / 100) * s.more(...keys);
+    const pct = 40 + ((70 - 40) * (Math.min(20, sk.level) - 1)) / 19 + Math.max(0, sk.level - 20) * 1.5;
+    const dps = (pool * pct) / 100 * mult;
+    const radius = (sk.gem.active!.params.radius ?? 2.6) * (st?.areaMult ?? 1);
+    for (const m of this.area.monsters) {
+      if (m.dead || m.team !== 'enemy' || dist(m.pos, p.pos) > radius + m.radius) continue;
+      m.aggro = true;
+      m.takeDamage(dps * dt * (1 - Math.min(90, m.stats.res.fire) / 100) * m.stats.damageTakenMult * m.shockTaken, false);
+      if (m.dead) this.onKill(m, p);
+    }
+    const self = pool * 0.24 * (1 - Math.min(90, p.stats.res.fire) / 100) * p.stats.damageTakenMult;
+    p.takeDamage(self * dt, false);
+    this.rfTimer -= dt;
+    if (this.rfTimer <= 0) {
+      this.rfTimer = 0.45;
+      this.vfx({ type: 'burn', pos: { ...p.pos }, radius, color: '#ff7a2a' });
+    }
+  }
+
+  /** Headhunter: killing a rare monster grants you its modifiers for 20 seconds. */
+  private headhunt(m: Monster): void {
+    const mods: StatMod[] = [];
+    const add = (x: RareMonsterMod) => {
+      if (x.speedInc) mods.push(inc('movement_speed', x.speedInc * 0.5));
+      if (x.attackSpeedInc) mods.push(inc('attack_speed', x.attackSpeedInc), inc('cast_speed', x.attackSpeedInc));
+      if (x.physReduction) mods.push(flat('phys_damage_reduction', x.physReduction * 0.5));
+      if (x.regenPct) mods.push(flat('life_regen_pct', x.regenPct * 0.5));
+      if (x.leech) mods.push(flat('life_leech', 2));
+      if (x.poison) mods.push(flat('poison_chance', x.poison));
+      if (x.damageMore) mods.push(inc('damage', x.damageMore));
+      if (x.lifeMore) mods.push(inc('life', x.lifeMore * 0.4));
+      for (const [t, v] of Object.entries(x.extra ?? {})) mods.push(flat(`phys_as_extra_${t}` as never, v * 0.25));
+      for (const [t, v] of Object.entries(x.res ?? {})) mods.push(flat(`${t}_res` as never, v * 0.5));
+    };
+    for (const x of m.mods) add(x);
+    if (!mods.length) return;
+    const p = this.player;
+    p.buffs = p.buffs.filter((b) => b.id !== `hh:${m.id}`);
+    p.buffs.push({ id: `hh:${m.id}`, time: 20, mods, label: `獵首：${m.mods.map((x) => x.name).join('、')}` });
+    this.requestRecalc();
+  }
+
   private onKill(m: Monster, _source: Actor | null): void {
     const area = this.area;
     this.vfx({ type: 'death', pos: { ...m.pos }, color: m.def.color, big: !!m.def.boss });
@@ -1165,6 +1237,7 @@ export class Game implements SkillHost {
     this.kills++;
     const p = this.player;
     const cs = p.cstats;
+    if (m.rarity === 'rare' && cs.sheet.has('headhunter')) this.headhunt(m);
     if (!p.dead) {
       if (cs.sheet.flat('life_on_kill')) p.heal(cs.sheet.flat('life_on_kill'));
       if (cs.sheet.flat('mana_on_kill')) p.restoreMana(cs.sheet.flat('mana_on_kill'));
