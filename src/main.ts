@@ -11,6 +11,8 @@ import { Audio } from './ui/audio';
 import { showCharSelect } from './ui/charSelect';
 import { clear } from './ui/dom';
 import { Input } from './ui/input';
+import { isTouchDevice } from './ui/touch';
+import { TouchControls } from './ui/touchControls';
 import { UI } from './ui/ui';
 
 /** Application shell: title screen ↔ game session, main loop and persistence. */
@@ -21,6 +23,7 @@ class App {
   private game: Game | null = null;
   private ui: UI | null = null;
   private input: Input | null = null;
+  private touch: TouchControls | null = null;
   private last = performance.now();
   readonly audio = new Audio();
 
@@ -34,7 +37,7 @@ class App {
     const params = new URLSearchParams(location.search);
     const quick = params.get('quickstart') as ClassId | null;
     if (quick) {
-      const c = newCharacter('Tester', quick);
+      const c = newCharacter('測試者', quick);
       if (params.get('unlock')) c.unlockedAreas = AREAS.map((a) => a.id);
       if (params.get('level')) c.level = Number(params.get('level'));
       this.save.characters.push(c);
@@ -56,6 +59,7 @@ class App {
     this.ui = new UI(this.uiRoot, game, this.renderer, () => this.exitToTitle());
     this.ui.hud.showLabels = this.save.settings.alwaysShowLabels;
     this.input = new Input(this.ui, game, this.renderer);
+    if (isTouchDevice()) this.touch = new TouchControls(this.ui, this.input);
     game.events.on('save', () => this.persist());
     this.audio.volume = this.save.settings.volume;
     game.events.on('drop', ({ item }) => {
@@ -69,7 +73,7 @@ class App {
     game.events.on('levelup', () => this.audio.play('levelup'));
     game.events.on('death', () => this.audio.play('death'));
     game.events.on('area', () => this.audio.play('portal'));
-    game.log(`Welcome to Duskhaven, ${char.name}. Press H for controls.`, '#d8c8a0');
+    game.log(this.touch ? `歡迎來到暮港，${char.name}。左下拖曳移動，按住右下技能鍵攻擊。` : `歡迎來到暮港，${char.name}。按 H 查看操作說明。`, '#d8c8a0');
     if (import.meta.env.DEV) Object.assign(window, { game, renderer: this.renderer, ui: this.ui });
     this.persist();
   }
@@ -78,6 +82,8 @@ class App {
     this.ui?.stowCursor();
     this.persist();
     this.input?.destroy();
+    this.touch?.destroy();
+    this.touch = null;
     this.ui?.destroy();
     this.game = null;
     this.ui = null;
@@ -113,6 +119,7 @@ class App {
       this.renderer.render(g, dt);
       g.vfxQueue.length = 0;
       this.ui.update(dt);
+      this.touch?.update();
     }
     requestAnimationFrame((t) => this.frame(t));
   }

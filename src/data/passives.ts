@@ -43,157 +43,157 @@ function node(name: string, ...parts: { mod: StatMod; text: string }[]) {
 
 const THEMES: Theme[] = [
   {
-    id: 'life', angle: 200, small: node('Life', T('life', 6, '6% increased maximum Life')),
+    id: 'life', angle: 200, small: node('生命', T('life', 6, '增加 6% 最大生命')),
     notables: [
-      node('Heart of Oak', T('life', 12, '12% increased maximum Life'), T('life_regen_pct', 0.8, 'Regenerate 0.8% of Life per second', 'flat')),
-      node('Blood of the Mountain', T('life', 10, '10% increased maximum Life'), T('str', 15, '+15 to Strength', 'flat')),
-      node('Unbroken Will', T('life', 12, '12% increased maximum Life'), T('damage_taken', -4, '4% reduced Damage taken')),
-      node('Enduring Flesh', T('life', 14, '14% increased maximum Life'), T('life_on_kill', 5, 'Gain 5 Life per Enemy Killed', 'flat')),
+      node('橡木之心', T('life', 12, '增加 12% 最大生命'), T('life_regen_pct', 0.8, '每秒回復 0.8% 生命', 'flat')),
+      node('群山之血', T('life', 10, '增加 10% 最大生命'), T('str', 15, '+15 力量', 'flat')),
+      node('不屈意志', T('life', 12, '增加 12% 最大生命'), T('damage_taken', -4, '減少 4% 承受傷害')),
+      node('堅韌血肉', T('life', 14, '增加 14% 最大生命'), T('life_on_kill', 5, '每擊殺一名敵人獲得 5 生命', 'flat')),
     ],
   },
   {
-    id: 'armour', angle: 225, small: node('Armour', T('armour', 16, '16% increased Armour')),
+    id: 'armour', angle: 225, small: node('護甲', T('armour', 16, '增加 16% 護甲')),
     notables: [
-      node('Iron Hide', T('armour', 35, '35% increased Armour'), T('life', 5, '5% increased maximum Life')),
-      node('Stone Skin', T('armour', 30, '30% increased Armour'), T('phys_damage_reduction', 2, '2% additional Physical Damage Reduction', 'flat')),
-      node('Bastion of Iron', T('armour', 40, '40% increased Armour'), T('life_regen_pct', 0.5, 'Regenerate 0.5% of Life per second', 'flat')),
+      node('鋼鐵之皮', T('armour', 35, '增加 35% 護甲'), T('life', 5, '增加 5% 最大生命')),
+      node('石膚', T('armour', 30, '增加 30% 護甲'), T('phys_damage_reduction', 2, '額外 2% 物理傷害減免', 'flat')),
+      node('鋼鐵堡壘', T('armour', 40, '增加 40% 護甲'), T('life_regen_pct', 0.5, '每秒回復 0.5% 生命', 'flat')),
     ],
   },
   {
-    id: 'melee', angle: 245, small: node('Melee Damage', T('melee_damage', 12, '12% increased Melee Damage')),
+    id: 'melee', angle: 245, small: node('近戰傷害', T('melee_damage', 12, '增加 12% 近戰傷害')),
     notables: [
-      node('Savage Onslaught', T('melee_damage', 22, '22% increased Melee Damage'), T('attack_speed', 4, '4% increased Attack Speed')),
-      node('Bone Breaker', T('phys_damage', 20, '20% increased Physical Damage'), T('melee_damage', 15, '15% increased Melee Damage')),
-      node('Crushing Momentum', T('melee_damage', 25, '25% increased Melee Damage'), T('area_of_effect', 6, '6% increased Area of Effect')),
+      node('野蠻猛攻', T('melee_damage', 22, '增加 22% 近戰傷害'), T('attack_speed', 4, '增加 4% 攻擊速度')),
+      node('碎骨者', T('phys_damage', 20, '增加 20% 物理傷害'), T('melee_damage', 15, '增加 15% 近戰傷害')),
+      node('粉碎之勢', T('melee_damage', 25, '增加 25% 近戰傷害'), T('area_of_effect', 6, '增加 6% 效果範圍')),
     ],
   },
   {
-    id: 'leech', angle: 265, small: node('Life Leech', T('life_leech', 0.2, '0.2% of Attack Damage Leeched as Life', 'flat')),
+    id: 'leech', angle: 265, small: node('生命偷取', T('life_leech', 0.2, '0.2% 攻擊傷害轉化為生命偷取', 'flat')),
     notables: [
-      node('Crimson Thirst', T('life_leech', 0.6, '0.6% of Attack Damage Leeched as Life', 'flat'), T('attack_damage', 12, '12% increased Attack Damage')),
-      node('Sanguine Edge', T('life_on_hit', 4, 'Gain 4 Life per Enemy Hit', 'flat'), T('phys_damage', 15, '15% increased Physical Damage')),
+      node('緋紅渴望', T('life_leech', 0.6, '0.6% 攻擊傷害轉化為生命偷取', 'flat'), T('attack_damage', 12, '增加 12% 攻擊傷害')),
+      node('血刃', T('life_on_hit', 4, '每擊中一名敵人獲得 4 生命', 'flat'), T('phys_damage', 15, '增加 15% 物理傷害')),
     ],
   },
   {
-    id: 'attack_speed', angle: 290, small: node('Attack Speed', T('attack_speed', 4, '4% increased Attack Speed')),
+    id: 'attack_speed', angle: 290, small: node('攻擊速度', T('attack_speed', 4, '增加 4% 攻擊速度')),
     notables: [
-      node('Flurry of Blows', T('attack_speed', 8, '8% increased Attack Speed'), T('accuracy', 100, '+100 to Accuracy Rating', 'flat')),
-      node('Blade Dancer', T('attack_speed', 7, '7% increased Attack Speed'), T('movement_speed', 4, '4% increased Movement Speed')),
-      node('Eye of the Hawk', T('accuracy', 30, '30% increased Accuracy Rating'), T('attack_damage', 15, '15% increased Attack Damage')),
+      node('連打', T('attack_speed', 8, '增加 8% 攻擊速度'), T('accuracy', 100, '+100 命中值', 'flat')),
+      node('劍舞者', T('attack_speed', 7, '增加 7% 攻擊速度'), T('movement_speed', 4, '增加 4% 移動速度')),
+      node('鷹之眼', T('accuracy', 30, '增加 30% 命中值'), T('attack_damage', 15, '增加 15% 攻擊傷害')),
     ],
   },
   {
-    id: 'flask', angle: 280, small: node('Flask Charges', T('flask_charges', 8, '8% increased Flask Charges gained')),
+    id: 'flask', angle: 280, small: node('藥劑充能', T('flask_charges', 8, '增加 8% 獲得的藥劑充能')),
     notables: [
-      node('Alchemist\'s Grace', T('flask_duration', 15, '15% increased Flask Effect Duration'), T('flask_recovery', 15, '15% increased Flask Recovery')),
-      node('Bottomless Draught', T('flask_charges', 25, '25% increased Flask Charges gained'), T('flask_recovery', 10, '10% increased Flask Recovery')),
+      node('鍊金師之恩', T('flask_duration', 15, '增加 15% 藥劑效果持續時間'), T('flask_recovery', 15, '增加 15% 藥劑回復量')),
+      node('無底之飲', T('flask_charges', 25, '增加 25% 獲得的藥劑充能'), T('flask_recovery', 10, '增加 10% 藥劑回復量')),
     ],
   },
   {
-    id: 'evasion', angle: 320, small: node('Evasion', T('evasion', 16, '16% increased Evasion Rating')),
+    id: 'evasion', angle: 320, small: node('閃避', T('evasion', 16, '增加 16% 閃避值')),
     notables: [
-      node('Fleet of Foot', T('evasion', 30, '30% increased Evasion Rating'), T('movement_speed', 5, '5% increased Movement Speed')),
-      node('Ghost Dance', T('evasion', 35, '35% increased Evasion Rating'), T('life', 5, '5% increased maximum Life')),
-      node('Windborn', T('evasion', 25, '25% increased Evasion Rating'), T('dex', 20, '+20 to Dexterity', 'flat')),
+      node('健步如飛', T('evasion', 30, '增加 30% 閃避值'), T('movement_speed', 5, '增加 5% 移動速度')),
+      node('幽魂之舞', T('evasion', 35, '增加 35% 閃避值'), T('life', 5, '增加 5% 最大生命')),
+      node('風之子', T('evasion', 25, '增加 25% 閃避值'), T('dex', 20, '+20 敏捷', 'flat')),
     ],
   },
   {
-    id: 'projectile', angle: 345, small: node('Projectile Damage', T('projectile_damage', 12, '12% increased Projectile Damage')),
+    id: 'projectile', angle: 345, small: node('投射物傷害', T('projectile_damage', 12, '增加 12% 投射物傷害')),
     notables: [
-      node('Deadeye\'s Mark', T('projectile_damage', 22, '22% increased Projectile Damage'), T('projectile_speed', 15, '15% increased Projectile Speed')),
-      node('Hail of Arrows', T('projectile_damage', 18, '18% increased Projectile Damage'), T('attack_speed', 6, '6% increased Attack Speed')),
-      node('Far Shot', T('projectile_damage', 25, '25% increased Projectile Damage'), T('accuracy', 80, '+80 to Accuracy Rating', 'flat')),
+      node('銳眼標記', T('projectile_damage', 22, '增加 22% 投射物傷害'), T('projectile_speed', 15, '增加 15% 投射物速度')),
+      node('箭雨', T('projectile_damage', 18, '增加 18% 投射物傷害'), T('attack_speed', 6, '增加 6% 攻擊速度')),
+      node('遠射', T('projectile_damage', 25, '增加 25% 投射物傷害'), T('accuracy', 80, '+80 命中值', 'flat')),
     ],
   },
   {
-    id: 'chaos', angle: 10, small: node('Chaos Damage', T('chaos_damage', 12, '12% increased Chaos Damage')),
+    id: 'chaos', angle: 10, small: node('混沌傷害', T('chaos_damage', 12, '增加 12% 混沌傷害')),
     notables: [
-      node('Toxic Blood', T('poison_chance', 10, '10% chance to Poison on Hit', 'flat'), T('poison_damage', 20, '20% increased Damage with Poison')),
-      node('Blight Heart', T('chaos_damage', 22, '22% increased Chaos Damage'), T('chaos_res', 12, '+12% to Chaos Resistance', 'flat')),
+      node('毒血', T('poison_chance', 10, '10% 機率擊中時使敵人中毒', 'flat'), T('poison_damage', 20, '增加 20% 中毒傷害')),
+      node('凋零之心', T('chaos_damage', 22, '增加 22% 混沌傷害'), T('chaos_res', 12, '+12% 混沌抗性', 'flat')),
     ],
   },
   {
-    id: 'crit', angle: 30, small: node('Critical Strikes', T('crit_chance', 15, '15% increased Critical Strike Chance')),
+    id: 'crit', angle: 30, small: node('暴擊', T('crit_chance', 15, '增加 15% 暴擊率')),
     notables: [
-      node('Assassin\'s Focus', T('crit_chance', 30, '30% increased Critical Strike Chance'), T('crit_multi', 20, '+20% to Critical Strike Multiplier', 'flat')),
-      node('Killing Intent', T('crit_multi', 30, '+30% to Critical Strike Multiplier', 'flat')),
-      node('Razor Mind', T('crit_chance', 35, '35% increased Critical Strike Chance'), T('spell_crit_chance', 20, '20% increased Critical Strike Chance for Spells')),
+      node('刺客專注', T('crit_chance', 30, '增加 30% 暴擊率'), T('crit_multi', 20, '+20% 暴擊傷害加成', 'flat')),
+      node('殺意', T('crit_multi', 30, '+30% 暴擊傷害加成', 'flat')),
+      node('銳利心智', T('crit_chance', 35, '增加 35% 暴擊率'), T('spell_crit_chance', 20, '增加 20% 法術暴擊率')),
     ],
   },
   {
-    id: 'cold', angle: 50, small: node('Cold Damage', T('cold_damage', 12, '12% increased Cold Damage')),
+    id: 'cold', angle: 50, small: node('冰冷傷害', T('cold_damage', 12, '增加 12% 冰冷傷害')),
     notables: [
-      node('Heart of Winter', T('cold_damage', 25, '25% increased Cold Damage'), T('freeze_chance', 5, '5% chance to Freeze', 'flat')),
-      node('Hoarfrost', T('cold_damage', 20, '20% increased Cold Damage'), T('chill_effect', 15, '15% increased Effect of Chill')),
-      node('Glacial Mind', T('cold_damage', 22, '22% increased Cold Damage'), T('cold_pen', 5, 'Damage Penetrates 5% Cold Resistance', 'flat')),
+      node('寒冬之心', T('cold_damage', 25, '增加 25% 冰冷傷害'), T('freeze_chance', 5, '5% 機率冰凍', 'flat')),
+      node('白霜', T('cold_damage', 20, '增加 20% 冰冷傷害'), T('chill_effect', 15, '增加 15% 冰緩效果')),
+      node('冰河心智', T('cold_damage', 22, '增加 22% 冰冷傷害'), T('cold_pen', 5, '傷害穿透 5% 冰冷抗性', 'flat')),
     ],
   },
   {
-    id: 'spell', angle: 75, small: node('Spell Damage', T('spell_damage', 10, '10% increased Spell Damage')),
+    id: 'spell', angle: 75, small: node('法術傷害', T('spell_damage', 10, '增加 10% 法術傷害')),
     notables: [
-      node('Arcane Potency', T('spell_damage', 22, '22% increased Spell Damage'), T('cast_speed', 5, '5% increased Cast Speed')),
-      node('Mind over Flesh', T('spell_damage', 18, '18% increased Spell Damage'), T('mana', 10, '10% increased maximum Mana')),
-      node('Spellweaver', T('cast_speed', 10, '10% increased Cast Speed'), T('spell_damage', 12, '12% increased Spell Damage')),
-      node('Sorcerous Might', T('spell_damage', 25, '25% increased Spell Damage'), T('spell_crit_chance', 25, '25% increased Critical Strike Chance for Spells')),
+      node('秘法之力', T('spell_damage', 22, '增加 22% 法術傷害'), T('cast_speed', 5, '增加 5% 施法速度')),
+      node('心勝於體', T('spell_damage', 18, '增加 18% 法術傷害'), T('mana', 10, '增加 10% 最大魔力')),
+      node('法術編織者', T('cast_speed', 10, '增加 10% 施法速度'), T('spell_damage', 12, '增加 12% 法術傷害')),
+      node('巫術之力', T('spell_damage', 25, '增加 25% 法術傷害'), T('spell_crit_chance', 25, '增加 25% 法術暴擊率')),
     ],
   },
   {
-    id: 'mana', angle: 85, small: node('Mana', T('mana', 8, '8% increased maximum Mana'), T('mana_regen', 8, '8% increased Mana Regeneration Rate')),
+    id: 'mana', angle: 85, small: node('魔力', T('mana', 8, '增加 8% 最大魔力'), T('mana_regen', 8, '增加 8% 魔力回復速度')),
     notables: [
-      node('Wellspring', T('mana', 14, '14% increased maximum Mana'), T('mana_regen', 25, '25% increased Mana Regeneration Rate')),
-      node('Frugal Mind', T('mana_cost', -8, '8% reduced Mana Cost of Skills'), T('mana_regen', 20, '20% increased Mana Regeneration Rate')),
+      node('泉源', T('mana', 14, '增加 14% 最大魔力'), T('mana_regen', 25, '增加 25% 魔力回復速度')),
+      node('節儉心智', T('mana_cost', -8, '減少 8% 技能魔力消耗'), T('mana_regen', 20, '增加 20% 魔力回復速度')),
     ],
   },
   {
-    id: 'es', angle: 100, small: node('Energy Shield', T('energy_shield', 8, '8% increased maximum Energy Shield')),
+    id: 'es', angle: 100, small: node('能量護盾', T('energy_shield', 8, '增加 8% 最大能量護盾')),
     notables: [
-      node('Aegis of Thought', T('energy_shield', 18, '18% increased maximum Energy Shield'), T('es_recharge', 15, '15% increased Energy Shield Recharge Rate')),
-      node('Crystal Mantle', T('energy_shield', 15, '15% increased maximum Energy Shield'), T('int', 20, '+20 to Intelligence', 'flat')),
-      node('Unwavering Ward', T('energy_shield', 20, '20% increased maximum Energy Shield'), T('es_recharge_delay', -20, 'Energy Shield Recharge starts 20% faster')),
+      node('思緒之盾', T('energy_shield', 18, '增加 18% 最大能量護盾'), T('es_recharge', 15, '增加 15% 能量護盾充能速度')),
+      node('水晶斗篷', T('energy_shield', 15, '增加 15% 最大能量護盾'), T('int', 20, '+20 智慧', 'flat')),
+      node('不移護衛', T('energy_shield', 20, '增加 20% 最大能量護盾'), T('es_recharge_delay', -20, '能量護盾充能提早 20% 開始')),
     ],
   },
   {
-    id: 'lightning', angle: 115, small: node('Lightning Damage', T('lightning_damage', 12, '12% increased Lightning Damage')),
+    id: 'lightning', angle: 115, small: node('閃電傷害', T('lightning_damage', 12, '增加 12% 閃電傷害')),
     notables: [
-      node('Storm Heart', T('lightning_damage', 25, '25% increased Lightning Damage'), T('shock_chance', 10, '10% chance to Shock', 'flat')),
-      node('Conductor', T('lightning_damage', 20, '20% increased Lightning Damage'), T('lightning_pen', 6, 'Damage Penetrates 6% Lightning Resistance', 'flat')),
+      node('風暴之心', T('lightning_damage', 25, '增加 25% 閃電傷害'), T('shock_chance', 10, '10% 機率感電', 'flat')),
+      node('導體', T('lightning_damage', 20, '增加 20% 閃電傷害'), T('lightning_pen', 6, '傷害穿透 6% 閃電抗性', 'flat')),
     ],
   },
   {
-    id: 'minion', angle: 125, small: node('Minion Damage', T('minion_damage', 12, 'Minions deal 12% increased Damage'), T('minion_life', 6, 'Minions have 6% increased maximum Life')),
+    id: 'minion', angle: 125, small: node('召喚物傷害', T('minion_damage', 12, '召喚物傷害增加 12%'), T('minion_life', 6, '召喚物最大生命增加 6%')),
     notables: [
-      node('Lord of the Dead', T('minion_damage', 25, 'Minions deal 25% increased Damage'), T('minion_life', 15, 'Minions have 15% increased maximum Life')),
-      node('Grave Legion', T('minion_count', 1, '+1 to maximum number of Minions', 'flat'), T('minion_life', 10, 'Minions have 10% increased maximum Life')),
-      node('Death\'s Swiftness', T('minion_speed', 15, 'Minions have 15% increased Speed'), T('minion_damage', 15, 'Minions deal 15% increased Damage')),
+      node('亡者之王', T('minion_damage', 25, '召喚物傷害增加 25%'), T('minion_life', 15, '召喚物最大生命增加 15%')),
+      node('墓穴軍團', T('minion_count', 1, '+1 召喚物最大數量', 'flat'), T('minion_life', 10, '召喚物最大生命增加 10%')),
+      node('死神迅捷', T('minion_speed', 15, '召喚物速度增加 15%'), T('minion_damage', 15, '召喚物傷害增加 15%')),
     ],
   },
   {
-    id: 'fire', angle: 140, small: node('Fire Damage', T('fire_damage', 12, '12% increased Fire Damage')),
+    id: 'fire', angle: 140, small: node('火焰傷害', T('fire_damage', 12, '增加 12% 火焰傷害')),
     notables: [
-      node('Pyromaniac', T('fire_damage', 25, '25% increased Fire Damage'), T('ignite_chance', 10, '10% chance to Ignite', 'flat')),
-      node('Smoldering Soul', T('burning_damage', 30, '30% increased Burning Damage'), T('fire_damage', 15, '15% increased Fire Damage')),
-      node('Fire Walker', T('fire_damage', 20, '20% increased Fire Damage'), T('fire_pen', 6, 'Damage Penetrates 6% Fire Resistance', 'flat')),
+      node('縱火狂', T('fire_damage', 25, '增加 25% 火焰傷害'), T('ignite_chance', 10, '10% 機率點燃', 'flat')),
+      node('悶燒之魂', T('burning_damage', 30, '增加 30% 燃燒傷害'), T('fire_damage', 15, '增加 15% 火焰傷害')),
+      node('行火者', T('fire_damage', 20, '增加 20% 火焰傷害'), T('fire_pen', 6, '傷害穿透 6% 火焰抗性', 'flat')),
     ],
   },
   {
-    id: 'block', angle: 158, small: node('Block', T('block', 1, '+1% Chance to Block Attack Damage', 'flat'), T('armour', 6, '6% increased Armour')),
+    id: 'block', angle: 158, small: node('格擋', T('block', 1, '+1% 攻擊格擋率', 'flat'), T('armour', 6, '增加 6% 護甲')),
     notables: [
-      node('Shield Wall', T('block', 4, '+4% Chance to Block Attack Damage', 'flat'), T('life', 5, '5% increased maximum Life')),
-      node('Sacred Bulwark', T('block', 3, '+3% Chance to Block Attack Damage', 'flat'), T('all_ele_res', 10, '+10% to all Elemental Resistances', 'flat')),
+      node('盾牆', T('block', 4, '+4% 攻擊格擋率', 'flat'), T('life', 5, '增加 5% 最大生命')),
+      node('神聖壁壘', T('block', 3, '+3% 攻擊格擋率', 'flat'), T('all_ele_res', 10, '+10% 全部元素抗性', 'flat')),
     ],
   },
   {
-    id: 'area', angle: 175, small: node('Area Damage', T('area_damage', 10, '10% increased Area Damage')),
+    id: 'area', angle: 175, small: node('範圍傷害', T('area_damage', 10, '增加 10% 範圍傷害')),
     notables: [
-      node('Cataclysm', T('area_of_effect', 12, '12% increased Area of Effect'), T('area_damage', 15, '15% increased Area Damage')),
-      node('Earthquake Heart', T('area_damage', 25, '25% increased Area Damage'), T('str', 15, '+15 to Strength', 'flat')),
+      node('災變', T('area_of_effect', 12, '增加 12% 效果範圍'), T('area_damage', 15, '增加 15% 範圍傷害')),
+      node('地震之心', T('area_damage', 25, '增加 25% 範圍傷害'), T('str', 15, '+15 力量', 'flat')),
     ],
   },
   {
-    id: 'resist', angle: 185, small: node('Resistances', T('all_ele_res', 6, '+6% to all Elemental Resistances', 'flat')),
+    id: 'resist', angle: 185, small: node('抗性', T('all_ele_res', 6, '+6% 全部元素抗性', 'flat')),
     notables: [
-      node('Elemental Warding', T('all_ele_res', 15, '+15% to all Elemental Resistances', 'flat'), T('life', 4, '4% increased maximum Life')),
-      node('Prismatic Skin', T('max_all_ele_res', 1, '+1% to all maximum Elemental Resistances', 'flat'), T('all_ele_res', 10, '+10% to all Elemental Resistances', 'flat')),
+      node('元素護衛', T('all_ele_res', 15, '+15% 全部元素抗性', 'flat'), T('life', 4, '增加 4% 最大生命')),
+      node('稜彩之膚', T('max_all_ele_res', 1, '+1% 全部最大元素抗性', 'flat'), T('all_ele_res', 10, '+10% 全部元素抗性', 'flat')),
     ],
   },
 ];
@@ -206,15 +206,15 @@ interface KeystoneDef {
 }
 
 export const KEYSTONES: KeystoneDef[] = [
-  { angle: 330, name: 'Phantom Step', stats: [flag('ks_phantom_step')], text: ['30% chance to avoid all damage from Hits', '50% less Armour and Energy Shield'] },
-  { angle: 0, name: 'Close Quarters', stats: [flag('ks_close_quarters')], text: ['Projectiles deal up to 40% more Damage to targets at close range', 'Projectiles deal less Damage to targets far away'] },
-  { angle: 30, name: 'Elemental Overload', stats: [flag('ks_elemental_overload')], text: ['40% more Elemental Damage', 'Your Critical Strikes do not deal extra Damage'] },
-  { angle: 60, name: 'Arcane Ward', stats: [flag('ks_arcane_ward')], text: ['30% of Damage is taken from Mana before Life'] },
-  { angle: 120, name: 'Hollow Vessel', stats: [flag('ks_hollow_vessel')], text: ['Maximum Life becomes 1', 'Immune to Chaos Damage'] },
-  { angle: 150, name: 'Wrath of Ages', stats: [flag('ks_wrath_of_ages')], text: ['Deal 30% more Damage', 'Take 15% more Damage'] },
-  { angle: 210, name: 'Blood Pact', stats: [flag('ks_blood_pact')], text: ['Removes all Mana', 'Skills cost Life instead of Mana', 'Auras reserve Life instead of Mana'] },
-  { angle: 240, name: 'Ironclad', stats: [flag('ks_ironclad')], text: ['Converts all Evasion Rating to Armour', 'Dexterity provides no bonus to Evasion Rating'] },
-  { angle: 270, name: 'Unerring Discipline', stats: [flag('ks_unerring')], text: ['Your hits can\'t be Evaded', 'Never deal Critical Strikes'] },
+  { angle: 330, name: '幻影步', stats: [flag('ks_phantom_step')], text: ['30% 機率迴避擊中的所有傷害', '總減 50% 護甲與能量護盾'] },
+  { angle: 0, name: '近身作戰', stats: [flag('ks_close_quarters')], text: ['投射物對近距離目標最多總增 40% 傷害', '投射物對遠處目標造成較少傷害'] },
+  { angle: 30, name: '元素超載', stats: [flag('ks_elemental_overload')], text: ['總增 40% 元素傷害', '你的暴擊不會造成額外傷害'] },
+  { angle: 60, name: '秘法護衛', stats: [flag('ks_arcane_ward')], text: ['30% 承受傷害先由魔力扣除'] },
+  { angle: 120, name: '空虛之器', stats: [flag('ks_hollow_vessel')], text: ['最大生命變為 1', '免疫混沌傷害'] },
+  { angle: 150, name: '萬古之怒', stats: [flag('ks_wrath_of_ages')], text: ['造成總增 30% 傷害', '承受總增 15% 傷害'] },
+  { angle: 210, name: '血之契約', stats: [flag('ks_blood_pact')], text: ['移除所有魔力', '技能改為消耗生命而非魔力', '光環改為保留生命而非魔力'] },
+  { angle: 240, name: '鋼鐵意志', stats: [flag('ks_ironclad')], text: ['所有閃避值轉換為護甲', '敏捷不再提供閃避值加成'] },
+  { angle: 270, name: '堅定紀律', stats: [flag('ks_unerring')], text: ['你的擊中無法被閃避', '永遠不會暴擊'] },
 ];
 
 const ATTR_PEAKS: [StatKey, number][] = [['str', 210], ['dex', 330], ['int', 90]];
@@ -237,7 +237,7 @@ function attrFor(angle: number): StatKey {
   return best;
 }
 
-const ATTR_LABEL: Record<string, string> = { str: 'Strength', dex: 'Dexterity', int: 'Intelligence' };
+const ATTR_LABEL: Record<string, string> = { str: '力量', dex: '敏捷', int: '智慧' };
 
 function pickTheme(rng: RNG, angle: number, spread = 40): Theme {
   const cands = THEMES.filter((t) => angDist(t.angle, angle) <= spread);
@@ -269,7 +269,7 @@ export function buildPassiveTree(): PassiveTree {
   };
   const attrNode = (deg: number, amount = 10) => {
     const a = attrFor(deg);
-    return { name: ATTR_LABEL[a], stats: [flat(a, amount)], text: [`+${amount} to ${ATTR_LABEL[a]}`] };
+    return { name: ATTR_LABEL[a], stats: [flat(a, amount)], text: [`+${amount} ${ATTR_LABEL[a]}`] };
   };
   const smallOf = (theme: Theme) => theme.small;
   const usedNotables = new Set<string>();
@@ -284,7 +284,7 @@ export function buildPassiveTree(): PassiveTree {
   const startOf = {} as Record<ClassId, number>;
   const branchEnds: { id: number; deg: number }[] = [];
   for (const c of CLASSES) {
-    const start = add(250, c.treeAngle, 'start', { name: c.name, stats: [], text: [`${c.name} starting point`] }, c.id);
+    const start = add(250, c.treeAngle, 'start', { name: c.name, stats: [], text: [`${c.name}的起點`] }, c.id);
     startOf[c.id] = start;
     for (const off of [-16, 0, 16]) {
       let prev = start;

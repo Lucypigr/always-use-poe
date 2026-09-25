@@ -63,11 +63,11 @@ export class AreaInstance {
 
 export function createTown(rng: RNG): AreaInstance {
   const layout = generateTown(rng);
-  const inst = new AreaInstance('Duskhaven', 1, layout.map, true, null, null);
-  inst.addInteractable('stash', layout.stash, 'Stash', 1);
-  inst.addInteractable('vendor', layout.vendor, 'Mara, the Trader', 0.8);
-  inst.addInteractable('waypoint', layout.waypoint, 'Waypoint', 1.2);
-  inst.addInteractable('map_device', layout.mapDevice, 'Map Device', 1.2);
+  const inst = new AreaInstance('暮港', 1, layout.map, true, null, null);
+  inst.addInteractable('stash', layout.stash, '倉庫', 1);
+  inst.addInteractable('vendor', layout.vendor, '商人瑪拉', 0.8);
+  inst.addInteractable('waypoint', layout.waypoint, '傳送點', 1.2);
+  inst.addInteractable('map_device', layout.mapDevice, '地圖裝置', 1.2);
   inst.portalPos = layout.portalSpot;
   return inst;
 }
@@ -141,7 +141,7 @@ export function createMapArea(mapItem: Item, rng: RNG): AreaInstance {
   const ms = mapStats(mapItem);
   // Higher tiers are tougher even without mods
   monsterMods.push(inc('monster_life', tier * 4));
-  const name = `${mapItem.name && mapItem.rarity === 'rare' ? mapItem.name + ' — ' : ''}Tier ${tier} Map`;
+  const name = `${mapItem.name && mapItem.rarity === 'rare' ? mapItem.name + ' — ' : ''}${tier} 階地圖`;
   const inst = new AreaInstance(name, mapItem.ilvl, map, false, null, mapItem);
   inst.quant = ms.quant;
   inst.rarity = ms.rarity;

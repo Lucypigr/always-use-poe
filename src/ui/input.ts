@@ -1,6 +1,8 @@
 import type { Game } from '../game/game';
 import type { Renderer } from '../render/renderer';
 import type { UI } from './ui';
+import { fromTouch } from './touch';
+import { dist } from '../core/math';
 
 const KEY_SLOTS: Record<string, number> = { q: 2, w: 3, e: 4, r: 5, t: 6 };
 
@@ -16,6 +18,14 @@ export class Input {
   private overUI = false;
   private shift = false;
   private listeners: [EventTarget, string, EventListener][] = [];
+  /** Touch: fingers currently on the game canvas. */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { d: number; zoom: number } | null = null;
+  /** Touch: skill slots held via on-screen buttons (auto-aimed). */
+  private touchSkills: number[] = [];
+  /** Virtual joystick deflection in screen space (-1…1), or null. */
+  joy: { x: number; y: number } | null = null;
+  private releaseLmb = false;
 
   constructor(
     private ui: UI,
@@ -32,8 +42,12 @@ export class Input {
       this.overUI = ui.pointerOverUI(m.target);
       ui.onMouseMove(m.clientX, m.clientY);
     });
-    this.on(canvas, 'mousedown', (e) => this.onCanvasDown(e as MouseEvent));
-    this.on(window, 'mouseup', (e) => this.onUp(e as MouseEvent));
+    this.on(canvas, 'mousedown', (e) => !fromTouch() && this.onCanvasDown(e as MouseEvent));
+    this.on(canvas, 'pointerdown', (e) => this.onTouchDown(e as PointerEvent));
+    this.on(window, 'pointermove', (e) => this.onTouchMove(e as PointerEvent));
+    this.on(window, 'pointerup', (e) => this.onTouchUp(e as PointerEvent));
+    this.on(window, 'pointercancel', (e) => this.onTouchUp(e as PointerEvent));
+    this.on(window, 'mouseup', (e) => !fromTouch() && this.onUp(e as MouseEvent));
     this.on(canvas, 'contextmenu', (e) => e.preventDefault());
     this.on(canvas, 'wheel', (e) => {
       const w = e as WheelEvent;
@@ -54,6 +68,10 @@ export class Input {
 
   private releaseAll(): void {
     this.held = [];
+    this.touchSkills = [];
+    this.touches.clear();
+    this.pinch = null;
+    this.joy = null;
     this.lmb = 'none';
     this.shift = false;
     this.ui.setAlt(false);
@@ -88,6 +106,59 @@ export class Input {
       e.preventDefault();
       this.press(7);
     }
+  }
+
+  // ------------------------------------------------------------------ touch
+
+  private onTouchDown(e: PointerEvent): void {
+    if (e.pointerType !== 'touch') return;
+    e.preventDefault();
+    this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    this.releaseLmb = false;
+    if (this.touches.size === 2) {
+      const [a, b] = [...this.touches.values()];
+      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: this.renderer.zoom };
+      this.lmb = 'none';
+      return;
+    }
+    if (this.touches.size > 2) return;
+    this.mouseX = e.clientX;
+    this.mouseY = e.clientY;
+    this.overUI = false;
+    this.ui.onMouseMove(e.clientX, e.clientY);
+    this.onCanvasDown({ button: 0, clientX: e.clientX, clientY: e.clientY, shiftKey: false, preventDefault() {} } as MouseEvent);
+  }
+
+  private onTouchMove(e: PointerEvent): void {
+    const t = this.touches.get(e.pointerId);
+    if (!t) return;
+    t.x = e.clientX;
+    t.y = e.clientY;
+    if (this.pinch && this.touches.size >= 2) {
+      const [a, b] = [...this.touches.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      this.renderer.zoom = Math.max(0.65, Math.min(1.45, this.pinch.zoom * (this.pinch.d / Math.max(20, d))));
+      return;
+    }
+    this.mouseX = e.clientX;
+    this.mouseY = e.clientY;
+  }
+
+  private onTouchUp(e: PointerEvent): void {
+    if (!this.touches.delete(e.pointerId)) return;
+    if (this.touches.size < 2) this.pinch = null;
+    // release after the next update so even a very quick tap registers as a move / attack
+    if (this.touches.size === 0) this.releaseLmb = true;
+  }
+
+  /** On-screen skill button pressed (touch). */
+  pressTouchSkill(slot: number): void {
+    this.touchSkills = this.touchSkills.filter((s) => s !== slot);
+    this.touchSkills.push(slot);
+  }
+
+  releaseTouchSkill(slot: number): void {
+    this.touchSkills = this.touchSkills.filter((s) => s !== slot);
   }
 
   private onUp(e: MouseEvent): void {
@@ -165,6 +236,49 @@ export class Input {
     if (this.lmb === 'move' && this.shift) {
       inp.heldSlot = 0;
       inp.moveHeld = false;
+    }
+
+    // Virtual joystick: convert the screen-space deflection into a world direction.
+    inp.moveDir = null;
+    const p = g.player;
+    if (this.joy && Math.hypot(this.joy.x, this.joy.y) > 0.25) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const a = this.renderer.screenToGround(cx, cy);
+      const b = this.renderer.screenToGround(cx + this.joy.x * 120, cy + this.joy.y * 120);
+      const l = Math.hypot(b.x - a.x, b.y - a.y);
+      if (l > 1e-3) inp.moveDir = { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+      if (this.lmb === 'move') inp.moveHeld = false;
+    }
+
+    // Touch skill buttons: auto-aim at the nearest enemy, else straight ahead.
+    if (this.touchSkills.length) {
+      inp.heldSlot = this.touchSkills[this.touchSkills.length - 1];
+      inp.moveHeld = false;
+      if (!inp.hoverMonster || this.lmb === 'none') {
+        let best = null;
+        let bestD = 12;
+        for (const m of g.area.monsters) {
+          if (m.dead || m.team !== 'enemy') continue;
+          const d = dist(p.pos, m.pos);
+          if (d < bestD) {
+            bestD = d;
+            best = m;
+          }
+        }
+        inp.hoverMonster = best;
+        if (best) inp.cursor = { ...best.pos };
+        else {
+          const dir = inp.moveDir ?? { x: Math.cos(p.facing), y: Math.sin(p.facing) };
+          inp.cursor = { x: p.pos.x + dir.x * 5, y: p.pos.y + dir.y * 5 };
+        }
+      }
+      // keep walking while casting only if the joystick isn't held (skills root you in place)
+      if (inp.moveDir) inp.moveDir = null;
+    }
+    if (this.releaseLmb) {
+      this.releaseLmb = false;
+      this.lmb = 'none';
     }
   }
 }

@@ -4,48 +4,48 @@ import type { ItemClass } from './types';
 /** Random rare item names: "<Prefix word> <class-flavoured suffix word>". */
 
 const FIRST = [
-  'Agony', 'Apocalypse', 'Ashen', 'Beast', 'Behemoth', 'Blight', 'Blood', 'Bramble', 'Brimstone', 'Brood', 'Carrion',
-  'Cataclysm', 'Chimeric', 'Corpse', 'Corruption', 'Damnation', 'Death', 'Demon', 'Dire', 'Dragon', 'Dread', 'Doom',
-  'Dusk', 'Eagle', 'Ember', 'Empyrean', 'Fate', 'Foe', 'Gale', 'Ghoul', 'Gloom', 'Glyph', 'Golem', 'Grim', 'Hate',
-  'Havoc', 'Honour', 'Horror', 'Hypnotic', 'Kraken', 'Loath', 'Maelstrom', 'Mind', 'Miracle', 'Morbid', 'Oblivion',
-  'Onslaught', 'Pain', 'Pandemonium', 'Phoenix', 'Plague', 'Rage', 'Rapture', 'Raven', 'Rune', 'Skull', 'Sol', 'Soul',
-  'Sorrow', 'Spirit', 'Storm', 'Tempest', 'Thunder', 'Torment', 'Vengeance', 'Victory', 'Viper', 'Vortex', 'Woe', 'Wrath',
+  '痛苦', '天啟', '灰燼', '野獸', '巨獸', '凋零', '鮮血', '荊棘', '硫磺', '巢', '腐屍',
+  '災變', '幻獸', '屍骸', '腐化', '天譴', '死亡', '惡魔', '恐怖', '巨龍', '恐懼', '末日',
+  '黃昏', '鷹', '餘燼', '天界', '命運', '仇敵', '疾風', '食屍鬼', '陰霾', '符文', '魔像', '冷酷', '憎恨',
+  '浩劫', '榮耀', '恐怖', '催眠', '海妖', '厭惡', '漩渦', '心智', '奇蹟', '病態', '湮滅',
+  '猛攻', '痛楚', '混亂', '鳳凰', '瘟疫', '狂怒', '狂喜', '渡鴉', '符文', '骷髏', '日', '靈魂',
+  '悲傷', '精神', '風暴', '暴風', '雷霆', '折磨', '復仇', '勝利', '毒蛇', '渦流', '悲嘆', '憤怒',
 ];
 
 const SECOND: Partial<Record<ItemClass, string[]>> = {
-  helmet: ['Brow', 'Corona', 'Crest', 'Crown', 'Veil', 'Visor', 'Horn', 'Dome', 'Cowl', 'Glance'],
-  body_armour: ['Carapace', 'Coat', 'Hide', 'Husk', 'Shell', 'Pelt', 'Mantle', 'Wrap', 'Skin', 'Cloak', 'Jack', 'Vest'],
-  gloves: ['Grasp', 'Grip', 'Hand', 'Fist', 'Touch', 'Clutches', 'Palm', 'Mitts', 'Talons', 'Paw'],
-  boots: ['Trail', 'Stride', 'Tread', 'Spur', 'March', 'Road', 'Track', 'Pace', 'Slippers', 'Walk'],
-  shield: ['Aegis', 'Bulwark', 'Guard', 'Ward', 'Tower', 'Wall', 'Emblem', 'Badge', 'Watch', 'Refuge'],
-  one_hand_sword: ['Bane', 'Edge', 'Fang', 'Razor', 'Song', 'Skewer', 'Slicer', 'Spike', 'Blade'],
-  two_hand_sword: ['Bane', 'Edge', 'Fang', 'Razor', 'Song', 'Skewer', 'Slicer', 'Spike', 'Blade'],
-  one_hand_axe: ['Bite', 'Cleaver', 'Edge', 'Reaver', 'Splitter', 'Hunger', 'Sever'],
-  two_hand_axe: ['Bite', 'Cleaver', 'Edge', 'Reaver', 'Splitter', 'Hunger', 'Sever'],
-  one_hand_mace: ['Bash', 'Blast', 'Brand', 'Crusher', 'Mallet', 'Knell', 'Batter', 'Wreck'],
-  two_hand_mace: ['Bash', 'Blast', 'Brand', 'Crusher', 'Mallet', 'Knell', 'Batter', 'Wreck'],
-  sceptre: ['Call', 'Chant', 'Hymn', 'Rod', 'Song', 'Cane', 'Scepter', 'Heart'],
-  bow: ['Arc', 'Branch', 'Fling', 'Guardian', 'Mark', 'Stinger', 'Siege', 'Thunder', 'Strike'],
-  wand: ['Branch', 'Cry', 'Needle', 'Spire', 'Stinger', 'Song', 'Charm', 'Bite'],
-  staff: ['Beam', 'Branch', 'Pillar', 'Pole', 'Spire', 'Weaver', 'Goad', 'Call'],
-  dagger: ['Barb', 'Etcher', 'Fang', 'Needle', 'Stinger', 'Point', 'Pricker', 'Slicer'],
-  claw: ['Fang', 'Hook', 'Talon', 'Rake', 'Scratch', 'Gutter', 'Ripper', 'Grasp'],
-  ring: ['Band', 'Circle', 'Coil', 'Knot', 'Loop', 'Spiral', 'Turn', 'Whorl', 'Eye'],
-  amulet: ['Beads', 'Charm', 'Choker', 'Collar', 'Heart', 'Idol', 'Locket', 'Pendant', 'Talisman', 'Torc'],
-  belt: ['Bind', 'Buckle', 'Clasp', 'Cord', 'Lash', 'Strap', 'Tether', 'Girdle', 'Belt'],
-  quiver: ['Arrow', 'Barb', 'Bite', 'Bolt', 'Dart', 'Flight', 'Hail', 'Point', 'Sliver', 'Thirst'],
-  map: ['Sanctum', 'Hollow', 'Reach', 'Depths', 'Spire', 'Wastes', 'Vault', 'Mire'],
+  helmet: ['額', '日冕', '羽冠', '王冠', '面紗', '面甲', '角', '圓頂', '兜帽', '凝視'],
+  body_armour: ['甲殼', '外衣', '皮', '殼', '殼', '毛皮', '披風', '裹', '膚', '斗篷', '短甲', '背心'],
+  gloves: ['掌握', '握', '手', '拳', '觸', '爪握', '掌', '連指手套', '爪', '掌爪'],
+  boots: ['小徑', '闊步', '踏', '馬刺', '行軍', '道路', '足跡', '步伐', '拖鞋', '步'],
+  shield: ['神盾', '壁壘', '守衛', '守護', '塔', '牆', '紋章', '徽章', '守望', '庇護'],
+  one_hand_sword: ['禍根', '鋒', '牙', '剃刀', '歌', '串刺', '切割者', '尖刺', '刃'],
+  two_hand_sword: ['禍根', '鋒', '牙', '剃刀', '歌', '串刺', '切割者', '尖刺', '刃'],
+  one_hand_axe: ['咬', '劈刀', '鋒', '劫掠者', '劈裂者', '飢渴', '斷'],
+  two_hand_axe: ['咬', '劈刀', '鋒', '劫掠者', '劈裂者', '飢渴', '斷'],
+  one_hand_mace: ['重擊', '爆裂', '烙印', '粉碎者', '木槌', '喪鐘', '碎擊', '殘骸'],
+  two_hand_mace: ['重擊', '爆裂', '烙印', '粉碎者', '木槌', '喪鐘', '碎擊', '殘骸'],
+  sceptre: ['呼喚', '頌', '讚歌', '棒', '歌', '杖', '權杖', '心'],
+  bow: ['弧', '枝', '拋擲', '守護者', '印記', '螫刺', '圍城', '雷霆', '打擊'],
+  wand: ['枝', '吶喊', '針', '尖塔', '螫刺', '歌', '符咒', '咬'],
+  staff: ['光柱', '枝', '柱', '竿', '尖塔', '編織者', '刺棒', '呼喚'],
+  dagger: ['倒刺', '蝕刻者', '牙', '針', '螫刺', '尖', '刺', '切割者'],
+  claw: ['牙', '鉤', '利爪', '耙', '抓痕', '溝渠', '撕裂者', '掌握'],
+  ring: ['環', '圈', '盤環', '結', '環', '螺旋', '迴轉', '渦', '眼'],
+  amulet: ['念珠', '符咒', '頸圈', '項圈', '心', '神像', '墜盒', '墜飾', '護符', '頸環'],
+  belt: ['束縛', '扣環', '扣', '繩', '鞭', '帶', '繫繩', '腰封', '腰帶'],
+  quiver: ['箭', '倒刺', '咬', '矢', '鏢', '飛羽', '冰雹', '尖', '碎片', '渴'],
+  map: ['聖所', '空洞', '境', '深淵', '尖塔', '荒原', '寶庫', '泥沼'],
 };
 
 export function rareName(rng: RNG, cls: ItemClass): string {
-  const second = SECOND[cls] ?? ['Relic', 'Charm', 'Token'];
-  return `${rng.pick(FIRST)} ${rng.pick(second)}`;
+  const second = SECOND[cls] ?? ['遺物', '符咒', '信物'];
+  return `${rng.pick(FIRST)}${rng.pick(second)}`;
 }
 
-const MONSTER_A = ['Gore', 'Blood', 'Rot', 'Grim', 'Ash', 'Bone', 'Dread', 'Night', 'Bile', 'Fester', 'Skull', 'Storm', 'Frost', 'Venom', 'Soot', 'Carrion'];
+const MONSTER_A = ['血腥', '鮮血', '腐爛', '冷酷', '灰燼', '骨', '恐懼', '夜', '膽汁', '潰爛', '骷髏', '風暴', '冰霜', '劇毒', '煤煙', '腐屍'];
 const MONSTER_B = ['maw', 'fang', 'gut', 'claw', 'hide', 'spine', 'eye', 'tooth', 'belly', 'grin', 'heart', 'howl', 'shriek', 'wing'];
-const MONSTER_C = ['the Wretched', 'the Hungering', 'the Defiler', 'the Unyielding', 'the Rotten', 'the Cruel', 'the Vile', 'the Ravenous', 'the Blighted', 'the Accursed'];
+const MONSTER_C = ['悲慘者', '飢餓者', '褻瀆者', '不屈者', '腐爛者', '殘酷者', '邪惡者', '貪食者', '凋零者', '受詛者'];
 
 export function rareMonsterName(rng: RNG): string {
-  return `${rng.pick(MONSTER_A)}${rng.pick(MONSTER_B)} ${rng.pick(MONSTER_C)}`;
+  return `${rng.pick(MONSTER_C)}${rng.pick(MONSTER_A)}${rng.pick(MONSTER_B)}`;
 }

@@ -119,7 +119,7 @@ export class Hud {
       const f = h('div', { class: 'flask-slot', onclick: () => ui.game.drinkFlask(i) });
       f.addEventListener('mouseenter', () => {
         const it = ui.game.char.equipment[`flask${i + 1}` as EquipSlot];
-        if (it) ui.tooltip.show(it, ui.tctx, ui.alt);
+        if (it && !ui.touch) ui.tooltip.show(it, ui.tctx, ui.alt);
       });
       f.addEventListener('mouseleave', () => ui.tooltip.hide());
       this.flaskEls.push(f);
@@ -127,8 +127,10 @@ export class Hud {
     }
     const skills = h('div', { class: 'skills' });
     for (let i = 0; i < 8; i++) {
-      const s = h('div', { class: 'skill-slot', onclick: () => ui.modals.skillPicker(i) });
-      s.addEventListener('mouseenter', () => this.skillTooltip(i));
+      const s = h('div', { class: 'skill-slot', onclick: () => {
+        if (!ui.touch || ui.editSkills || (i > 0 && !ui.game.char.skillBar[i])) ui.modals.skillPicker(i);
+      } });
+      s.addEventListener('mouseenter', () => (!ui.touch || ui.editSkills) && this.skillTooltip(i));
       s.addEventListener('mouseleave', () => ui.tooltip.hide());
       this.skillEls.push(s);
       skills.append(s);
@@ -138,16 +140,16 @@ export class Hud {
     const xp = h('div', { class: 'xp-bar interactive' }, this.xpFill);
     xp.addEventListener('mouseenter', () => {
       const c = ui.game.char;
-      ui.tooltip.showCustom(h('div', { class: 'tooltip' }, h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line desc' }, `Level ${c.level}`), h('div', { class: 'tt-line prop' }, `Experience: ${fmt(c.xp)} / ${fmt(xpToNext(c.level))}`))));
+      ui.tooltip.showCustom(h('div', { class: 'tooltip' }, h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line desc' }, `等級 ${c.level}`), h('div', { class: 'tt-line prop' }, `經驗值：${fmt(c.xp)} / ${fmt(xpToNext(c.level))}`))));
     });
     xp.addEventListener('mouseleave', () => ui.tooltip.hide());
     bottom.append(xp);
     bottom.append(
       h('div', { class: 'menu-buttons' },
-        h('button', { onclick: () => ui.togglePanel('character') }, 'Char (C)'),
-        h('button', { onclick: () => ui.togglePanel('inventory') }, 'Inv (I)'),
-        h('button', { onclick: () => ui.togglePanel('passives') }, 'Tree (P)'),
-        h('button', { onclick: () => ui.modals.options() }, 'Menu'),
+        h('button', { onclick: () => ui.togglePanel('character') }, '角色 (C)'),
+        h('button', { onclick: () => ui.togglePanel('inventory') }, '背包 (I)'),
+        h('button', { onclick: () => ui.togglePanel('passives') }, '天賦 (P)'),
+        h('button', { onclick: () => ui.modals.options() }, '選單'),
       ),
     );
     this.el.append(bottom);
@@ -159,7 +161,7 @@ export class Hud {
   onArea(): void {
     const a = this.ui.game.area;
     this.areaName.textContent = a.name;
-    this.areaSub.textContent = a.town ? 'Town · safe zone' : `Area Level ${a.level}${a.resPenalty ? ` · ${a.resPenalty}% resistance penalty` : ''}${a.quant ? ` · +${a.quant}% quantity` : ''}`;
+    this.areaSub.textContent = a.town ? '城鎮 · 安全區' : `區域等級 ${a.level}${a.resPenalty ? ` · 抗性懲罰 ${a.resPenalty}%` : ''}${a.quant ? ` · 物品數量 +${a.quant}%` : ''}`;
     this.clearDynamic();
     const map = a.map;
     this.explored.width = map.w;
@@ -218,36 +220,36 @@ export class Hud {
     const uid = g.skillSlotUid(i);
     const box = h('div', { class: 'tooltip' });
     if (!uid) {
-      box.append(h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line hint' }, 'Empty skill slot — click to assign a skill.')));
+      box.append(h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line hint' }, '空的技能欄位 — 點擊以指定技能。')));
       this.ui.tooltip.showCustom(box);
       return;
     }
     const sk = g.player.skills.get(uid);
     const st = g.player.skillStats.get(uid);
     if (!sk || !st) return;
-    box.append(h('div', { class: 'tt-head gem' }, `${sk.gem.name}${sk.item ? ` (Level ${sk.level})` : ''}`));
+    box.append(h('div', { class: 'tt-head gem' }, `${sk.gem.name}${sk.item ? `（等級 ${sk.level}）` : ''}`));
     const lines = h('div', { class: 'tt-sec' });
     const add = (t: string, cls = 'prop') => lines.append(h('div', { class: `tt-line ${cls}` }, t));
-    if (!sk.usable) add(sk.reason ?? 'Unusable', 'reqfail');
-    if (st.reservation) add(`Reserves ${st.reservation}% of Mana`);
-    else if (st.manaCost || st.lifeCost) add(`Cost: ${st.manaCost || st.lifeCost} ${st.lifeCost ? 'Life' : 'Mana'}`);
+    if (!sk.usable) add(sk.reason ?? '無法使用', 'reqfail');
+    if (st.reservation) add(`保留 ${st.reservation}% 魔力`);
+    else if (st.manaCost || st.lifeCost) add(`消耗：${st.manaCost || st.lifeCost} ${st.lifeCost ? '生命' : '魔力'}`);
     const dmg = (['phys', 'fire', 'cold', 'lightning', 'chaos'] as const).filter((t) => st.damage[t][1] > 0);
-    for (const t of dmg) add(`${t === 'phys' ? 'Physical' : t[0].toUpperCase() + t.slice(1)} Damage: ${fmt(st.damage[t][0])}–${fmt(st.damage[t][1])}`, t === 'phys' ? 'desc' : t);
+    for (const t of dmg) add(`${({ phys: '物理', fire: '火焰', cold: '冰冷', lightning: '閃電', chaos: '混沌' } as const)[t]}傷害：${fmt(st.damage[t][0])}–${fmt(st.damage[t][1])}`, t === 'phys' ? 'desc' : t);
     if (dmg.length) {
-      add(`Average Hit: ${fmt(st.averageHit, 1)}`, 'desc');
-      add(`${st.isAttack ? 'Attacks' : 'Casts'} per Second: ${fmt(st.usesPerSecond * st.hitsPerUse, 2)}`, 'desc');
-      add(`Critical Strike Chance: ${fmt(st.critChance, 2)}%`, 'desc');
-      add(`Estimated DPS: ${fmt(st.dps, 1)}`, 'aug');
+      add(`平均傷害：${fmt(st.averageHit, 1)}`, 'desc');
+      add(`${st.isAttack ? '攻擊' : '施放'}每秒次數：${fmt(st.usesPerSecond * st.hitsPerUse, 2)}`, 'desc');
+      add(`暴擊率：${fmt(st.critChance, 2)}%`, 'desc');
+      add(`估計 DPS：${fmt(st.dps, 1)}`, 'aug');
     }
-    if (sk.gem.tags.includes('projectile')) add(`Projectiles: ${st.projectiles}${st.pierce ? ` · Pierce ${st.pierce}` : ''}${st.chain ? ` · Chain ${st.chain}` : ''}${st.fork ? ' · Fork' : ''}`);
+    if (sk.gem.tags.includes('projectile')) add(`投射物：${st.projectiles}${st.pierce ? ` · 穿透 ${st.pierce}` : ''}${st.chain ? ` · 連鎖 ${st.chain}` : ''}${st.fork ? ' · 分裂' : ''}`);
     box.append(lines);
     if (sk.supports.length) {
       const sup = h('div', { class: 'tt-sec' });
-      sup.append(h('div', { class: 'tt-line prop' }, 'Supported by:'));
-      for (const s of sk.supports) sup.append(h('div', { class: 'tt-line mod' }, `${s.def.name} (Level ${s.level})`));
+      sup.append(h('div', { class: 'tt-line prop' }, '輔助寶石：'));
+      for (const s of sk.supports) sup.append(h('div', { class: 'tt-line mod' }, `${s.def.name}（等級 ${s.level}）`));
       box.append(sup);
     }
-    box.append(h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line hint' }, 'Click to change the skill in this slot.')));
+    box.append(h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line hint' }, '點擊以更換此欄位的技能。')));
     this.ui.tooltip.showCustom(box);
   }
 
@@ -275,7 +277,7 @@ export class Hud {
     const maxMana = Math.max(1, s.maxMana);
     this.manaFill.style.height = `${Math.max(0, Math.min(100, (p.mana / maxMana) * 100))}%`;
     this.manaReserved.style.height = `${(p.reserved / maxMana) * 100}%`;
-    this.manaText.textContent = s.maxMana ? `${Math.floor(p.mana)} / ${p.unreservedMana}${p.reserved ? ` (${p.reserved} reserved)` : ''}` : 'Blood Pact';
+    this.manaText.textContent = s.maxMana ? `${Math.floor(p.mana)} / ${p.unreservedMana}${p.reserved ? `（保留 ${p.reserved}）` : ''}` : '血之契約';
     this.xpFill.style.width = `${Math.min(100, (g.char.xp / xpToNext(g.char.level)) * 100)}%`;
 
     // flask durations / active glow
@@ -321,7 +323,7 @@ export class Hud {
     // passive points
     const pts = passivePointsUnspent(g.char);
     this.points.style.display = pts > 0 ? '' : 'none';
-    this.points.textContent = `+${pts} Passive Skill Point${pts > 1 ? 's' : ''}`;
+    this.points.textContent = `+${pts} 天賦點數`;
     // buffs & debuffs
     clear(this.buffs);
     for (const uid of g.char.activeAuras) {
@@ -334,12 +336,12 @@ export class Hud {
       if (it) this.buffs.append(h('span', { class: 'buff' }, `${displayName(it)} ${b.time.toFixed(1)}s`));
     }
     const a = p.ailments;
-    if (a.ignite) this.buffs.append(h('span', { class: 'buff debuff' }, 'Ignited'));
-    if (a.chill) this.buffs.append(h('span', { class: 'buff debuff' }, 'Chilled'));
-    if (a.freeze) this.buffs.append(h('span', { class: 'buff debuff' }, 'Frozen'));
-    if (a.shock) this.buffs.append(h('span', { class: 'buff debuff' }, 'Shocked'));
-    if (a.poison.length) this.buffs.append(h('span', { class: 'buff debuff' }, `Poisoned ×${a.poison.length}`));
-    if (a.bleed) this.buffs.append(h('span', { class: 'buff debuff' }, 'Bleeding'));
+    if (a.ignite) this.buffs.append(h('span', { class: 'buff debuff' }, '點燃'));
+    if (a.chill) this.buffs.append(h('span', { class: 'buff debuff' }, '冰緩'));
+    if (a.freeze) this.buffs.append(h('span', { class: 'buff debuff' }, '冰凍'));
+    if (a.shock) this.buffs.append(h('span', { class: 'buff debuff' }, '感電'));
+    if (a.poison.length) this.buffs.append(h('span', { class: 'buff debuff' }, `中毒 ×${a.poison.length}`));
+    if (a.bleed) this.buffs.append(h('span', { class: 'buff debuff' }, '流血'));
     // skill bar: mana availability
     this.skillEls.forEach((el, i) => {
       const uid = g.skillSlotUid(i);
@@ -370,7 +372,7 @@ export class Hud {
     this.target.style.display = '';
     const cls = m.def.boss ? 'unique' : m.rarity;
     const mods = m.mods.map((x) => x.name).join(', ');
-    this.target.innerHTML = `<div class="name ${cls}">${m.name}</div>${mods ? `<div class="mods">${mods}</div>` : ''}<div class="hp"><div class="fill" style="width:${(m.life / m.stats.maxLife) * 100}%"></div><div class="txt">Level ${m.level}</div></div>`;
+    this.target.innerHTML = `<div class="name ${cls}">${m.name}</div>${mods ? `<div class="mods">${mods}</div>` : ''}<div class="hp"><div class="fill" style="width:${(m.life / m.stats.maxLife) * 100}%"></div><div class="txt">等級 ${m.level}</div></div>`;
   }
 
   private updateLabels(): void {

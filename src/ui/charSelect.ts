@@ -1,3 +1,4 @@
+import { isTouchDevice } from './touch';
 import { AREA_BY_ID } from '../data/areas';
 import { CLASSES, CLASS_BY_ID, type ClassId } from '../data/classes';
 import { newCharacter, type CharacterData } from '../game/character';
@@ -15,14 +16,14 @@ export function showCharSelect(root: HTMLElement, save: SaveData, onPlay: (c: Ch
 
   const render = () => {
     clear(screen);
-    screen.append(h('h1', {}, 'HOLLOWREACH'), h('div', { class: 'subtitle' }, 'An action RPG of exiles, orbs and endless loot'));
+    screen.append(h('h1', {}, 'HOLLOWREACH'), h('div', { class: 'subtitle' }, '一款關於流亡者、寶石與無盡戰利品的動作角色扮演遊戲'));
     if (!creating) {
       const list = h('div', { class: 'char-list' });
       for (const c of save.characters) {
         const last = c.completedAreas[c.completedAreas.length - 1];
         const row = h('div', { class: `char-row${c === selected ? ' sel' : ''}` },
-          h('div', {}, h('div', { class: 'nm' }, c.name), h('div', { class: 'info' }, `Level ${c.level} ${CLASS_BY_ID[c.classId].name}${last ? ` · Cleared ${AREA_BY_ID[last]?.name ?? ''}` : ''}`)),
-          h('div', { class: 'info' }, `${Math.floor(c.playTime / 60)} min`),
+          h('div', {}, h('div', { class: 'nm' }, c.name), h('div', { class: 'info' }, `等級 ${c.level} ${CLASS_BY_ID[c.classId].name}${last ? ` · 已通過 ${AREA_BY_ID[last]?.name ?? ''}` : ''}`)),
+          h('div', { class: 'info' }, `${Math.floor(c.playTime / 60)} 分鐘`),
         );
         row.addEventListener('click', () => ((selected = c), render()));
         row.addEventListener('dblclick', () => onPlay(c));
@@ -31,29 +32,29 @@ export function showCharSelect(root: HTMLElement, save: SaveData, onPlay: (c: Ch
       screen.append(list);
       screen.append(
         h('div', { class: 'row-buttons' },
-          h('button', { disabled: !selected, onclick: () => selected && onPlay(selected) }, 'Play'),
-          h('button', { onclick: () => ((creating = true), render()) }, 'Create Character'),
+          h('button', { disabled: !selected, onclick: () => selected && onPlay(selected) }, '開始遊戲'),
+          h('button', { onclick: () => ((creating = true), render()) }, '建立角色'),
           h('button', {
             disabled: !selected,
             onclick: () => {
-              if (!selected || !confirm(`Delete ${selected.name}? This cannot be undone.`)) return;
+              if (!selected || !confirm(`刪除 ${selected.name}？此操作無法復原。`)) return;
               save.characters = save.characters.filter((c) => c !== selected);
               selected = save.characters[0] ?? null;
               if (!selected) creating = true;
               onChange();
               render();
             },
-          }, 'Delete'),
+          }, '刪除'),
         ),
       );
     } else {
-      const name = h('input', { type: 'text', placeholder: 'Character name', maxlength: '20' }) as HTMLInputElement;
-      name.value = ['Ashka', 'Veyra', 'Doran', 'Kestrel', 'Mirel', 'Taal', 'Oswin', 'Ysolde'][Math.floor(Math.random() * 8)];
+      const name = h('input', { type: 'text', placeholder: '角色名稱', maxlength: '20' }) as HTMLInputElement;
+      name.value = ['艾許卡', '薇拉', '多蘭', '紅隼', '米蕾兒', '塔爾', '奧斯溫', '伊索德'][Math.floor(Math.random() * 8)];
       const grid = h('div', { class: 'class-grid' });
       for (const c of CLASSES) {
         const card = h('div', { class: `class-card${c.id === cls ? ' sel' : ''}` },
           h('div', { class: 'cn', style: `color:${c.color}` }, c.name),
-          h('div', { class: 'attrs' }, h('span', { class: 's' }, `Str ${c.str}`), ' · ', h('span', { class: 'd' }, `Dex ${c.dex}`), ' · ', h('span', { class: 'i' }, `Int ${c.int}`)),
+          h('div', { class: 'attrs' }, h('span', { class: 's' }, `力量 ${c.str}`), ' · ', h('span', { class: 'd' }, `敏捷 ${c.dex}`), ' · ', h('span', { class: 'i' }, `智慧 ${c.int}`)),
           h('div', { class: 'desc' }, c.description),
         );
         card.addEventListener('click', () => {
@@ -64,7 +65,7 @@ export function showCharSelect(root: HTMLElement, save: SaveData, onPlay: (c: Ch
         grid.append(card);
       }
       const create = () => {
-        const nm = name.value.trim() || 'Exile';
+        const nm = name.value.trim() || '流亡者';
         const ch = newCharacter(nm, cls);
         save.characters.push(ch);
         onChange();
@@ -75,15 +76,15 @@ export function showCharSelect(root: HTMLElement, save: SaveData, onPlay: (c: Ch
         if (e.key === 'Enter') create();
       });
       screen.append(
-        h('div', { style: 'text-align:center' }, h('div', { class: 'section-title' }, 'Choose your class'), grid, name),
+        h('div', { style: 'text-align:center' }, h('div', { class: 'section-title' }, '選擇職業'), grid, name),
         h('div', { class: 'row-buttons' },
-          h('button', { onclick: create }, 'Create & Play'),
-          save.characters.length ? h('button', { onclick: () => ((creating = false), render()) }, 'Back') : null,
+          h('button', { onclick: create }, '建立並開始'),
+          save.characters.length ? h('button', { onclick: () => ((creating = false), render()) }, '返回') : null,
         ),
       );
-      setTimeout(() => name.focus(), 0);
+      if (!isTouchDevice()) setTimeout(() => name.focus(), 0);
     }
-    screen.append(h('div', { class: 'muted', style: 'margin:20px 0 30px' }, 'Progress is saved in your browser automatically.'));
+    screen.append(h('div', { class: 'muted', style: 'margin:20px 0 30px' }, '進度會自動儲存在你的瀏覽器中。'));
   };
   render();
 }

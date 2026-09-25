@@ -47,6 +47,8 @@ export interface InputState {
   heldSlot: number | null;
   moveHeld: boolean;
   stand: boolean;
+  /** Direct movement direction in world space (virtual joystick), or null. */
+  moveDir?: Vec2 | null;
 }
 
 export const SKILL_COLORS: Record<string, string> = {
@@ -205,13 +207,13 @@ export class Game implements SkillHost {
       p.mana = p.unreservedMana;
       p.ailments = { ignite: null, bleed: null, poison: [], chill: null, freeze: null, shock: null };
       this.town.interactables = this.town.interactables.filter((i) => i.kind !== 'area_portal');
-      if (this.portalInstance) this.town.addInteractable('area_portal', this.town.portalPos!, `Portal: ${this.portalInstance.name}`, 1);
+      if (this.portalInstance) this.town.addInteractable('area_portal', this.town.portalPos!, `傳送門：${this.portalInstance.name}`, 1);
     }
     inst.flow.originX = -1;
     inst.flow.update(p.pos);
     this.recalc();
     this.events.emit('area', { name: inst.name, level: inst.level, town: inst.town });
-    this.log(inst.town ? `You have entered ${inst.name}.` : `You have entered ${inst.name} (Level ${inst.level}).`, '#d8c8a0');
+    this.log(inst.town ? `你進入了${inst.name}。` : `你進入了${inst.name}（等級 ${inst.level}）。`, '#d8c8a0');
     this.save();
   }
 
@@ -241,22 +243,22 @@ export class Game implements SkillHost {
     const inst = createMapArea(mapItem, this.rng);
     this.portalInstance = inst;
     this.enterArea(inst, inst.map.spawn);
-    this.log(`The Map Device hums. ${inst.name} awaits.`, '#c8a8ff');
+    this.log(`地圖裝置發出嗡鳴。${inst.name}正等待著你。`, '#c8a8ff');
     return true;
   }
 
   usePortalScroll(): boolean {
     if (this.area.town) {
-      this.log('You cannot open a portal in town.', '#ff8080');
+      this.log('無法在城鎮中開啟傳送門。', '#ff8080');
       return false;
     }
     if (!spendCurrency(this.char.inventory, 'portal', 1)) {
-      this.log('You have no Portal Scrolls.', '#ff8080');
+      this.log('你沒有傳送卷軸。', '#ff8080');
       return false;
     }
     this.area.interactables = this.area.interactables.filter((i) => i.kind !== 'town_portal');
     const pos = this.map.nearestFloor({ x: this.player.pos.x + Math.cos(this.player.facing) * 1.5, y: this.player.pos.y + Math.sin(this.player.facing) * 1.5 });
-    this.area.addInteractable('town_portal', pos, 'Portal to Duskhaven', 1);
+    this.area.addInteractable('town_portal', pos, '通往暮港的傳送門', 1);
     this.area.portalPos = pos;
     this.portalInstance = this.area;
     this.events.emit('inventory', null);
@@ -347,7 +349,7 @@ export class Game implements SkillHost {
     if (this.player.dead && this.deathTimer === 0) {
       this.deathTimer = 0.001;
       this.char.deaths++;
-      this.log('You have died.', '#ff4040');
+      this.log('你已死亡。', '#ff4040');
       this.events.emit('death', null);
     }
     for (const gi of area.groundItems) gi.age += dt;
@@ -383,6 +385,19 @@ export class Game implements SkillHost {
         const handled = this.tryUseSkill(uid, inp.cursor, inp.hoverMonster ?? undefined, dt, pressed);
         if (handled) return;
       }
+    }
+
+    if (inp.moveDir) {
+      this.interactTarget = null;
+      p.path = [];
+      const step = p.stats.moveSpeed * (1 - p.chillSlow) * dt;
+      p.pos.x += inp.moveDir.x * step;
+      p.pos.y += inp.moveDir.y * step;
+      p.facing = Math.atan2(inp.moveDir.y, inp.moveDir.x);
+      p.moving = true;
+      p.stride += dt * p.stats.moveSpeed;
+      this.map.collide(p.pos, p.radius);
+      return;
     }
 
     // Interaction target (pick up / talk / portal)
@@ -477,7 +492,7 @@ export class Game implements SkillHost {
     }
     if (st.manaCost > p.mana || (st.lifeCost > 0 && st.lifeCost >= p.life)) {
       if (p.manaWarn <= 0) {
-        this.log('Not enough mana.', '#8fb3ff');
+        this.log('魔力不足。', '#8fb3ff');
         p.manaWarn = 1;
       }
       return false;
@@ -539,7 +554,7 @@ export class Game implements SkillHost {
     this.recalc();
     const on = this.char.activeAuras.includes(uid);
     const sk = this.player.skills.get(uid);
-    if (sk) this.log(`${sk.gem.name} ${on ? 'activated' : i >= 0 ? 'deactivated' : 'cannot be activated (not enough unreserved mana)'}.`, '#c8b8ff');
+    if (sk) this.log(`${sk.gem.name}${on ? '已啟動' : i >= 0 ? '已關閉' : '無法啟動（未保留魔力不足）'}。`, '#c8b8ff');
   }
 
   private summonMinions(uid: string): void {
@@ -844,11 +859,11 @@ export class Game implements SkillHost {
     const res = applyHit(target, h, this.rng);
     const pos = { x: target.pos.x, y: target.pos.y };
     if (target === this.player) {
-      if (res.evaded) this.vfx({ type: 'text', pos, text: 'Evade', color: '#c8c8c8' });
-      else if (res.blocked) this.vfx({ type: 'text', pos, text: 'Block', color: '#c8c8c8' });
-      else if (res.avoided) this.vfx({ type: 'text', pos, text: 'Avoided', color: '#c8c8c8' });
+      if (res.evaded) this.vfx({ type: 'text', pos, text: '閃避', color: '#c8c8c8' });
+      else if (res.blocked) this.vfx({ type: 'text', pos, text: '格擋', color: '#c8c8c8' });
+      else if (res.avoided) this.vfx({ type: 'text', pos, text: '迴避', color: '#c8c8c8' });
     } else if (this.settings.showDamageNumbers && source.team === 'player') {
-      if (res.evaded) this.vfx({ type: 'text', pos, text: 'Miss', color: '#a0a0a0' });
+      if (res.evaded) this.vfx({ type: 'text', pos, text: '未命中', color: '#a0a0a0' });
       else if (res.dealt > 0) this.vfx({ type: 'text', pos, text: String(Math.round(res.dealt)), color: res.crit ? '#ffe070' : '#f0f0f0', big: res.crit });
     }
     if (res.dealt > 0) this.vfx({ type: 'impact', pos, color: res.byType.fire > res.byType.phys ? SKILL_COLORS.fire : res.byType.cold > res.byType.phys ? SKILL_COLORS.cold : res.byType.lightning > res.byType.phys ? SKILL_COLORS.lightning : '#ffdddd' });
@@ -1020,18 +1035,18 @@ export class Game implements SkillHost {
   private onBossKilled(m: Monster): void {
     const area = this.area;
     area.bossDead = true;
-    this.log(`${m.name} has been defeated!`, '#ffb050');
-    area.addInteractable('exit', area.map.nearestFloor({ x: m.pos.x, y: m.pos.y + 2 }), 'Waypoint to Duskhaven', 1.2);
+    this.log(`${m.name}已被擊敗！`, '#ffb050');
+    area.addInteractable('exit', area.map.nearestFloor({ x: m.pos.x, y: m.pos.y + 2 }), '通往暮港的傳送點', 1.2);
     if (area.def) {
       if (!this.char.completedAreas.includes(area.def.id)) {
         this.char.completedAreas.push(area.def.id);
         this.char.bonusPassivePoints++;
-        this.log('Quest complete! You gained a Passive Skill Point.', '#a0ff80');
+        this.log('任務完成！你獲得了 1 點天賦點數。', '#a0ff80');
         if (area.def.next && !this.char.unlockedAreas.includes(area.def.next)) {
           this.char.unlockedAreas.push(area.def.next);
-          this.log(`New area unlocked: ${AREA_BY_ID[area.def.next].name}`, '#a0ff80');
+          this.log(`解鎖新區域：${AREA_BY_ID[area.def.next].name}`, '#a0ff80');
         }
-        if (!area.def.next) this.log('The Map Device in Duskhaven can now open Maps. Maps drop in high level areas.', '#c8a8ff');
+        if (!area.def.next) this.log('暮港的地圖裝置現在可以開啟地圖了。地圖會在高等級區域掉落。', '#c8a8ff');
         this.town.resPenalty = this.townPenalty();
       }
     }
@@ -1056,7 +1071,7 @@ export class Game implements SkillHost {
       c.xp -= xpToNext(c.level);
       c.level++;
       leveled = true;
-      this.log(`You have reached level ${c.level}!`, '#ffe070');
+      this.log(`你升到了等級 ${c.level}！`, '#ffe070');
       this.events.emit('levelup', { level: c.level });
       this.vfx({ type: 'levelup', pos: { ...this.player.pos } });
     }
@@ -1073,7 +1088,7 @@ export class Game implements SkillHost {
     const area = this.area;
     if (!area.groundItems.includes(gi)) return false;
     if (!addItem(this.char.inventory, gi.item)) {
-      this.log('Your inventory is full.', '#ff8080');
+      this.log('背包已滿。', '#ff8080');
       return false;
     }
     area.groundItems = area.groundItems.filter((g) => g !== gi);
@@ -1095,7 +1110,7 @@ export class Game implements SkillHost {
     const fp = flaskProps(f, cs.flaskRecovery, cs.flaskDuration);
     if (!fp) return;
     if (f.flask.charges < fp.chargesPerUse) {
-      this.log("You don't have enough charges.", '#ff8080');
+      this.log('藥劑充能不足。', '#ff8080');
       return;
     }
     const id = `flask:${f.uid}`;
@@ -1131,7 +1146,7 @@ export class Game implements SkillHost {
 
   applyCurrencyTo(currencyItem: Item, target: Item): CraftResult {
     const cid = currencyId(currencyItem) as CurrencyId | undefined;
-    if (!cid) return { ok: false, message: 'Not a currency item' };
+    if (!cid) return { ok: false, message: '不是通貨物品' };
     const res = applyCurrency(cid, target, this.rng);
     if (res.ok) {
       currencyItem.stack = (currencyItem.stack ?? 1) - 1;
@@ -1150,7 +1165,7 @@ export class Game implements SkillHost {
     const cid = currencyId(item);
     if (cid === 'portal') {
       if (this.area.town) {
-        this.log('You cannot open a portal in town.', '#ff8080');
+        this.log('無法在城鎮中開啟傳送門。', '#ff8080');
         return;
       }
       this.usePortalScroll();
@@ -1158,14 +1173,14 @@ export class Game implements SkillHost {
       item.stack = (item.stack ?? 1) - 1;
       if (item.stack <= 0) removeItem(this.char.inventory, item);
       this.char.refundPoints++;
-      this.log('You gained a passive refund point.', '#a0ff80');
+      this.log('你獲得了 1 點天賦重置點數。', '#a0ff80');
       this.events.emit('inventory', null);
     }
   }
 
   levelUpGem(gem: Item): void {
     if (levelGem(gem, this.char.level)) {
-      this.log(`${displayName(gem)} is now level ${gem.gem!.level}.`, '#8fd8ff');
+      this.log(`${displayName(gem)}升到了等級 ${gem.gem!.level}。`, '#8fd8ff');
       this.recalc();
     }
   }
@@ -1175,7 +1190,7 @@ export class Game implements SkillHost {
     const path = pathToNode(PASSIVE_TREE, allocated, nodeId);
     if (!path || !path.length) return false;
     if (path.length > passivePointsUnspent(this.char)) {
-      this.log('Not enough passive skill points.', '#ff8080');
+      this.log('天賦點數不足。', '#ff8080');
       return false;
     }
     this.char.passives.push(...path);
@@ -1185,12 +1200,12 @@ export class Game implements SkillHost {
 
   refundPassive(nodeId: number): boolean {
     if (this.char.refundPoints <= 0) {
-      this.log('You need an Orb of Unlearning to refund passives.', '#ff8080');
+      this.log('需要後悔石才能重置天賦。', '#ff8080');
       return false;
     }
     const start = PASSIVE_TREE.startOf[this.char.classId];
     if (!canRefund(PASSIVE_TREE, new Set(this.char.passives), nodeId, start)) {
-      this.log('That passive cannot be refunded without disconnecting others.', '#ff8080');
+      this.log('重置該天賦會使其他天賦斷開，無法重置。', '#ff8080');
       return false;
     }
     this.char.passives = this.char.passives.filter((n) => n !== nodeId);
@@ -1216,13 +1231,13 @@ export class Game implements SkillHost {
   buy(offer: VendorOffer): boolean {
     const have = countCurrency(this.char.inventory, offer.price.currency);
     if (have < offer.price.amount) {
-      this.log(`You need ${offer.price.amount}× ${CURRENCY_BY_ID[offer.price.currency].name}.`, '#ff8080');
+      this.log(`需要 ${offer.price.amount} 個${CURRENCY_BY_ID[offer.price.currency].name}。`, '#ff8080');
       return false;
     }
     const copy = JSON.parse(JSON.stringify(offer.item)) as Item;
     copy.uid = `${copy.uid}b${Math.floor(this.rng.next() * 1e9).toString(36)}`;
     if (!addItem(this.char.inventory, copy)) {
-      this.log('Your inventory is full.', '#ff8080');
+      this.log('背包已滿。', '#ff8080');
       return false;
     }
     spendCurrency(this.char.inventory, offer.price.currency, offer.price.amount);
@@ -1234,7 +1249,7 @@ export class Game implements SkillHost {
 
   sell(items: Item[]): Item[] {
     const sale = evaluateSale(items);
-    for (const r of sale.recipes) this.log(`Vendor recipe: ${r}`, '#a0ff80');
+    for (const r of sale.recipes) this.log(`商人配方：${r}`, '#a0ff80');
     return sale.receive;
   }
 
@@ -1248,7 +1263,7 @@ export class Game implements SkillHost {
     if (!this.area.town && lvl >= 28) {
       const loss = Math.floor(xpToNext(this.char.level) * (lvl >= 40 ? 0.1 : 0.05));
       this.char.xp = Math.max(0, this.char.xp - loss);
-      this.log(`You lost ${loss.toLocaleString()} experience.`, '#ff8080');
+      this.log(`你失去了 ${loss.toLocaleString()} 經驗值。`, '#ff8080');
     }
     p.dead = false;
     p.ailments = { ignite: null, bleed: null, poison: [], chill: null, freeze: null, shock: null };

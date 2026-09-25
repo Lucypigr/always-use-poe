@@ -38,7 +38,7 @@ describe('character stats', () => {
 
   it('keystones change stats', () => {
     const c = newCharacter('Test', 'arcanist');
-    const hv = PASSIVE_TREE.nodes.find((n) => n.name === 'Hollow Vessel')!;
+    const hv = PASSIVE_TREE.nodes.find((n) => n.name === '空虛之器')!;
     c.passives.push(hv.id);
     const s = computeCharacterStats(c);
     expect(s.maxLife).toBe(1);
@@ -134,7 +134,7 @@ describe('passive tree', () => {
 
   it('allocation paths and refunds preserve connectivity', () => {
     const start = PASSIVE_TREE.startOf.arcanist;
-    const target = PASSIVE_TREE.nodes.find((n) => n.kind === 'keystone' && n.name === 'Arcane Ward')!;
+    const target = PASSIVE_TREE.nodes.find((n) => n.kind === 'keystone' && n.name === '秘法護衛')!;
     const allocated = new Set([start]);
     const path = pathToNode(PASSIVE_TREE, allocated, target.id)!;
     expect(path.length).toBeGreaterThan(3);

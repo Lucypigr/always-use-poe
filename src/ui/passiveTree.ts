@@ -1,3 +1,4 @@
+import { fromTouch } from './touch';
 import { canRefund, pathToNode, PASSIVE_TREE, type PassiveNode } from '../data/passives';
 import { passivePointsUnspent } from '../game/character';
 import { clear, h } from './dom';
@@ -13,6 +14,9 @@ export class PassiveTreeView {
   private hudRef: HTMLElement;
   private search: HTMLInputElement;
   private scale = 0.55;
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { d: number; scale: number; mx: number; my: number } | null = null;
+  private touchSel: PassiveNode | null = null;
   private panX = 0;
   private panY = 0;
   private hover: PassiveNode | null = null;
@@ -29,19 +33,23 @@ export class PassiveTreeView {
     this.tip = h('div', { class: 'node-tip', style: 'display:none' });
     this.hudPts = h('div', { class: 'pts' });
     this.hudRef = h('div', { class: 'ref' });
-    this.search = h('input', { type: 'text', placeholder: 'Search passives…' });
+    this.search = h('input', { type: 'text', placeholder: '搜尋天賦…' });
     this.search.addEventListener('input', () => this.updateSearch());
     this.search.addEventListener('keydown', (e) => e.stopPropagation());
     el.append(
       this.canvas,
       h('div', { class: 'tree-hud' }, this.hudPts, this.hudRef),
       h('div', { class: 'tree-search' }, this.search),
-      h('div', { class: 'tree-close' }, h('button', { onclick: () => ui.closePanel('passives') }, 'Close (P)')),
-      h('div', { class: 'tree-help' }, 'Left-click: allocate (walks the shortest path) · Right-click: refund (needs an Orb of Unlearning) · Drag: pan · Wheel: zoom'),
+      h('div', { class: 'tree-close' }, h('button', { onclick: () => ui.closePanel('passives') }, '關閉 (P)')),
+      h('div', { class: 'tree-help' }, '點擊：配置（自動走最短路徑）· 右鍵／長按：重置（需要後悔石）· 拖曳：平移 · 滾輪／雙指：縮放'),
     );
     document.body.append(this.tip);
-    this.canvas.addEventListener('mousedown', (e) => this.onDown(e));
-    window.addEventListener('mouseup', (e) => this.onUp(e));
+    this.canvas.addEventListener('mousedown', (e) => !fromTouch() && this.onDown(e));
+    window.addEventListener('mouseup', (e) => !fromTouch() && this.onUp(e));
+    this.canvas.addEventListener('pointerdown', (e) => this.onTouchDown(e));
+    this.canvas.addEventListener('pointermove', (e) => this.onTouchMove(e));
+    this.canvas.addEventListener('pointerup', (e) => this.onTouchUp(e));
+    this.canvas.addEventListener('pointercancel', (e) => this.onTouchUp(e));
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     this.canvas.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
   }
@@ -71,8 +79,8 @@ export class PassiveTreeView {
       this.centeredFor = char.id;
     }
     const pts = passivePointsUnspent(char);
-    this.hudPts.textContent = `${pts} Passive Skill Point${pts === 1 ? '' : 's'} Available`;
-    this.hudRef.textContent = `${char.refundPoints} Refund Point${char.refundPoints === 1 ? '' : 's'} · ${char.passives.length - 1} allocated`;
+    this.hudPts.textContent = `可用天賦點數：${pts}`;
+    this.hudRef.textContent = `重置點數：${char.refundPoints} · 已配置 ${char.passives.length - 1}`;
     this.draw();
   }
 
@@ -219,10 +227,10 @@ export class PassiveTreeView {
     this.tip.append(h('div', { class: `nt-head ${n.kind}` }, n.name));
     if (n.text.length) this.tip.append(h('div', { class: 'nt-body' }, ...n.text.flatMap((t, i) => (i ? [h('br'), t] : [t]))));
     let foot = '';
-    if (n.kind === 'start') foot = 'Class starting point';
-    else if (allocated.has(n.id)) foot = canRefund(PASSIVE_TREE, allocated, n.id, PASSIVE_TREE.startOf[char.classId]) ? 'Right-click to refund' : 'Allocated';
-    else if (this.preview.length) foot = `Click to allocate (${this.preview.length} point${this.preview.length > 1 ? 's' : ''})`;
-    else foot = 'Not reachable';
+    if (n.kind === 'start') foot = '職業起點';
+    else if (allocated.has(n.id)) foot = canRefund(PASSIVE_TREE, allocated, n.id, PASSIVE_TREE.startOf[char.classId]) ? (this.ui.touch ? '再點一次以重置（消耗 1 重置點數）' : '按右鍵重置') : '已配置';
+    else if (this.preview.length) foot = this.ui.touch ? `再點一次以配置（需要 ${this.preview.length} 點）` : `點擊配置（需要 ${this.preview.length} 點）`;
+    else foot = '無法連接';
     this.tip.append(h('div', { class: 'nt-foot' }, foot));
     this.tip.style.display = '';
     const r = this.tip.getBoundingClientRect();
@@ -249,6 +257,80 @@ export class PassiveTreeView {
         this.render();
       }
     }
+  }
+
+  // ------------------------------------------------------------------ touch: drag to pan, pinch to zoom, tap twice to allocate
+
+  private onTouchDown(e: PointerEvent): void {
+    if (e.pointerType !== 'touch') return;
+    e.preventDefault();
+    this.canvas.setPointerCapture?.(e.pointerId);
+    this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.touches.size === 1) this.drag = { x: e.clientX, y: e.clientY, px: this.panX, py: this.panY, moved: false };
+    else if (this.touches.size === 2) {
+      const [a, b] = [...this.touches.values()];
+      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), scale: this.scale, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+      if (this.drag) this.drag.moved = true;
+    }
+  }
+
+  private onTouchMove(e: PointerEvent): void {
+    const t = this.touches.get(e.pointerId);
+    if (!t) return;
+    t.x = e.clientX;
+    t.y = e.clientY;
+    if (this.pinch && this.touches.size >= 2) {
+      const [a, b] = [...this.touches.values()];
+      const rect = this.canvas.getBoundingClientRect();
+      const sx = this.pinch.mx - rect.left;
+      const sy = this.pinch.my - rect.top;
+      const [wx, wy] = this.toWorld(sx, sy);
+      this.scale = Math.max(0.2, Math.min(1.6, this.pinch.scale * (Math.hypot(a.x - b.x, a.y - b.y) / Math.max(20, this.pinch.d))));
+      this.panX = sx - this.canvas.width / 2 - wx * this.scale;
+      this.panY = sy - this.canvas.height / 2 - wy * this.scale;
+      this.draw();
+      return;
+    }
+    if (this.drag) {
+      const dx = e.clientX - this.drag.x;
+      const dy = e.clientY - this.drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 10) this.drag.moved = true;
+      if (this.drag.moved) {
+        this.panX = this.drag.px + dx;
+        this.panY = this.drag.py + dy;
+        this.draw();
+      }
+    }
+  }
+
+  private onTouchUp(e: PointerEvent): void {
+    if (!this.touches.delete(e.pointerId)) return;
+    if (this.touches.size < 2) this.pinch = null;
+    if (this.touches.size) return;
+    const drag = this.drag;
+    this.drag = null;
+    if (!drag || drag.moved || !this.visible) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const n = this.nodeAt(e.clientX - rect.left, e.clientY - rect.top);
+    const char = this.ui.game.char;
+    const allocated = new Set(char.passives);
+    if (n && n === this.touchSel) {
+      // second tap on the same node: allocate, or refund an allocated one
+      if (allocated.has(n.id)) this.ui.game.refundPassive(n.id);
+      else this.ui.game.allocatePassive(n.id);
+      this.touchSel = null;
+      this.hover = null;
+      this.preview = [];
+      this.tip.style.display = 'none';
+      this.render();
+      return;
+    }
+    this.touchSel = n;
+    this.hover = n;
+    this.preview = n && !allocated.has(n.id) ? pathToNode(PASSIVE_TREE, allocated, n.id) ?? [] : [];
+    this.draw();
+    if (n) this.showTip(n, e.clientX, e.clientY);
+    else this.tip.style.display = 'none';
   }
 
   private onWheel(e: WheelEvent): void {

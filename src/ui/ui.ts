@@ -24,16 +24,16 @@ const STASH_CELL = 38;
 
 /** Where each equipment slot sits on the paper doll (px, within a 552×410 box). */
 const DOLL: Record<EquipSlot, [number, number, number, number, string]> = {
-  weapon: [16, 20, 92, 184, 'Main Hand'],
-  offhand: [444, 20, 92, 184, 'Off Hand'],
-  helmet: [230, 6, 92, 92, 'Helmet'],
-  body: [230, 106, 92, 138, 'Body'],
-  gloves: [124, 212, 92, 92, 'Gloves'],
-  boots: [336, 212, 92, 92, 'Boots'],
-  amulet: [336, 106, 46, 46, 'Amulet'],
-  ring1: [170, 150, 46, 46, 'Ring'],
-  ring2: [336, 160, 46, 46, 'Ring'],
-  belt: [230, 252, 92, 46, 'Belt'],
+  weapon: [16, 20, 92, 184, '主手'],
+  offhand: [444, 20, 92, 184, '副手'],
+  helmet: [230, 6, 92, 92, '頭盔'],
+  body: [230, 106, 92, 138, '胸甲'],
+  gloves: [124, 212, 92, 92, '手套'],
+  boots: [336, 212, 92, 92, '鞋子'],
+  amulet: [336, 106, 46, 46, '護身符'],
+  ring1: [170, 150, 46, 46, '戒指'],
+  ring2: [336, 160, 46, 46, '戒指'],
+  belt: [230, 252, 92, 46, '腰帶'],
   flask1: [161, 316, 46, 92, '1'],
   flask2: [207, 316, 46, 92, '2'],
   flask3: [253, 316, 46, 92, '3'],
@@ -49,6 +49,10 @@ export class UI {
   mouse = { x: 0, y: 0 };
   cursor: { item: Item; from: Loc | null } | null = null;
   applying: Item | null = null;
+  /** Playing on a touch screen (see TouchControls). */
+  touch = false;
+  /** Touch: tapping skill slots opens the skill picker instead of casting. */
+  editSkills = false;
   open = new Set<PanelId>();
   tooltip: TooltipView;
   hud: Hud;
@@ -108,7 +112,7 @@ export class UI {
       }),
       ev.on('death', () => setTimeout(() => this.modals.death(), 900)),
       ev.on('log', (m) => this.hud.log(m.text, m.color)),
-      ev.on('levelup', ({ level }) => this.hud.toast(`Level ${level}`)),
+      ev.on('levelup', ({ level }) => this.hud.toast(`等級 ${level}`)),
       ev.on('area', () => {
         this.closePanel('stash');
         this.closePanel('vendor');
@@ -203,7 +207,7 @@ export class UI {
   private renderInventory(): void {
     const p = this.panels.inventory;
     clear(p);
-    p.append(h('div', { class: 'panel-title' }, 'Inventory', h('button', { class: 'panel-close small', onclick: () => this.closePanel('inventory') }, '×')));
+    p.append(h('div', { class: 'panel-title' }, '背包', h('button', { class: 'panel-close small', onclick: () => this.closePanel('inventory') }, '×')));
     const doll = h('div', { class: 'equip' });
     const char = this.game.char;
     for (const [slot, [x, y, w, hh, label]] of Object.entries(DOLL) as [EquipSlot, (typeof DOLL)[EquipSlot]][]) {
@@ -225,17 +229,17 @@ export class UI {
     }
     p.append(doll);
     p.append(this.gridEl(char.inventory, INV_CELL, { kind: 'inv' }));
-    const help = h('div', { class: 'muted', style: 'margin-top:6px;text-align:center' }, 'Right-click currency to apply it · Ctrl-click to move · Right-click gear to equip · Hold Alt for mod tiers');
+    const help = h('div', { class: 'muted inv-help', style: 'margin-top:6px;text-align:center' }, this.touch ? '用下方工具列切換：拿取 · 使用（通貨 / 裝備 / 取下寶石）· 快速移動 · 查看' : '右鍵通貨以使用 · Ctrl+點擊移動 · 右鍵裝備 · 按住 Alt 看詞綴階級');
     p.append(help);
   }
 
   private renderStash(): void {
     const p = this.panels.stash;
     clear(p);
-    p.append(h('div', { class: 'panel-title' }, 'Stash', h('button', { class: 'panel-close small', onclick: () => this.closePanel('stash') }, '×')));
+    p.append(h('div', { class: 'panel-title' }, '倉庫', h('button', { class: 'panel-close small', onclick: () => this.closePanel('stash') }, '×')));
     const tabs = h('div', { class: 'tabs' });
     this.game.account.stash.forEach((_, i) => {
-      tabs.append(h('button', { class: i === this.stashTab ? 'on' : '', onclick: () => ((this.stashTab = i), this.renderStash()) }, `Tab ${this.game.account.stashNames[i] ?? i + 1}`));
+      tabs.append(h('button', { class: i === this.stashTab ? 'on' : '', onclick: () => ((this.stashTab = i), this.renderStash()) }, `分頁 ${this.game.account.stashNames[i] ?? i + 1}`));
     });
     p.append(tabs, this.gridEl(this.game.account.stash[this.stashTab], STASH_CELL, { kind: 'stash', tab: this.stashTab }));
   }
@@ -244,10 +248,10 @@ export class UI {
     const p = this.panels.vendor;
     clear(p);
     const g = this.game;
-    p.append(h('div', { class: 'panel-title' }, 'Mara, the Trader', h('button', { class: 'panel-close small', onclick: () => this.closePanel('vendor') }, '×')));
+    p.append(h('div', { class: 'panel-title' }, '商人瑪拉', h('button', { class: 'panel-close small', onclick: () => this.closePanel('vendor') }, '×')));
     const tabs = h('div', { class: 'tabs' },
-      h('button', { class: this.vendorTab === 'buy' ? 'on' : '', onclick: () => ((this.vendorTab = 'buy'), this.renderVendor()) }, 'Buy'),
-      h('button', { class: this.vendorTab === 'sell' ? 'on' : '', onclick: () => ((this.vendorTab = 'sell'), this.renderVendor()) }, 'Sell'),
+      h('button', { class: this.vendorTab === 'buy' ? 'on' : '', onclick: () => ((this.vendorTab = 'buy'), this.renderVendor()) }, '購買'),
+      h('button', { class: this.vendorTab === 'sell' ? 'on' : '', onclick: () => ((this.vendorTab = 'sell'), this.renderVendor()) }, '出售'),
     );
     p.append(tabs);
     if (this.vendorTab === 'buy') {
@@ -269,23 +273,23 @@ export class UI {
         el.addEventListener('mouseenter', () => {
           const c = CURRENCY_BY_ID[offer.price.currency];
           this.tooltip.show(offer.item, this.tctx, this.alt);
-          const priceEl = h('div', { class: 'tooltip', style: 'min-width:0' }, h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line desc' }, `Cost: ${offer.price.amount}× ${c.name}`), h('div', { class: 'tt-line hint' }, 'Click to buy')));
+          const priceEl = h('div', { class: 'tooltip', style: 'min-width:0' }, h('div', { class: 'tt-sec' }, h('div', { class: 'tt-line desc' }, `價格：${offer.price.amount} 個${c.name}`), h('div', { class: 'tt-line hint' }, '點擊購買')));
           this.tooltipWrapAppend(priceEl);
         });
         el.addEventListener('mouseleave', () => this.tooltip.hide());
         wrap.append(el);
       }
-      p.append(wrap, h('div', { class: 'muted', style: 'margin-top:6px' }, 'Gems, flasks and gear. Prices are paid in currency from your inventory.'));
+      p.append(wrap, h('div', { class: 'muted', style: 'margin-top:6px' }, '寶石、藥劑與裝備。以背包中的通貨支付。'));
     } else {
-      p.append(h('div', { class: 'section-title' }, 'Your offer'));
+      p.append(h('div', { class: 'section-title' }, '你的出價'));
       p.append(this.gridEl(this.sellGrid, STASH_CELL, { kind: 'sell' }));
       const sale = evaluateSale(this.sellGrid.items.map((x) => x.item));
       const rec = h('div', { class: 'receive' });
-      if (!sale.receive.length) rec.append(h('span', { class: 'muted' }, 'Ctrl-click items in your inventory to offer them.'));
-      for (const it of sale.receive) rec.append(h('span', { class: 'cur' }, h('img', { src: itemIcon(it) }), `${it.stack}× ${CURRENCY_BY_ID[currencyId(it)!].name}`));
-      p.append(h('div', { class: 'section-title' }, 'You will receive'), rec);
-      for (const r of sale.recipes) p.append(h('div', { class: 'muted', style: 'color:#a0e080' }, `Recipe: ${r}`));
-      p.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.acceptSale(), disabled: !this.sellGrid.items.length }, 'Accept')));
+      if (!sale.receive.length) rec.append(h('span', { class: 'muted' }, 'Ctrl+點擊（或在手機上切換「快速移動」後點擊）背包中的物品以出售。'));
+      for (const it of sale.receive) rec.append(h('span', { class: 'cur' }, h('img', { src: itemIcon(it) }), `${it.stack} × ${CURRENCY_BY_ID[currencyId(it)!].name}`));
+      p.append(h('div', { class: 'section-title' }, '你將獲得'), rec);
+      for (const r of sale.recipes) p.append(h('div', { class: 'muted', style: 'color:#a0e080' }, `配方：${r}`));
+      p.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.acceptSale(), disabled: !this.sellGrid.items.length }, '確認')));
     }
   }
 
@@ -300,7 +304,7 @@ export class UI {
     const receive = this.game.sell(items);
     this.sellGrid.items = [];
     for (const r of receive) if (!addItem(this.game.char.inventory, r)) this.game.dropItem(r, this.game.player.pos);
-    this.game.log(`Sold ${items.length} item${items.length > 1 ? 's' : ''}.`, '#d8c8a0');
+    this.game.log(`已出售 ${items.length} 件物品。`, '#d8c8a0');
     this.refreshItems();
   }
 
@@ -408,6 +412,7 @@ export class UI {
     if (e.button !== 0) return;
     if (this.applying) {
       if (target) this.applyTo(target.item, e.shiftKey);
+      else this.stopApplying();
       return;
     }
     if (this.cursor) {
@@ -455,7 +460,7 @@ export class UI {
       const res = equipItem(char, this.game.player.cstats, item, slot);
       if (!res.ok) {
         addItem(grid, item);
-        this.game.log(res.error ?? 'Cannot equip', '#ff8080');
+        this.game.log(res.error ?? '無法裝備', '#ff8080');
         return;
       }
       for (const d of res.displaced) if (!addItem(grid, d)) this.game.dropItem(d, this.game.player.pos);
@@ -490,7 +495,7 @@ export class UI {
           delete char.equipment[slot];
           this.game.recalc();
           this.refreshItems();
-        } else this.game.log('Your inventory is full.', '#ff8080');
+        } else this.game.log('背包已滿。', '#ff8080');
       }
       return;
     }
@@ -502,7 +507,7 @@ export class UI {
     if (this.cursor) {
       const res = equipItem(char, this.game.player.cstats, this.cursor.item, slot);
       if (!res.ok) {
-        this.game.log(res.error ?? 'Cannot equip that here', '#ff8080');
+        this.game.log(res.error ?? '無法裝備在此處', '#ff8080');
         return;
       }
       const [first, ...rest] = res.displaced;
@@ -527,7 +532,7 @@ export class UI {
     if (this.applying) return false;
     if (e.button === 0 && this.cursor?.item.gem) {
       if (!socketAccepts(socket.color, this.cursor.item)) {
-        this.game.log('That gem does not fit in a socket of this colour.', '#ff8080');
+        this.game.log('該寶石無法放入此顏色的插槽。', '#ff8080');
         return true;
       }
       const old = socket.gem;
@@ -568,7 +573,7 @@ export class UI {
     if (!cur) return;
     const before = displayName(target);
     const res = this.game.applyCurrencyTo(cur, target);
-    if (res.ok && !res.message) this.game.log(`${CURRENCY_BY_ID[currencyId(cur)!].name} used on ${before}.`, '#aa9e82');
+    if (res.ok && !res.message) this.game.log(`對${before}使用了${CURRENCY_BY_ID[currencyId(cur)!].name}。`, '#aa9e82');
     if (!keep || (cur.stack ?? 0) <= 0) this.stopApplying();
     this.refreshItems();
     if (this.hoverSource?.item === target) this.showItemTooltip(target, this.hoverSource.loc);

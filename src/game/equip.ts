@@ -38,25 +38,25 @@ export function slotsFor(it: Item): EquipSlot[] {
 
 export function meetsRequirements(it: Item, char: CharacterData, stats: CharacterStats): string | null {
   const lvl = requiredLevel(it);
-  if (lvl > char.level) return `Requires level ${lvl}`;
+  if (lvl > char.level) return `需要等級 ${lvl}`;
   const reqs = attributeReqs(it);
   for (const a of ['str', 'dex', 'int'] as Attr[]) {
     const need = reqs[a] ?? 0;
-    if (need > stats[a]) return `Requires ${need} ${a === 'str' ? 'Strength' : a === 'dex' ? 'Dexterity' : 'Intelligence'}`;
+    if (need > stats[a]) return `需要 ${need} ${a === 'str' ? '力量' : a === 'dex' ? '敏捷' : '智慧'}`;
   }
   return null;
 }
 
 export function canEquip(char: CharacterData, stats: CharacterStats, it: Item, slot: EquipSlot): string | null {
-  if (!slotsFor(it).includes(slot)) return 'That item does not fit in this slot';
-  if (!it.identified) return 'Item must be identified to be equipped';
+  if (!slotsFor(it).includes(slot)) return '該物品無法放入此欄位';
+  if (!it.identified) return '物品必須鑑定後才能裝備';
   const req = meetsRequirements(it, char, stats);
   if (req) return req;
   const b = getBase(it.baseId);
   if (slot === 'offhand') {
     const main = char.equipment.weapon ? getBase(char.equipment.weapon.baseId) : undefined;
-    if (b.cls === 'quiver' && main?.cls !== 'bow') return 'Quivers can only be used with bows';
-    if (main?.twoHanded && !(main.cls === 'bow' && b.cls === 'quiver')) return 'Cannot use an off-hand with a two-handed weapon';
+    if (b.cls === 'quiver' && main?.cls !== 'bow') return '箭袋只能搭配弓使用';
+    if (main?.twoHanded && !(main.cls === 'bow' && b.cls === 'quiver')) return '使用雙手武器時無法裝備副手';
   }
   return null;
 }

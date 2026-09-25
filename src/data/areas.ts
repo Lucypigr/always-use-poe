@@ -47,16 +47,16 @@ export interface AreaDef {
 }
 
 export const AREAS: AreaDef[] = [
-  { id: 'shore', name: 'The Drowned Shore', level: 1, theme: 'shore', monsters: ['drowned', 'crab', 'drowned_archer'], boss: 'tidecaller', size: [110, 70], packs: 22, next: 'mudflats', act: 1, description: 'Where the shipwrecked wash ashore — and rise again.' },
-  { id: 'mudflats', name: 'Mudflat Hollows', level: 4, theme: 'swamp', monsters: ['drowned', 'bog_spider', 'rhoa'], boss: 'bog_mother', size: [115, 75], packs: 24, next: 'ashwood', act: 1, description: 'Sucking mud and things that hunt in it.' },
-  { id: 'ashwood', name: 'The Ashen Woods', level: 8, theme: 'forest', monsters: ['wolf', 'bandit_archer', 'ash_cultist'], boss: 'grove_warden', size: [120, 80], packs: 26, next: 'old_crypt', act: 1, description: 'A forest that burned and never stopped smouldering.' },
-  { id: 'old_crypt', name: 'The Old Crypt', level: 12, theme: 'crypt', monsters: ['skeleton', 'skeleton_archer', 'wraith'], boss: 'crypt_lord', size: [90, 90], packs: 26, next: 'warrens', act: 2, description: 'The dead here were buried in haste, and not deep enough.' },
-  { id: 'warrens', name: 'Spider Warrens', level: 16, theme: 'caves', monsters: ['bog_spider', 'cave_bat', 'venom_spitter'], boss: 'broodmother', size: [95, 95], packs: 28, next: 'citadel', act: 2, description: 'Silk and bones in equal measure.' },
-  { id: 'citadel', name: 'Ruined Citadel', level: 21, theme: 'ruins', monsters: ['brute', 'ash_cultist', 'skeleton_archer', 'skeleton'], boss: 'fallen_knight', size: [95, 95], packs: 28, next: 'blackwater', act: 2, description: 'Its garrison still stands watch, long after death.' },
-  { id: 'blackwater', name: 'Blackwater Caverns', level: 26, theme: 'caves', monsters: ['drowned', 'frost_witch', 'rhoa', 'cave_bat'], boss: 'deep_horror', size: [100, 100], packs: 30, next: 'cinder', act: 3, description: 'Cold water drips from the dark, and something drinks it.' },
-  { id: 'cinder', name: 'Temple of Cinders', level: 31, theme: 'inferno', monsters: ['ash_cultist', 'imp', 'brute'], boss: 'ember_priest', size: [100, 100], packs: 30, next: 'frozen', act: 3, description: 'The faithful burn, and call it prayer.' },
-  { id: 'frozen', name: 'The Frozen Pass', level: 36, theme: 'frost', monsters: ['wolf', 'frost_witch', 'yeti'], boss: 'rime_giant', size: [130, 80], packs: 32, next: 'throne', act: 4, description: 'Only the cold is older than this mountain.' },
-  { id: 'throne', name: 'Throne of the Forsaken', level: 40, theme: 'void', monsters: ['wraith', 'brute', 'imp', 'venom_spitter', 'skeleton_archer'], boss: 'forsaken_king', size: [100, 100], packs: 34, act: 4, description: 'The end of the road. The beginning of the Maps.' },
+  { id: 'shore', name: '溺亡海岸', level: 1, theme: 'shore', monsters: ['drowned', 'crab', 'drowned_archer'], boss: 'tidecaller', size: [110, 70], packs: 22, next: 'mudflats', act: 1, description: '船難者被沖上岸 — 然後再度起身。' },
+  { id: 'mudflats', name: '泥灘窪地', level: 4, theme: 'swamp', monsters: ['drowned', 'bog_spider', 'rhoa'], boss: 'bog_mother', size: [115, 75], packs: 24, next: 'ashwood', act: 1, description: '吸人的泥濘，以及在其中狩獵的東西。' },
+  { id: 'ashwood', name: '灰燼森林', level: 8, theme: 'forest', monsters: ['wolf', 'bandit_archer', 'ash_cultist'], boss: 'grove_warden', size: [120, 80], packs: 26, next: 'old_crypt', act: 1, description: '一片燃燒後便從未熄滅的森林。' },
+  { id: 'old_crypt', name: '古老墓穴', level: 12, theme: 'crypt', monsters: ['skeleton', 'skeleton_archer', 'wraith'], boss: 'crypt_lord', size: [90, 90], packs: 26, next: 'warrens', act: 2, description: '這裡的死者被草草埋葬，埋得不夠深。' },
+  { id: 'warrens', name: '蜘蛛巢穴', level: 16, theme: 'caves', monsters: ['bog_spider', 'cave_bat', 'venom_spitter'], boss: 'broodmother', size: [95, 95], packs: 28, next: 'citadel', act: 2, description: '絲與骨，各佔一半。' },
+  { id: 'citadel', name: '廢墟要塞', level: 21, theme: 'ruins', monsters: ['brute', 'ash_cultist', 'skeleton_archer', 'skeleton'], boss: 'fallen_knight', size: [95, 95], packs: 28, next: 'blackwater', act: 2, description: '它的衛戍部隊在死後仍在站崗。' },
+  { id: 'blackwater', name: '黑水洞窟', level: 26, theme: 'caves', monsters: ['drowned', 'frost_witch', 'rhoa', 'cave_bat'], boss: 'deep_horror', size: [100, 100], packs: 30, next: 'cinder', act: 3, description: '冰冷的水從黑暗中滴落，而某種東西正在啜飲。' },
+  { id: 'cinder', name: '餘燼神殿', level: 31, theme: 'inferno', monsters: ['ash_cultist', 'imp', 'brute'], boss: 'ember_priest', size: [100, 100], packs: 30, next: 'frozen', act: 3, description: '信徒們燃燒自己，並稱之為祈禱。' },
+  { id: 'frozen', name: '冰封山道', level: 36, theme: 'frost', monsters: ['wolf', 'frost_witch', 'yeti'], boss: 'rime_giant', size: [130, 80], packs: 32, next: 'throne', act: 4, description: '唯有寒冷比這座山更古老。' },
+  { id: 'throne', name: '被遺棄者王座', level: 40, theme: 'void', monsters: ['wraith', 'brute', 'imp', 'venom_spitter', 'skeleton_archer'], boss: 'forsaken_king', size: [100, 100], packs: 34, act: 4, description: '旅途的終點，地圖的起點。' },
 ];
 
 export const AREA_BY_ID: Record<string, AreaDef> = Object.fromEntries(AREAS.map((a) => [a.id, a]));

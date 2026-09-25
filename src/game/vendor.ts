@@ -81,7 +81,7 @@ export function evaluateSale(items: Item[]): SaleResult {
     const set = [...weaponPart, ...setParts, rings[0], rings[1]] as Item[];
     const unid = set.every((i) => !i.identified);
     add('chaos', unid ? 2 : 1);
-    recipes.push(`Full rare set${unid ? ' (unidentified)' : ''}`);
+    recipes.push(`完整稀有套裝${unid ? '（未鑑定）' : ''}`);
     for (const i of set) consumed.add(i);
   }
 
@@ -107,12 +107,12 @@ export function evaluateSale(items: Item[]): SaleResult {
     const links = maxLinks(it);
     if (links >= 6) {
       add('divine', 1);
-      recipes.push('Six-linked item');
+      recipes.push('六連物品');
       continue;
     }
     if (it.sockets.length >= 6) {
       add('jeweller', 7);
-      recipes.push('Six-socket item');
+      recipes.push('六孔物品');
       continue;
     }
     const groups = new Map<number, Set<string>>();
@@ -122,7 +122,7 @@ export function evaluateSale(items: Item[]): SaleResult {
     }
     if ([...groups.values()].some((g) => g.has('R') && g.has('G') && g.has('B'))) {
       add('chromatic', 1);
-      recipes.push('Linked red, green and blue sockets');
+      recipes.push('連結的紅綠藍插槽');
     }
     switch (it.rarity) {
       case 'normal':
@@ -141,11 +141,11 @@ export function evaluateSale(items: Item[]): SaleResult {
   }
   if (gemQuality >= 40) {
     add('gcp', Math.floor(gemQuality / 40));
-    recipes.push('Gems with 40% total quality');
+    recipes.push('總品質 40% 的寶石');
   }
   if (flaskQuality >= 40) {
     add('bauble', Math.floor(flaskQuality / 40));
-    recipes.push('Flasks with 40% total quality');
+    recipes.push('總品質 40% 的藥劑');
   }
   const receive: Item[] = [];
   for (const [c, n] of totals) {

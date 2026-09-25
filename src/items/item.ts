@@ -39,17 +39,17 @@ export function itemSize(it: Item): [number, number] {
 export function baseName(it: Item): string {
   if (isCurrency(it)) return currencyName(it);
   if (it.gem) return getGem(it.gem.id).name;
-  if (it.map) return `${mapName(it)} (Tier ${it.map.tier})`;
+  if (it.map) return `${mapName(it)}（${it.map.tier} 階）`;
   return getBase(it.baseId).name;
 }
 
 const MAP_NAMES: Record<string, string> = {
-  crypt: 'Sunken Crypt', caves: 'Hollow Caverns', forest: 'Thornwood', ruins: 'Fallen Citadel', inferno: 'Cinder Pits',
-  frost: 'Glacial Rift', void: 'Voidreach', shore: "Wreckers' Coast",
+  crypt: '沉沒墓穴', caves: '空洞洞窟', forest: '荊棘森林', ruins: '淪陷要塞', inferno: '餘燼深坑',
+  frost: '冰河裂隙', void: '虛空之境', shore: '破船者海岸',
 };
 
 export function mapName(it: Item): string {
-  return `${MAP_NAMES[it.map?.layout ?? ''] ?? 'Unknown'} Map`;
+  return `${MAP_NAMES[it.map?.layout ?? ''] ?? '未知'}地圖`;
 }
 
 /** Full display name including magic affix names. */
@@ -59,7 +59,7 @@ export function displayName(it: Item): string {
   if (it.rarity === 'magic' && it.identified) {
     const pre = it.prefixes[0] ? affixName(it.prefixes[0]) : '';
     const suf = it.suffixes[0] ? affixName(it.suffixes[0]) : '';
-    return [pre, baseName(it), suf].filter(Boolean).join(' ');
+    return [pre, baseName(it), suf].filter(Boolean).join('');
   }
   return baseName(it);
 }

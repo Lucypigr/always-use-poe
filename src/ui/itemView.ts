@@ -114,7 +114,7 @@ export class TooltipView {
     this.lastAlt = alt;
     this.wrap.innerHTML = '';
     this.wrap.append(tooltipEl(buildTooltip(item, ctx), alt));
-    for (const c of compare) this.wrap.append(tooltipEl(buildTooltip(c, ctx), alt, 'Currently Equipped'));
+    for (const c of compare) this.wrap.append(tooltipEl(buildTooltip(c, ctx), alt, '目前裝備'));
     this.wrap.style.display = 'flex';
     this.position(this.mx, this.my);
   }

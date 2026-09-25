@@ -36,15 +36,15 @@ export interface SkillInstance {
 }
 
 export const DEFAULT_ATTACK: GemDef = {
-  id: 'default_attack', name: 'Default Attack', color: 'R', reqLevel: 1, tags: ['attack', 'melee'],
-  description: 'Attack with your weapon.',
+  id: 'default_attack', name: '普通攻擊', color: 'R', reqLevel: 1, tags: ['attack', 'melee'],
+  description: '使用武器攻擊。',
   active: { behaviour: 'melee', weaponDamage: [100, 100], manaCost: [0, 0], params: { arc: 0 } },
   quality: [], qualityText: '',
 };
 
 export const DEFAULT_RANGED: GemDef = {
-  id: 'default_attack', name: 'Default Attack', color: 'G', reqLevel: 1, tags: ['attack', 'projectile'],
-  description: 'Attack with your weapon.',
+  id: 'default_attack', name: '普通攻擊', color: 'G', reqLevel: 1, tags: ['attack', 'projectile'],
+  description: '使用武器攻擊。',
   active: { behaviour: 'projectile', weaponDamage: [100, 100], manaCost: [0, 0], params: { count: 1, spread: 0, speed: 24, range: 14, size: 0.25, visual: 1 } },
   quality: [], qualityText: '',
 };
@@ -60,16 +60,16 @@ function weaponCheck(gem: GemDef, weapon?: Item): string | undefined {
   const a = gem.active;
   if (!a || !gem.tags.includes('attack')) return undefined;
   const base = weapon ? getBase(weapon.baseId) : undefined;
-  if (a.weapons && (!base || !a.weapons.includes(base.cls as never))) return `Requires a ${a.weapons.join(' or ')}`;
-  if (gem.tags.includes('melee') && base && !base.tags.includes('melee')) return 'Requires a melee weapon';
+  if (a.weapons && (!base || !a.weapons.includes(base.cls as never))) return `需要${a.weapons.map((w) => (w === 'bow' ? '弓' : w)).join('或')}`;
+  if (gem.tags.includes('melee') && base && !base.tags.includes('melee')) return '需要近戰武器';
   return undefined;
 }
 
 function meetsGemReq(def: GemDef, level: number, char: CharacterData, stats: CharacterStats): string | undefined {
   const req = gemRequirements(def, level);
-  if (req.level > char.level) return `Requires level ${req.level}`;
+  if (req.level > char.level) return `需要等級 ${req.level}`;
   const have = stats[req.attr];
-  if (have < req.value) return `Requires ${req.value} ${req.attr === 'str' ? 'Strength' : req.attr === 'dex' ? 'Dexterity' : 'Intelligence'}`;
+  if (have < req.value) return `需要 ${req.value} ${req.attr === 'str' ? '力量' : req.attr === 'dex' ? '敏捷' : '智慧'}`;
   return undefined;
 }
 

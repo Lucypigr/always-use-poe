@@ -44,6 +44,27 @@ Inventory: click to pick items up and place them (PoE-style cursor), **Ctrl-clic
 between inventory and stash/vendor, **right-click** gear to equip, **right-click currency** and then
 click an item to apply it (hold **Shift** to keep applying). Right-click a socketed gem to unsocket it.
 
+### Touch screens (phones / tablets)
+
+On devices whose primary pointer is a finger the game switches to touch controls
+(`src/ui/touchControls.ts`); landscape orientation is recommended.
+
+| Touch | Action |
+| --- | --- |
+| Drag in the lower-left area | Virtual joystick — move |
+| Tap the ground / a monster / a label | Move there · attack · pick up / use; pinch to zoom |
+| Hold a round skill button (lower right) | Use the skill, auto-aimed at the nearest enemy |
+| 編輯技能 then tap a slot | Change the skill in that slot |
+| Flask slots | Drink |
+| 地圖 · 標籤 · 回城 · 全螢幕 | Overlay map · item labels · portal scroll · fullscreen |
+| Item toolbar (while inventory is open) | 拿取 = click · 使用 = right-click · 快速移動 = Ctrl-click · 查看 = inspect only · 詞綴階級 = Alt |
+| Passive tree | Drag to pan, pinch to zoom, tap a node to inspect and tap it again to allocate / refund |
+
+## Language
+
+All in-game text is Traditional Chinese (繁體中文). Item, gem, currency and area names are
+original names translated into Chinese.
+
 ## Systems (and how they map to Path of Exile)
 
 ### Items

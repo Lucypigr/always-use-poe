@@ -21,15 +21,15 @@ describe('equipment rules', () => {
     expect(res.ok).toBe(true);
     expect(res.displaced.map((i) => i.baseId)).toContain('shield_str_0');
     expect(c.equipment.offhand).toBeUndefined();
-    expect(canEquip(c, s, createItem('shield_str_0', 1), 'offhand')).toMatch(/two-handed/);
+    expect(canEquip(c, s, createItem('shield_str_0', 1), 'offhand')).toMatch(/雙手武器/);
   });
 
   it('enforces level and attribute requirements', () => {
     const c = newCharacter('E', 'arcanist');
     const s = computeCharacterStats(c);
     const plate = createItem('body_armour_str_5', 70);
-    expect(canEquip(c, s, plate, 'body')).toMatch(/Requires/);
-    expect(canEquip(c, s, createItem('ring_iron', 1), 'helmet')).toMatch(/fit/);
+    expect(canEquip(c, s, plate, 'body')).toMatch(/需要/);
+    expect(canEquip(c, s, createItem('ring_iron', 1), 'helmet')).toMatch(/無法放入/);
   });
 
   it('socket colours gate gems, white sockets accept anything', () => {
