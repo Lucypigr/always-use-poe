@@ -13,6 +13,11 @@ sound is generated procedurally.
 | --- | --- |
 | ![Inventory](docs/screenshots/inventory.jpg) | ![Passive tree](docs/screenshots/passive-tree.jpg) |
 
+## Play online
+
+The `main` branch is deployed automatically to GitHub Pages:
+<https://lucypigr.github.io/always-use-poe/> (`.github/workflows/deploy.yml`).
+
 ## Quick start
 
 ```bash
