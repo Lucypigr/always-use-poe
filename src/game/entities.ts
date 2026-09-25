@@ -1,4 +1,5 @@
 import type { Vec2 } from '../core/math';
+import type { NpcId } from '../data/quests';
 import type { Item } from '../items/types';
 import type { SkillStats } from '../skills/skills';
 import type { Actor, Team } from './actor';
@@ -67,7 +68,7 @@ export interface GroundItem {
   age: number;
 }
 
-export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit';
+export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit' | 'npc' | 'quest';
 
 export interface Interactable {
   id: number;
@@ -75,6 +76,11 @@ export interface Interactable {
   pos: Vec2;
   label: string;
   radius: number;
+  /** Town NPC (kind 'npc'). */
+  npc?: NpcId;
+  /** Quest object (kind 'quest'): quest id and object index. */
+  questId?: string;
+  questIndex?: number;
 }
 
 let nextEntityId = 1;

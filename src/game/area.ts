@@ -1,6 +1,7 @@
 import { angleTo, type Vec2 } from '../core/math';
 import type { RNG } from '../core/rng';
 import { AREA_BY_ID, MAP_LAYOUTS, THEMES, type AreaDef, type Theme } from '../data/areas';
+import { NPCS } from '../data/quests';
 import { getMod } from '../data/affixes';
 import { modStats } from '../items/item';
 import { mapStats } from '../items/tooltip';
@@ -68,6 +69,7 @@ export function createTown(rng: RNG): AreaInstance {
   inst.addInteractable('vendor', layout.vendor, '商人瑪拉', 0.8);
   inst.addInteractable('waypoint', layout.waypoint, '傳送點', 1.2);
   inst.addInteractable('map_device', layout.mapDevice, '地圖裝置', 1.2);
+  for (const n of NPCS) inst.addInteractable('npc', layout.map.nearestFloor(n.pos), n.name, 0.8).npc = n.id;
   inst.portalPos = layout.portalSpot;
   return inst;
 }

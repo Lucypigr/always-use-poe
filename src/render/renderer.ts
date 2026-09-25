@@ -3,6 +3,7 @@ import type { Vec2 } from '../core/math';
 import { CLASS_BY_ID } from '../data/classes';
 import { CURRENCY_BY_ID } from '../data/currency';
 import { getBase } from '../data/bases';
+import { NPC_BY_ID } from '../data/quests';
 import type { AreaInstance } from '../game/area';
 import type { AreaEffect, GroundItem, Interactable, Projectile } from '../game/entities';
 import type { Game } from '../game/game';
@@ -615,9 +616,16 @@ export class Renderer {
       seen.add(it.id);
       let o = this.interMeshes.get(it.id);
       if (!o) {
-        o = interactableModel(it.kind);
+        o = interactableModel(it.kind, it.npc ? NPC_BY_ID[it.npc].look : undefined);
         o.position.set(it.pos.x, 0, it.pos.y);
         if (it.kind === 'vendor') o.rotation.y = 0.3;
+        // town NPCs face the square
+        if (it.kind === 'npc') o.rotation.y = Math.atan2(23 - it.pos.x, 20 - it.pos.y);
+        if (it.kind === 'quest') {
+          const light = new THREE.PointLight('#ffc860', 8, 6, 1.6);
+          light.position.y = 1.3;
+          o.add(light);
+        }
         if (it.kind === 'town_portal' || it.kind === 'area_portal' || it.kind === 'waypoint' || it.kind === 'exit' || it.kind === 'map_device') {
           const light = new THREE.PointLight(it.kind === 'map_device' ? '#b07aff' : '#6ab0ff', 10, 8, 1.6);
           light.position.y = 1.5;

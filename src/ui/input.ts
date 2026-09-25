@@ -4,15 +4,15 @@ import type { UI } from './ui';
 import { fromTouch } from './touch';
 import { dist } from '../core/math';
 
-const KEY_SLOTS: Record<string, number> = { q: 2, w: 3, e: 4, r: 5, t: 6 };
+const KEY_SLOTS: Record<string, number> = { ' ': 0, q: 2, w: 3, e: 4, r: 5, t: 6 };
 
 /**
- * Mouse & keyboard → game intent. Mirrors Path of Exile's controls: click to move,
- * click monsters to attack, skills on RMB/QWERT/MMB (held to repeat), flasks on 1–5.
+ * Mouse & keyboard → game intent. The left button only moves, picks up and interacts;
+ * skills are on RMB / Space / QWERT / MMB (held to repeat), flasks on 1–5.
  */
 export class Input {
   private held: number[] = [];
-  private lmb: 'none' | 'move' | 'skill' = 'none';
+  private lmb: 'none' | 'move' = 'none';
   private mouseX = 0;
   private mouseY = 0;
   private overUI = false;
@@ -98,9 +98,8 @@ export class Input {
     }
     if (ui.modals.isOpen && !ui.modals.isDeviceOpen) return;
     if (e.button === 0) {
-      const hover = this.renderer.pickMonster(this.game, e.clientX, e.clientY);
       this.game.cancelInteract();
-      this.lmb = e.shiftKey || hover ? 'skill' : 'move';
+      this.lmb = 'move';
     } else if (e.button === 2) this.press(1);
     else if (e.button === 1) {
       e.preventDefault();
@@ -179,6 +178,7 @@ export class Input {
       return;
     }
     if (key in KEY_SLOTS) {
+      if (key === ' ') e.preventDefault();
       if (down) this.press(KEY_SLOTS[key]);
       else this.release(KEY_SLOTS[key]);
       return;
@@ -201,6 +201,10 @@ export class Input {
         break;
       case 'p':
         ui.togglePanel('passives');
+        break;
+      case 'j':
+        if (ui.modals.isOpen) ui.modals.close();
+        else ui.story.journal();
         break;
       case 'tab':
         e.preventDefault();
@@ -229,14 +233,9 @@ export class Input {
     inp.cursor = this.renderer.screenToGround(this.mouseX, this.mouseY);
     inp.hoverMonster = this.overUI ? null : this.renderer.pickMonster(g, this.mouseX, this.mouseY);
     inp.stand = this.shift;
-    let slot: number | null = this.held.length ? this.held[this.held.length - 1] : null;
-    if (slot === null && this.lmb === 'skill') slot = 0;
+    const slot: number | null = this.held.length ? this.held[this.held.length - 1] : null;
     inp.heldSlot = slot;
     inp.moveHeld = this.lmb === 'move' && slot === null;
-    if (this.lmb === 'move' && this.shift) {
-      inp.heldSlot = 0;
-      inp.moveHeld = false;
-    }
 
     // Virtual joystick: convert the screen-space deflection into a world direction.
     inp.moveDir = null;
@@ -255,23 +254,21 @@ export class Input {
     if (this.touchSkills.length) {
       inp.heldSlot = this.touchSkills[this.touchSkills.length - 1];
       inp.moveHeld = false;
-      if (!inp.hoverMonster || this.lmb === 'none') {
-        let best = null;
-        let bestD = 12;
-        for (const m of g.area.monsters) {
-          if (m.dead || m.team !== 'enemy') continue;
-          const d = dist(p.pos, m.pos);
-          if (d < bestD) {
-            bestD = d;
-            best = m;
-          }
+      let best = null;
+      let bestD = 12;
+      for (const m of g.area.monsters) {
+        if (m.dead || m.team !== 'enemy') continue;
+        const d = dist(p.pos, m.pos);
+        if (d < bestD) {
+          bestD = d;
+          best = m;
         }
-        inp.hoverMonster = best;
-        if (best) inp.cursor = { ...best.pos };
-        else {
-          const dir = inp.moveDir ?? { x: Math.cos(p.facing), y: Math.sin(p.facing) };
-          inp.cursor = { x: p.pos.x + dir.x * 5, y: p.pos.y + dir.y * 5 };
-        }
+      }
+      inp.hoverMonster = best;
+      if (best) inp.cursor = { ...best.pos };
+      else {
+        const dir = inp.moveDir ?? { x: Math.cos(p.facing), y: Math.sin(p.facing) };
+        inp.cursor = { x: p.pos.x + dir.x * 5, y: p.pos.y + dir.y * 5 };
       }
       // keep walking while casting only if the joystick isn't held (skills root you in place)
       if (inp.moveDir) inp.moveDir = null;

@@ -4,11 +4,13 @@ import { PASSIVE_TREE } from '../data/passives';
 import { createCurrency, createGem, createItem } from '../items/generate';
 import { addItem, newGrid, type Grid } from '../items/grid';
 import type { EquipSlot, Item } from '../items/types';
+import type { QuestState } from './quests';
 
 export const INV_W = 12;
 export const INV_H = 5;
 export const SKILL_SLOTS = 8;
-export const SKILL_KEYS = ['LMB', 'RMB', 'Q', 'W', 'E', 'R', 'T', 'MMB'] as const;
+/** Slot 0 is on the space bar: the left mouse button only moves / picks up / talks. */
+export const SKILL_KEYS = ['空白', 'RMB', 'Q', 'W', 'E', 'R', 'T', 'MMB'] as const;
 
 /** Persistent character state (serialised to the save file). */
 export interface CharacterData {
@@ -31,6 +33,10 @@ export interface CharacterData {
   deaths: number;
   playTime: number;
   created: number;
+  /** Story quest progress by quest id (missing on saves from before the story). */
+  quests?: Record<string, QuestState>;
+  /** The prologue has been shown. */
+  storySeen?: boolean;
 }
 
 export function newCharacter(name: string, classId: ClassId): CharacterData {
@@ -54,13 +60,14 @@ export function newCharacter(name: string, classId: ClassId): CharacterData {
     passives: [PASSIVE_TREE.startOf[classId]],
     refundPoints: 0,
     bonusPassivePoints: 0,
-    skillBar: [gem.uid, null, null, null, null, null, null, null],
+    skillBar: [null, gem.uid, null, null, null, null, null, null],
     activeAuras: [],
     unlockedAreas: ['shore'],
     completedAreas: [],
     deaths: 0,
     playTime: 0,
     created: Date.now(),
+    quests: {},
   };
   const lifeFlask = createItem('life_flask_0', 1);
   const lifeFlask2 = createItem('life_flask_0', 1);

@@ -23,9 +23,9 @@ function botStep(game: Game): void {
   }
   game.input.cursor = { ...t.pos };
   game.input.hoverMonster = t;
-  game.input.heldSlot = 0;
+  game.input.heldSlot = 1;
   game.input.moveHeld = false;
-  // Use the class's main skill (slot 0) — if it's ranged and out of range, walk closer first
+  // Use the class's main skill (slot 1, right mouse button) — if it's ranged and out of range, walk closer first
   if (dist(p.pos, t.pos) > 7) {
     game.input.heldSlot = null;
     game.input.moveHeld = true;

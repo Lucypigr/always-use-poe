@@ -28,9 +28,10 @@ Progress (characters, stash, settings) is saved to `localStorage` automatically.
 
 | Input | Action |
 | --- | --- |
-| Left click | Move · attack the monster under the cursor · pick up items · use objects |
-| Shift + Left click | Attack in place |
-| Right click, Q W E R T, Middle click | Skill slots (hold to keep using). Click a skill-bar slot to change it |
+| Left click | Move · pick up items · talk to NPCs · use objects (never casts a skill) |
+| Right click, Space, Q W E R T, Middle click | Skill slots (hold to keep using; aimed at the cursor / monster under it). Click a skill-bar slot to change it |
+| Shift + skill | Use the skill in place |
+| J | Quest journal |
 | 1–5 | Drink flasks |
 | I / C / P | Inventory / Character sheet / Passive tree |
 | Tab | Overlay map |
@@ -47,16 +48,19 @@ click an item to apply it (hold **Shift** to keep applying). Right-click a socke
 ### Touch screens (phones / tablets)
 
 On devices whose primary pointer is a finger the game switches to touch controls
-(`src/ui/touchControls.ts`); landscape orientation is recommended.
+(`src/ui/touchControls.ts`). Phones are **landscape only** (`src/ui/landscape.ts`): held upright,
+the game pauses behind a "rotate your phone" screen, and in landscape the first tap enters
+fullscreen (and locks the orientation where the browser allows it) so the address bar can't
+shift the view. On iPhone, where web pages can't go fullscreen, add the page to the home screen.
 
 | Touch | Action |
 | --- | --- |
 | Drag in the lower-left area | Virtual joystick — move |
-| Tap the ground / a monster / a label | Move there · attack · pick up / use; pinch to zoom |
+| Tap the ground / a label | Move there · pick up / talk / use; pinch to zoom |
 | Hold a round skill button (lower right) | Use the skill, auto-aimed at the nearest enemy |
 | 編輯技能 then tap a slot | Change the skill in that slot |
 | Flask slots | Drink |
-| 地圖 · 標籤 · 回城 · 全螢幕 | Overlay map · item labels · portal scroll · fullscreen |
+| 地圖 · 標籤 · 回城 · 全螢幕 · 任務 | Overlay map · item labels · portal scroll · fullscreen · quest journal |
 | Item toolbar (while inventory is open) | 拿取 = click · 使用 = right-click · 快速移動 = Ctrl-click · 查看 = inspect only · 詞綴階級 = Alt |
 | Passive tree | Drag to pan, pinch to zoom, tap a node to inspect and tap it again to allocate / refund |
 
@@ -64,6 +68,26 @@ On devices whose primary pointer is a finger the game switches to touch controls
 
 All in-game text is Traditional Chinese (繁體中文). Item, gem, currency and area names are
 original names translated into Chinese.
+
+## Story & quests
+
+The campaign retells the first four acts of Path of Exile with this game's areas and bosses
+(`src/data/quests.ts`, logic in `src/game/quests.ts`, dialogue in `src/ui/story.ts`): you are
+exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
+
+- **5 quest givers in town** (娜莎, 塔克雷, 耶娜, 克萊莉絲, 黛亞拉 — modelled on Nessa, Tarkleigh,
+  Yeena, Clarissa and Dialla). `！` over a head means a new quest, `？` a reward to collect.
+- **22 quests** named after PoE's: 城門前的敵人 (Enemy at the Gate), 慈悲任務 (Mercy Mission),
+  打破蛋 (Breaking Some Eggs), 牢籠中的蠻獸 (The Caged Brute), 海妖的歌聲 (The Siren's Cadence),
+  穿越聖地, 黑衣入侵者, 利齒與殘酷, 大白獸, 與盜匪的交易 (Deal with the Bandits), 迷失的愛,
+  維多里歐的秘密, 皮耶緹的寵物, 命運的定數, 神之權杖, 狂怒之王, 不屈之魂, 永恆夢魘 and more.
+- Objectives: defeat an area boss, find quest objects (gold labels), clear a number of monsters,
+  or hunt **named rare monsters** that only appear while the quest is active.
+- Rewards like PoE's: **pick one gem** from a list, currency, passive skill points, refund points —
+  and the bandit choice: destroy all three tokens for a passive point or take one bandit lord's
+  permanent blessing.
+- Quest tracker under the minimap, quest journal (J), and a prologue for new characters.
+  Older saves get their quests for already-beaten bosses marked ready to hand in.
 
 ## Systems (and how they map to Path of Exile)
 

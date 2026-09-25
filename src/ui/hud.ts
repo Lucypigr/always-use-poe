@@ -4,6 +4,8 @@ import { getGem } from '../data/gems';
 import { xpToNext } from '../data/scaling';
 import { equippedGems, passivePointsUnspent, SKILL_KEYS } from '../game/character';
 import type { VfxEvent } from '../game/entities';
+import { NPC_BY_ID } from '../data/quests';
+import { questGoal, questProgress, trackedQuests } from '../game/quests';
 import { FLOOR, PROP } from '../game/tilemap';
 import { currencyId, displayName, flaskProps } from '../items/item';
 import { maxLinks } from '../items/generate';
@@ -67,6 +69,7 @@ export class Hud {
   private labels: HTMLElement;
   private gemLevels: HTMLElement;
   private toastEl: HTMLElement;
+  private questEl: HTMLElement;
   private labelMap = new Map<number, { el: HTMLElement; w: number; h: number }>();
   private hpMap = new Map<number, HTMLElement>();
   private texts: FloatText[] = [];
@@ -98,7 +101,8 @@ export class Hud {
     this.logEl = h('div', { class: 'log' });
     this.gemLevels = h('div', { class: 'gem-levels' });
     this.toastEl = h('div', { class: 'toast', style: 'opacity:0' });
-    this.el.append(this.target, this.boss, this.minimap, this.logEl, this.gemLevels, this.toastEl);
+    this.questEl = h('div', { class: 'quest-tracker', title: '任務日誌 (J)', onclick: () => ui.story.journal() });
+    this.el.append(this.target, this.boss, this.minimap, this.questEl, this.logEl, this.gemLevels, this.toastEl);
 
     // Bottom bar
     const bottom = h('div', { class: 'hud-bottom' });
@@ -149,6 +153,7 @@ export class Hud {
         h('button', { onclick: () => ui.togglePanel('character') }, '角色 (C)'),
         h('button', { onclick: () => ui.togglePanel('inventory') }, '背包 (I)'),
         h('button', { onclick: () => ui.togglePanel('passives') }, '天賦 (P)'),
+        h('button', { onclick: () => ui.story.journal() }, '任務 (J)'),
         h('button', { onclick: () => ui.modals.options() }, '選單'),
       ),
     );
@@ -156,6 +161,24 @@ export class Hud {
     this.refreshSkills();
     this.refreshFlasks();
     this.onArea();
+    this.refreshQuests();
+  }
+
+  /** Quest tracker under the minimap. */
+  refreshQuests(): void {
+    const c = this.ui.game.char;
+    clear(this.questEl);
+    const list = trackedQuests(c, this.ui.touch ? 3 : 4);
+    if (!list.length) {
+      this.questEl.style.display = 'none';
+      return;
+    }
+    this.questEl.style.display = '';
+    for (const { q, st } of list) {
+      const goal = questGoal(q);
+      const task = st.s === 'ready' ? `回報${NPC_BY_ID[q.giver].name}` : `${q.task}${goal > 1 ? `（${Math.min(goal, questProgress(st))}/${goal}）` : ''}`;
+      this.questEl.append(h('div', { class: `qt-row ${st.s}${q.main ? ' main' : ''}` }, h('div', { class: 'qt-name' }, q.name), h('div', { class: 'qt-task' }, task)));
+    }
   }
 
   onArea(): void {
@@ -407,13 +430,13 @@ export class Hud {
       }
     }
     for (const it of g.area.interactables) {
-      const pr = r.project(it.pos, it.kind === 'vendor' ? 3 : 2.4);
+      const pr = r.project(it.pos, it.kind === 'vendor' || it.kind === 'npc' ? 3 : 2.4);
       if (!pr.visible || dist(it.pos, p.pos) > 30) continue;
       const id = -it.id;
       seen.add(id);
       let entry = this.labelMap.get(id);
       if (!entry) {
-        const el = h('div', { class: 'label interact' }, it.label);
+        const el = h('div', { class: `label interact${it.kind === 'quest' ? ' quest-obj' : ''}` }, it.label);
         el.addEventListener('mousedown', (e) => {
           e.stopPropagation();
           if (e.button === 0) g.clickInteractable(it);
@@ -422,6 +445,12 @@ export class Hud {
         entry = { el, w: 0, h: 0 };
         this.labelMap.set(id, entry);
       }
+      if (entry.el.textContent !== it.label) {
+        // NPC quest markers (！/？) change as quests progress
+        entry.el.textContent = it.label;
+        entry.w = 0;
+      }
+      entry.el.classList.toggle('quest-mark', it.kind === 'npc' && /^[！？]/.test(it.label));
       want.push({ id, x: pr.x, y: pr.y, entry });
     }
     for (const [id, e] of this.labelMap) {
@@ -545,7 +574,7 @@ export class Hud {
     const toY = (y: number) => oy + y * scale;
     for (const it of g.area.interactables) {
       if (!map.explored[Math.floor(it.pos.y) * map.w + Math.floor(it.pos.x)] && !g.area.town) continue;
-      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : '#60b0ff';
+      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : it.kind === 'quest' || (it.kind === 'npc' && /^[！？]/.test(it.label)) ? '#ffd040' : it.kind === 'npc' ? '#d8d0b0' : '#60b0ff';
       ctx.beginPath();
       ctx.arc(toX(it.pos.x), toY(it.pos.y), big ? 6 : 4, 0, Math.PI * 2);
       ctx.fill();

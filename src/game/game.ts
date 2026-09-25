@@ -14,7 +14,9 @@ import { executeBehaviour, type SkillContext, type SkillHost } from '../skills/b
 import { addGemXp, levelGem } from '../skills/gemUtil';
 import { computeMinionStats, computeSkillStats, resolveSkills, type SkillStats } from '../skills/skills';
 import { computeCharacterStats } from '../stats/character';
-import type { StatMod } from '../stats/stats';
+import { more, type StatMod } from '../stats/stats';
+import { NPC_BY_ID, QUEST_BY_ID, type NpcId, type QuestDef } from '../data/quests';
+import { createCurrency, createGem } from '../items/generate';
 import type { Actor, Team } from './actor';
 import { AreaInstance, createMapArea, createStoryArea, createTown } from './area';
 import { equippedGems, passivePointsUnspent, SKILL_SLOTS, type CharacterData } from './character';
@@ -24,6 +26,7 @@ import { questReward, rollDrops } from './loot';
 import { makeMinion, Monster, monsterDef } from './monster';
 import { findPath } from './path';
 import { Player } from './player';
+import { activeQuestsIn, advanceQuest, npcLabel, questBonusMods, questGoal, questProgress, questStates, refreshQuests } from './quests';
 import type { AccountData, Settings } from './save';
 import { evaluateSale, vendorStock, type VendorOffer } from './vendor';
 
@@ -38,6 +41,10 @@ export interface GameEvents extends Record<string, unknown> {
   save: null;
   drop: { item: Item };
   pickup: { item: Item };
+  /** Talk to a town NPC. */
+  dialog: { npc: NpcId };
+  /** Quest progress changed ('ready' = an objective was just completed). */
+  quest: { ready: boolean };
 }
 
 export interface InputState {
@@ -106,6 +113,13 @@ export class Game implements SkillHost {
   ) {
     this.town = createTown(this.rng);
     this.town.resPenalty = this.townPenalty();
+    if (!char.quests) {
+      // Saves from before the story: the left mouse button no longer casts, so move the
+      // slot-0 skill onto the right mouse button when that is free.
+      char.quests = {};
+      if (char.skillBar[0] && !char.skillBar[1]) [char.skillBar[0], char.skillBar[1]] = [null, char.skillBar[0]];
+    }
+    refreshQuests(char);
     this.player = new Player(char, this.town.map.spawn);
     this.recalc(true);
     this.enterArea(this.town, this.town.map.spawn);
@@ -123,7 +137,7 @@ export class Game implements SkillHost {
   recalc(fullHeal = false): void {
     const p = this.player;
     const penalty = this.area ? this.area.resPenalty : 0;
-    const temp: StatMod[] = [...p.buffMods(), ...(this.area?.playerMods ?? [])];
+    const temp: StatMod[] = [...p.buffMods(), ...(this.area?.playerMods ?? []), ...questBonusMods(this.char)];
     const first = computeCharacterStats(this.char, temp, penalty);
     const skills1 = resolveSkills(this.char, first);
     const auraMods: StatMod[] = [];
@@ -208,6 +222,7 @@ export class Game implements SkillHost {
       p.ailments = { ignite: null, bleed: null, poison: [], chill: null, freeze: null, shock: null };
       this.town.interactables = this.town.interactables.filter((i) => i.kind !== 'area_portal');
       if (this.portalInstance) this.town.addInteractable('area_portal', this.town.portalPos!, `傳送門：${this.portalInstance.name}`, 1);
+      this.refreshNpcLabels();
     }
     inst.flow.originX = -1;
     inst.flow.update(p.pos);
@@ -233,6 +248,7 @@ export class Game implements SkillHost {
     if (!this.char.unlockedAreas.includes(areaId)) return;
     this.leaveArea();
     const inst = createStoryArea(areaId, this.rng);
+    this.placeQuestContent(inst);
     this.portalInstance = null;
     this.enterArea(inst, inst.map.spawn);
   }
@@ -293,7 +309,151 @@ export class Game implements SkillHost {
       case 'exit':
         this.goToTown();
         break;
+      case 'npc':
+        if (obj.npc) this.events.emit('dialog', { npc: obj.npc });
+        break;
+      case 'quest':
+        this.collectQuestObject(obj);
+        break;
     }
+  }
+
+  // ------------------------------------------------------------------------------------------
+  // Quests
+  // ------------------------------------------------------------------------------------------
+
+  /** Place quest objects and named quest monsters for the active quests of a story area. */
+  private placeQuestContent(inst: AreaInstance): void {
+    if (!inst.def) return;
+    const spawn = inst.map.spawn;
+    const spots = this.rng.shuffle(inst.map.packSpots.filter((s) => dist(s, spawn) > 18));
+    let next = 0;
+    const spot = () => inst.map.nearestFloor(spots.length ? spots[next++ % spots.length] : inst.map.bossPos);
+    for (const q of activeQuestsIn(this.char, inst.def.id)) {
+      const o = q.objective;
+      const got = questStates(this.char)[q.id].got ?? [];
+      if (o.kind === 'collect') {
+        o.objects.forEach((label, i) => {
+          if (got.includes(i)) return;
+          const it = inst.addInteractable('quest', spot(), label, 0.7);
+          it.questId = q.id;
+          it.questIndex = i;
+        });
+      } else if (o.kind === 'slay') {
+        o.targets.forEach((t, i) => {
+          if (got.includes(i)) return;
+          const m = new Monster(monsterDef(t.monster), inst.level + 1, 'rare', spot(), 'enemy', this.rng, [more('monster_life', 60)]);
+          m.name = t.name;
+          m.questId = q.id;
+          m.questIndex = i;
+          m.pack = inst.nextPack++;
+          inst.monsters.push(m);
+        });
+      }
+    }
+  }
+
+  private collectQuestObject(obj: Interactable): void {
+    const q = obj.questId ? QUEST_BY_ID[obj.questId] : undefined;
+    this.area.interactables = this.area.interactables.filter((i) => i !== obj);
+    if (!q) return;
+    this.vfx({ type: 'nova', pos: { ...obj.pos }, radius: 1.6, color: '#ffd870' });
+    const done = advanceQuest(this.char, q, obj.questIndex);
+    const st = questStates(this.char)[q.id];
+    this.log(`你取得了「${obj.label}」（${questProgress(st)}/${questGoal(q)}）`, '#ffd870');
+    this.questUpdated(q, done);
+  }
+
+  /** Kill-count and named-target progress for the monster that just died. */
+  private questKill(m: Monster): void {
+    if (m.questId) {
+      const q = QUEST_BY_ID[m.questId];
+      if (q) this.questUpdated(q, advanceQuest(this.char, q, m.questIndex));
+    }
+    const areaId = this.area.def?.id;
+    if (!areaId) return;
+    for (const q of activeQuestsIn(this.char, areaId)) {
+      if (q.objective.kind !== 'kill') continue;
+      const done = advanceQuest(this.char, q);
+      const n = questProgress(questStates(this.char)[q.id]);
+      if (done || n % 10 === 0) this.questUpdated(q, done);
+    }
+  }
+
+  private questUpdated(q: QuestDef, done: boolean): void {
+    if (done) {
+      this.log(`任務完成：${q.name} — 回到暮港找${NPC_BY_ID[q.giver].name}領取獎勵。`, '#a0ff80');
+      this.startNewQuests();
+    }
+    this.refreshNpcLabels();
+    this.events.emit('quest', { ready: done });
+  }
+
+  private startNewQuests(): void {
+    for (const q of refreshQuests(this.char)) this.log(`新任務：${q.name}（${NPC_BY_ID[q.giver].name}）`, '#ffd870');
+    this.refreshNpcLabels();
+  }
+
+  refreshNpcLabels(): void {
+    for (const it of this.town.interactables) if (it.kind === 'npc' && it.npc) it.label = npcLabel(this.char, it.npc);
+  }
+
+  /** The player has heard the giver's introduction to a quest. */
+  markQuestSeen(id: string): void {
+    const st = questStates(this.char)[id];
+    if (st) st.seen = true;
+    this.refreshNpcLabels();
+    this.events.emit('quest', { ready: false });
+  }
+
+  /**
+   * Hand in a completed quest. `pick` is the chosen gem id or blessing id when the reward
+   * offers a choice. Returns false if the quest is not ready or the pick is invalid.
+   */
+  turnInQuest(id: string, pick?: string): boolean {
+    const q = QUEST_BY_ID[id];
+    const st = questStates(this.char)[id];
+    if (!q || st?.s !== 'ready') return false;
+    const r = q.reward;
+    if (r.gems && (!pick || !r.gems.includes(pick))) return false;
+    if (r.choices && !r.choices.some((c) => c.id === pick)) return false;
+    const give = (it: Item) => {
+      if (!addItem(this.char.inventory, it)) this.dropItem(it, this.player.pos);
+    };
+    const got: string[] = [];
+    if (r.gems && pick) {
+      const gem = createGem(pick);
+      give(gem);
+      got.push(displayName(gem));
+    }
+    for (const [cid, n] of r.currency ?? []) {
+      give(createCurrency(cid, n));
+      got.push(`${CURRENCY_BY_ID[cid].name} ×${n}`);
+    }
+    let passives = r.passives ?? 0;
+    const choice = r.choices?.find((c) => c.id === pick);
+    if (choice) {
+      passives += choice.passives ?? 0;
+      got.push(choice.label);
+    }
+    if (passives) {
+      this.char.bonusPassivePoints += passives;
+      got.push(`${passives} 點天賦點數`);
+    }
+    if (r.refunds) {
+      this.char.refundPoints += r.refunds;
+      got.push(`${r.refunds} 點天賦重置點數`);
+    }
+    st.s = 'done';
+    st.seen = true;
+    if (pick) st.pick = pick;
+    this.log(`任務獎勵（${q.name}）：${got.join('、')}`, '#a0ff80');
+    this.startNewQuests();
+    this.recalc();
+    this.events.emit('inventory', null);
+    this.events.emit('quest', { ready: false });
+    this.save();
+    return true;
   }
 
   // ------------------------------------------------------------------------------------------
@@ -1030,6 +1190,7 @@ export class Game implements SkillHost {
     if (firstKill && area.def) drops.push(...questReward(area.def.id, this.rng));
     for (const it of drops) this.dropItem(it, m.pos);
     if (isBoss) this.onBossKilled(m);
+    this.questKill(m);
   }
 
   private onBossKilled(m: Monster): void {
@@ -1049,6 +1210,10 @@ export class Game implements SkillHost {
         if (!area.def.next) this.log('暮港的地圖裝置現在可以開啟地圖了。地圖會在高等級區域掉落。', '#c8a8ff');
         this.town.resPenalty = this.townPenalty();
       }
+      for (const q of activeQuestsIn(this.char, area.def.id)) {
+        if (q.objective.kind === 'boss') this.questUpdated(q, advanceQuest(this.char, q));
+      }
+      this.startNewQuests();
     }
     this.events.emit('stats', null);
   }

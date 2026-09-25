@@ -11,6 +11,7 @@ import { Audio } from './ui/audio';
 import { showCharSelect } from './ui/charSelect';
 import { clear } from './ui/dom';
 import { Input } from './ui/input';
+import { installLandscapeGuard, mustRotate } from './ui/landscape';
 import { isTouchDevice } from './ui/touch';
 import { TouchControls } from './ui/touchControls';
 import { UI } from './ui/ui';
@@ -29,6 +30,7 @@ class App {
 
   constructor() {
     this.renderer = new Renderer(document.getElementById('game')!);
+    installLandscapeGuard();
     const unlock = () => this.audio.unlock();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
@@ -60,6 +62,7 @@ class App {
     this.ui.hud.showLabels = this.save.settings.alwaysShowLabels;
     this.input = new Input(this.ui, game, this.renderer);
     if (isTouchDevice()) this.touch = new TouchControls(this.ui, this.input);
+    this.ui.startStory();
     game.events.on('save', () => this.persist());
     this.audio.volume = this.save.settings.volume;
     game.events.on('drop', ({ item }) => {
@@ -73,7 +76,8 @@ class App {
     game.events.on('levelup', () => this.audio.play('levelup'));
     game.events.on('death', () => this.audio.play('death'));
     game.events.on('area', () => this.audio.play('portal'));
-    game.log(this.touch ? `歡迎來到暮港，${char.name}。左下拖曳移動，按住右下技能鍵攻擊。` : `歡迎來到暮港，${char.name}。按 H 查看操作說明。`, '#d8c8a0');
+    game.events.on('quest', ({ ready }) => ready && this.audio.play('levelup'));
+    game.log(this.touch ? `歡迎來到暮港，${char.name}。左下拖曳移動，按住右下技能鍵攻擊。` : `歡迎來到暮港，${char.name}。左鍵移動，右鍵 / 空白鍵 / QWERT 施放技能，按 H 查看操作說明。`, '#d8c8a0');
     if (import.meta.env.DEV) Object.assign(window, { game, renderer: this.renderer, ui: this.ui });
     this.persist();
   }
@@ -106,7 +110,8 @@ class App {
     const g = this.game;
     if (g && this.ui && this.input) {
       this.input.update();
-      g.update(dt);
+      // phones held upright are paused behind the "rotate your phone" screen
+      if (!mustRotate()) g.update(dt);
       this.audio.volume = g.settings.volume;
       for (const e of g.vfxQueue) {
         if (e.type === 'text') this.ui.hud.addText(e);

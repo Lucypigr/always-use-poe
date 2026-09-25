@@ -14,6 +14,7 @@ import { itemIcon } from './icons';
 import { itemEl, TooltipView } from './itemView';
 import { Modals } from './modals';
 import { PassiveTreeView } from './passiveTree';
+import { StoryDialogs } from './story';
 
 export type PanelId = 'inventory' | 'character' | 'stash' | 'vendor' | 'passives';
 
@@ -57,6 +58,7 @@ export class UI {
   tooltip: TooltipView;
   hud: Hud;
   modals: Modals;
+  story: StoryDialogs;
   sheet: CharacterSheet;
   tree: PassiveTreeView;
   stashTab = 0;
@@ -92,6 +94,7 @@ export class UI {
     this.sheet = new CharacterSheet(this, this.panels.character);
     this.tree = new PassiveTreeView(this, this.panels.passives);
     this.modals = new Modals(this);
+    this.story = new StoryDialogs(this);
     root.append(this.cursorEl, this.currencyCursor);
     this.currencyCursor.style.display = 'none';
     this.tooltip = new TooltipView(root);
@@ -111,6 +114,8 @@ export class UI {
         else if (panel === 'map_device') this.modals.mapDevice();
       }),
       ev.on('death', () => setTimeout(() => this.modals.death(), 900)),
+      ev.on('dialog', ({ npc }) => this.story.talk(npc)),
+      ev.on('quest', () => this.hud.refreshQuests()),
       ev.on('log', (m) => this.hud.log(m.text, m.color)),
       ev.on('levelup', ({ level }) => this.hud.toast(`等級 ${level}`)),
       ev.on('area', () => {
@@ -120,6 +125,14 @@ export class UI {
       }),
     );
     this.refreshItems();
+  }
+
+  /** Show the prologue once per character (after touch controls are set up). */
+  startStory(): void {
+    const c = this.game.char;
+    if (c.storySeen) return;
+    c.storySeen = true;
+    if (!c.completedAreas.length) this.story.prologue();
   }
 
   destroy(): void {

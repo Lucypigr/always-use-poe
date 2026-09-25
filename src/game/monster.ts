@@ -38,6 +38,9 @@ export class Monster extends Actor {
   pending: PendingAction | null = null;
   home: Vec2;
   isMinion = false;
+  /** Named quest target: quest id and target index. */
+  questId = '';
+  questIndex = -1;
   ownerId = 0;
   xpValue: number;
   deathTimer = 0;

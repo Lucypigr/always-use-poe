@@ -2,6 +2,7 @@ import { CURRENCY_BY_ID } from '../data/currency';
 import { currencyId } from '../items/item';
 import { h } from './dom';
 import type { Input } from './input';
+import { enterFullscreen, exitFullscreen, fullscreenSupported, isFullscreen } from './landscape';
 import { fromTouch, TOUCH_MODES, type TouchItemMode } from './touch';
 import type { UI } from './ui';
 
@@ -20,7 +21,6 @@ export class TouchControls {
   private modeButtons = new Map<TouchItemMode, HTMLElement>();
   private tiersBtn: HTMLElement;
   private editBtn: HTMLElement;
-  private rotateHint: HTMLElement;
   private listeners: [EventTarget, string, EventListener, boolean][] = [];
   private synth = false;
   mode: TouchItemMode = 'take';
@@ -75,8 +75,7 @@ export class TouchControls {
     } }, '取消 / 關閉'));
     this.setMode('take');
 
-    this.rotateHint = h('div', { class: 'rotate-hint' }, '將手機橫放以獲得最佳遊戲體驗');
-    this.root.append(zone, extra, this.toolbar, this.rotateHint);
+    this.root.append(zone, extra, this.toolbar);
     ui.root.append(this.root);
 
     // No keyboard: drop the hotkey hints from button labels.
@@ -169,13 +168,11 @@ export class TouchControls {
     this.ui.refreshItems();
   }
 
+  /** Toggle fullscreen. Leaving it here also stops the automatic re-entry on the next tap. */
   private fullscreen(): void {
-    const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void };
-    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
-    if (document.fullscreenElement || d.webkitFullscreenElement) (document.exitFullscreen ?? d.webkitExitFullscreen)?.call(document);
-    else if (el.requestFullscreen) el.requestFullscreen().catch(() => this.ui.game.log('此瀏覽器不支援全螢幕。', '#a0a0a0'));
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    else this.ui.game.log('此瀏覽器不支援全螢幕。可將網頁「加入主畫面」以全螢幕遊玩。', '#a0a0a0');
+    if (isFullscreen()) exitFullscreen();
+    else if (!fullscreenSupported()) this.ui.game.log('此瀏覽器不支援全螢幕。可將網頁「加入主畫面」以全螢幕遊玩。', '#a0a0a0');
+    else enterFullscreen().then((ok) => ok || this.ui.game.log('無法進入全螢幕。', '#a0a0a0'));
   }
 
   private layoutKey = '';

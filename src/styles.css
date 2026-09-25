@@ -286,6 +286,34 @@ input[type="text"] { background: #0e0c0a; border: 1px solid var(--gold-dim); col
 .help kbd { display: inline-block; min-width: 20px; padding: 0 5px; border: 1px solid #6a5a40; background: #1a1610; color: #f0e0c0; font-family: inherit; font-size: 12px; text-align: center; }
 .help td { padding: 2px 10px 2px 0; vertical-align: top; }
 
+/* ------------------------------------------------------------------ story: dialogue, quests */
+.dialog { max-width: 620px; }
+.dialog h2 { margin-bottom: 2px; }
+.dialog-sub { text-align: center; color: var(--text-dim); font-size: 13px; margin-bottom: 10px; font-style: italic; }
+.dialog-text p { margin: 0 0 9px; line-height: 1.65; font-size: 15px; color: #e0d6c0; }
+.dialog-task { color: #ffd870; font-size: 14px; margin: 4px 0; }
+.dialog-reward { color: #a0e080; font-size: 13px; margin: 6px 0; }
+.row-buttons.wrap { flex-wrap: wrap; }
+.reward-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px; margin: 8px 0; }
+.reward-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; padding: 8px 10px; font-family: inherit; }
+.reward-opt span:first-child { font-family: 'Cinzel', 'Noto Serif TC', serif; font-size: 15px; }
+.reward-opt .muted { font-size: 12px; color: var(--text-dim); line-height: 1.35; }
+.journal { display: flex; flex-direction: column; gap: 4px; min-width: 460px; }
+.journal-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 10px; border: 1px solid #3a3020; background: rgba(20, 16, 12, 0.9); }
+.journal-row .lvl { color: var(--text-dim); font-size: 12px; }
+.journal-row .q-main { color: var(--gold); }
+.journal-row .q-status { font-size: 12px; white-space: nowrap; color: #d8c8a0; }
+.journal-row.ready .q-status { color: #a0ff80; }
+.journal-row.done { opacity: 0.55; }
+.quest-tracker { position: absolute; right: 12px; top: 232px; width: 210px; pointer-events: auto; cursor: pointer; font-size: 12.5px; text-shadow: 0 0 3px #000, 0 0 4px #000; }
+.qt-row { margin-bottom: 6px; }
+.qt-name { color: #d8c8a0; font-family: 'Cinzel', 'Noto Serif TC', serif; }
+.qt-row.main .qt-name { color: var(--gold); }
+.qt-task { color: #b0a890; font-size: 11.5px; }
+.qt-row.ready .qt-task { color: #a0ff80; }
+.label.interact.quest-obj { color: #ffd870; border: 1px solid #8a6a2a; }
+.label.interact.quest-mark { color: #ffe070; font-weight: 600; }
+
 /* ------------------------------------------------------------------ title / character select */
 .title-screen { position: absolute; inset: 0; pointer-events: auto; background: radial-gradient(ellipse at 50% 30%, #2a1e12 0%, #0a0806 60%, #000 100%); display: flex; flex-direction: column; align-items: center; overflow: auto; }
 .title-screen h1 { font-size: 64px; color: var(--gold); margin: 40px 0 0; letter-spacing: 8px; text-shadow: 0 0 30px rgba(200, 150, 60, 0.5); }
@@ -329,9 +357,17 @@ input[type="text"] { background: #0e0c0a; border: 1px solid var(--gold-dim); col
 .touch-controls button.tbtn, .touch-toolbar button { padding: 5px 9px; font-size: 13px; min-height: 32px; white-space: nowrap; }
 .touch-controls button.on, .touch-toolbar button.on { border-color: #ffe0a0; color: #fff4d0; background: linear-gradient(#6a5030, #3a2a16); box-shadow: 0 0 8px rgba(255, 210, 120, 0.4); }
 .touch-controls.panel-open .joy-zone, .touch-controls.panel-open .touch-extra { display: none; }
-.rotate-hint { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); border: 1px solid var(--border); color: var(--gold); padding: 10px 16px; font-size: 15px; pointer-events: none !important; }
-@media (orientation: portrait) { .touch .rotate-hint { display: block; animation: hint-fade 5s forwards; } }
-@keyframes hint-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+/* phones: landscape only (see landscape.ts) */
+body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscroll-behavior: none; touch-action: manipulation; }
+.portrait-block { display: none; position: fixed; inset: 0; z-index: 1000; background: radial-gradient(ellipse at 50% 35%, #2a1e12 0%, #0a0806 70%); color: var(--text); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 6px; touch-action: none; }
+.portrait-block h2 { color: var(--gold); margin: 18px 0 4px; font-size: 24px; }
+.portrait-block p { margin: 4px 0; max-width: 320px; line-height: 1.5; }
+.portrait-block .pb-note { color: var(--text-dim); font-size: 13px; }
+.portrait-block button { margin-top: 14px; padding: 10px 18px; font-size: 16px; }
+.pb-phone { width: 46px; height: 80px; border: 3px solid var(--gold); border-radius: 8px; position: relative; animation: pb-rotate 2.4s ease-in-out infinite; }
+.pb-phone::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 10px; height: 3px; margin-left: -5px; background: var(--gold); border-radius: 2px; }
+@keyframes pb-rotate { 0%, 25% { transform: rotate(0deg); } 55%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { body.touch-device .portrait-block { display: flex; } }
 
 .touch .globe { width: 58px; height: 58px; top: 8px; bottom: auto; border-width: 2px; }
 .touch .globe.life { left: 8px; }
@@ -357,6 +393,17 @@ input[type="text"] { background: #0e0c0a; border: 1px solid var(--gold-dim); col
 .touch .xp-bar { left: 8px; right: 8px; bottom: 2px; height: 5px; }
 .touch .log { left: 50%; transform: translateX(-50%); bottom: 82px; width: min(460px, 46vw); font-size: 12px; }
 .touch .gem-levels { top: 90px; right: 146px; }
+.touch .quest-tracker { top: 142px; right: 8px; width: 150px; font-size: 11px; }
+.touch .qt-task { font-size: 10.5px; }
+.touch .journal { min-width: 0; }
+.touch .dialog { width: 86vw; max-width: 760px; }
+.touch .dialog h2 { font-size: 18px; }
+.touch .dialog-sub { margin-bottom: 4px; }
+.touch .reward-pick { grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 4px 0; }
+.touch .reward-opt { padding: 5px 8px; min-height: 0; }
+.touch .reward-opt span:first-child { font-size: 14px; }
+.touch .reward-opt .muted { font-size: 11px; }
+.touch .dialog-text p { font-size: 14px; line-height: 1.5; }
 .touch .target-frame { top: 84px; min-width: 220px; }
 .touch .boss-bar { top: 84px; width: min(420px, 60vw); }
 .touch .toast { top: 130px; font-size: 22px; }

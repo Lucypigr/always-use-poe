@@ -64,7 +64,7 @@ function newRig(kind: string, height: number): Rig {
 // Humanoids
 // ---------------------------------------------------------------------------------------------
 
-interface HumanoidOpts {
+export interface HumanoidOpts {
   skin: string;
   torso: string;
   legs: string;
@@ -519,9 +519,25 @@ export function propModel(kind: string, theme: { wall: string; wallTop: string }
   return g;
 }
 
-export function interactableModel(kind: string): THREE.Group {
+export function interactableModel(kind: string, look?: HumanoidOpts): THREE.Group {
   const g = new THREE.Group();
   switch (kind) {
+    case 'npc': {
+      const rig = humanoid('npc', look ?? { skin: '#c8a888', torso: '#5a5a5a', legs: '#3a3a3a' });
+      g.add(rig.root);
+      break;
+    }
+    case 'quest': {
+      // a glowing reliquary on a small stone plinth
+      g.add(mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.3, 8), mat('#4a4438'), 0, 0.15, 0));
+      g.add(mesh(new THREE.BoxGeometry(0.5, 0.35, 0.36), mat('#7a5a2a'), 0, 0.48, 0));
+      g.add(mesh(new THREE.BoxGeometry(0.54, 0.1, 0.4), mat('#d8b848', { metalness: 0.7, emissive: '#6a4a10', emissiveIntensity: 0.6 }), 0, 0.7, 0));
+      const glow = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), new THREE.MeshBasicMaterial({ color: '#ffd870' }));
+      glow.position.y = 1.15;
+      glow.name = 'spin';
+      g.add(glow);
+      break;
+    }
     case 'stash': {
       g.add(mesh(new THREE.BoxGeometry(1.1, 0.6, 0.7), mat('#6a4a2a'), 0, 0.3, 0));
       g.add(mesh(new THREE.BoxGeometry(1.15, 0.2, 0.75), mat('#8a6a3a'), 0, 0.7, 0));
