@@ -107,3 +107,21 @@ describe('save data', () => {
     expect(s2.armour).toBe(s1.armour);
   });
 });
+
+describe('vendor stock', () => {
+  it('gear offers sell once, gems stay in stock', async () => {
+    const { Game } = await import('../src/game/game');
+    const { newAccount, DEFAULT_SETTINGS } = await import('../src/game/save');
+    const { addItem } = await import('../src/items/grid');
+    const { createCurrency } = await import('../src/items/generate');
+    const g = new Game(newCharacter('V', 'brute'), newAccount(), { ...DEFAULT_SETTINGS });
+    g.refreshVendor(true);
+    for (const c of ['alteration', 'identify', 'transmute'] as const) addItem(g.char.inventory, createCurrency(c, 30));
+    const gear = g.vendorOffers.find((o) => !o.item.gem && !o.item.flask && o.price.currency === 'alteration')!;
+    const gem = g.vendorOffers.find((o) => o.item.gem)!;
+    expect(g.buy(gear)).toBe(true);
+    expect(g.vendorOffers).not.toContain(gear);
+    expect(g.buy(gem)).toBe(true);
+    expect(g.vendorOffers).toContain(gem);
+  });
+});

@@ -1226,6 +1226,8 @@ export class Game implements SkillHost {
       return false;
     }
     spendCurrency(this.char.inventory, offer.price.currency, offer.price.amount);
+    // gems, flasks and scrolls are always in stock; rolled gear is one of a kind
+    if (!offer.item.gem && !offer.item.flask && !currencyId(offer.item)) this.vendorOffers = this.vendorOffers.filter((o) => o !== offer);
     this.events.emit('inventory', null);
     return true;
   }
