@@ -322,8 +322,10 @@ export class UI {
       wrap.append(el);
     }
     const cellAt = (e: MouseEvent) => {
+      // panels may be CSS-zoomed on small screens, so derive the on-screen cell size
       const r = wrap.getBoundingClientRect();
-      return { cx: Math.floor((e.clientX - r.left) / cell), cy: Math.floor((e.clientY - r.top) / cell) };
+      const px = r.width / grid.w;
+      return { cx: Math.floor((e.clientX - r.left) / px), cy: Math.floor((e.clientY - r.top) / px) };
     };
     wrap.addEventListener('mousemove', (e) => {
       if (!this.cursor) {

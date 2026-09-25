@@ -307,3 +307,11 @@ input[type="text"] { background: #0e0c0a; border: 1px solid var(--gold-dim); col
 .class-card .desc { font-size: 13px; color: var(--text-dim); }
 .row-buttons { display: flex; gap: 10px; justify-content: center; margin: 14px 0; }
 .toast { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); font-family: 'Cinzel', serif; color: #ffe070; font-size: 26px; text-shadow: 0 0 10px #000; pointer-events: none; transition: opacity 0.5s; }
+
+/* ------------------------------------------------------------------ small screens */
+@media (max-height: 860px) {
+  .panel { zoom: 0.84; max-height: calc((100vh - 140px) / 0.84); }
+}
+@media (max-height: 720px) {
+  .panel { zoom: 0.72; max-height: calc((100vh - 130px) / 0.72); }
+}

@@ -101,6 +101,8 @@ export class TooltipView {
   private wrap = h('div', { class: 'tt-wrap' });
   private current: { item: Item; compare?: Item[] } | null = null;
   private lastAlt = false;
+  private mx = 0;
+  private my = 0;
 
   constructor(parent: HTMLElement) {
     parent.append(this.wrap);
@@ -114,6 +116,7 @@ export class TooltipView {
     this.wrap.append(tooltipEl(buildTooltip(item, ctx), alt));
     for (const c of compare) this.wrap.append(tooltipEl(buildTooltip(c, ctx), alt, 'Currently Equipped'));
     this.wrap.style.display = 'flex';
+    this.position(this.mx, this.my);
   }
 
   showCustom(el: HTMLElement): void {
@@ -121,6 +124,7 @@ export class TooltipView {
     this.wrap.innerHTML = '';
     this.wrap.append(el);
     this.wrap.style.display = 'flex';
+    this.position(this.mx, this.my);
   }
 
   hide(): void {
@@ -141,6 +145,8 @@ export class TooltipView {
   }
 
   position(mx: number, my: number): void {
+    this.mx = mx;
+    this.my = my;
     if (!this.visible) return;
     const r = this.wrap.getBoundingClientRect();
     let x = mx + 22;

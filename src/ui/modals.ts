@@ -153,8 +153,15 @@ export class Modals {
       });
       return h('label', { style: 'display:block;margin:6px 0;cursor:pointer' }, cb, ` ${label}`);
     };
+    const vol = h('input', { type: 'range', min: '0', max: '1', step: '0.05', style: 'width:160px;vertical-align:middle' }) as HTMLInputElement;
+    vol.value = String(st.volume);
+    vol.addEventListener('input', () => {
+      st.volume = Number(vol.value);
+    });
+    vol.addEventListener('change', () => g.save());
     this.show('options', h('div', { style: 'min-width:340px' },
       h('h2', {}, 'Menu'),
+      h('label', { style: 'display:block;margin:6px 0' }, 'Sound volume ', vol),
       toggle('Show damage numbers', 'showDamageNumbers'),
       toggle('Always show item labels (Z toggles)', 'alwaysShowLabels'),
       toggle('Hide labels of plain white items', 'hideNormalItems'),

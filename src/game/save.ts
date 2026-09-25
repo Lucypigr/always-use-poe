@@ -10,7 +10,7 @@ export interface Settings {
   showDamageNumbers: boolean;
   alwaysShowLabels: boolean;
   hideNormalItems: boolean;
-  musicVolume: number;
+  volume: number;
 }
 
 export interface AccountData {
@@ -25,7 +25,7 @@ export interface SaveData {
   settings: Settings;
 }
 
-export const DEFAULT_SETTINGS: Settings = { showDamageNumbers: true, alwaysShowLabels: true, hideNormalItems: false, musicVolume: 0.5 };
+export const DEFAULT_SETTINGS: Settings = { showDamageNumbers: true, alwaysShowLabels: true, hideNormalItems: false, volume: 0.5 };
 
 export function newAccount(): AccountData {
   return {

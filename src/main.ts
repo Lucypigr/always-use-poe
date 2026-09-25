@@ -5,6 +5,9 @@ import { newCharacter, type CharacterData } from './game/character';
 import { Game } from './game/game';
 import { loadSave, writeSave, type SaveData } from './game/save';
 import { Renderer } from './render/renderer';
+import { CURRENCY_BY_ID } from './data/currency';
+import { currencyId } from './items/item';
+import { Audio } from './ui/audio';
 import { showCharSelect } from './ui/charSelect';
 import { clear } from './ui/dom';
 import { Input } from './ui/input';
@@ -19,9 +22,13 @@ class App {
   private ui: UI | null = null;
   private input: Input | null = null;
   private last = performance.now();
+  readonly audio = new Audio();
 
   constructor() {
     this.renderer = new Renderer(document.getElementById('game')!);
+    const unlock = () => this.audio.unlock();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
     window.addEventListener('beforeunload', () => this.persist());
     requestAnimationFrame((t) => this.frame(t));
     const params = new URLSearchParams(location.search);
@@ -50,6 +57,18 @@ class App {
     this.ui.hud.showLabels = this.save.settings.alwaysShowLabels;
     this.input = new Input(this.ui, game, this.renderer);
     game.events.on('save', () => this.persist());
+    this.audio.volume = this.save.settings.volume;
+    game.events.on('drop', ({ item }) => {
+      const cid = currencyId(item);
+      if (item.rarity === 'unique') this.audio.play('unique');
+      else if (cid && CURRENCY_BY_ID[cid].tier >= 2) this.audio.play('rare_drop');
+      else if (cid) this.audio.play('currency');
+      else this.audio.play('drop');
+    });
+    game.events.on('pickup', () => this.audio.play('pickup'));
+    game.events.on('levelup', () => this.audio.play('levelup'));
+    game.events.on('death', () => this.audio.play('death'));
+    game.events.on('area', () => this.audio.play('portal'));
     game.log(`Welcome to Duskhaven, ${char.name}. Press H for controls.`, '#d8c8a0');
     if (import.meta.env.DEV) Object.assign(window, { game, renderer: this.renderer, ui: this.ui });
     this.persist();
@@ -82,7 +101,15 @@ class App {
     if (g && this.ui && this.input) {
       this.input.update();
       g.update(dt);
-      for (const e of g.vfxQueue) if (e.type === 'text') this.ui.hud.addText(e);
+      this.audio.volume = g.settings.volume;
+      for (const e of g.vfxQueue) {
+        if (e.type === 'text') this.ui.hud.addText(e);
+        else if (e.type === 'impact') this.audio.play('hit');
+        else if (e.type === 'swing') this.audio.play('swing');
+        else if (e.type === 'explosion') this.audio.play('explode');
+        else if (e.type === 'nova' || e.type === 'lightning' || e.type === 'blink') this.audio.play('spell');
+        else if (e.type === 'flask') this.audio.play('flask');
+      }
       this.renderer.render(g, dt);
       g.vfxQueue.length = 0;
       this.ui.update(dt);

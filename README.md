@@ -1,1 +1,151 @@
-# always-use-poe
+# Hollowreach
+
+A 2.5D loot-driven action RPG built to play like **Path of Exile**: the same style of skill gem
+and linked-socket system, orb-based crafting currency, tiered prefix/suffix affixes, equipment
+slots, a big passive tree with keystones, resistance penalties, and an endgame of modifiable maps.
+
+It runs in the browser (TypeScript + Three.js) with no external art assets — every model, icon and
+sound is generated procedurally.
+
+![Combat](docs/screenshots/combat.jpg)
+
+| Inventory, sockets & advanced mod view (Alt) | Passive skill tree |
+| --- | --- |
+| ![Inventory](docs/screenshots/inventory.jpg) | ![Passive tree](docs/screenshots/passive-tree.jpg) |
+
+## Quick start
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm test           # unit + headless gameplay simulation tests
+npm run build      # typecheck + production build into dist/
+```
+
+Progress (characters, stash, settings) is saved to `localStorage` automatically.
+
+## Controls
+
+| Input | Action |
+| --- | --- |
+| Left click | Move · attack the monster under the cursor · pick up items · use objects |
+| Shift + Left click | Attack in place |
+| Right click, Q W E R T, Middle click | Skill slots (hold to keep using). Click a skill-bar slot to change it |
+| 1–5 | Drink flasks |
+| I / C / P | Inventory / Character sheet / Passive tree |
+| Tab | Overlay map |
+| Alt (hold) | Advanced item descriptions (prefix/suffix, tier, roll range) |
+| Z | Toggle ground item labels |
+| Esc | Close panels / open menu |
+| H | Controls & guide |
+| Mouse wheel | Camera zoom |
+
+Inventory: click to pick items up and place them (PoE-style cursor), **Ctrl-click** to move items
+between inventory and stash/vendor, **right-click** gear to equip, **right-click currency** and then
+click an item to apply it (hold **Shift** to keep applying). Right-click a socketed gem to unsocket it.
+
+## Systems (and how they map to Path of Exile)
+
+### Items
+- **Rarities**: Normal, Magic (1 prefix + 1 suffix), Rare (up to 3 + 3), Unique (fixed mods).
+- **90 random affixes** (50 prefixes, 40 suffixes — including flask and map mods) plus 30 implicits and 12 corruption implicits, each with **tiers gated by item level** and per-tier
+  weights; one mod per mod group; spawn tags restrict mods to fitting bases (e.g. `+% increased
+  Armour` only on armour bases, flat added damage scaled up on two-handers).
+- **Required level** follows the highest mod (80% of its item level), like PoE.
+- **Local vs global mods**: weapon `% increased Physical Damage`, added damage, attack speed and crit
+  modify the weapon itself; armour mods modify the piece's Armour/Evasion/Energy Shield.
+- **Implicits** on bases (rings, amulets, belts, quivers, wands, daggers, staves…), **quality**,
+  **corruption** (with corrupted implicits and white sockets), **unidentified** drops.
+- **320+ bases**: 12 weapon classes, 6 defence types × 5 armour slots × 6 tiers, jewellery, quivers,
+  life/mana/hybrid/utility flasks (with flask prefixes/suffixes), and **maps**.
+- **20 uniques** with build-enabling mechanics (a 6-link white-socket robe, a keystone chest, +1
+  projectile bow, minion wand…).
+
+### Currency (original names, familiar behaviour)
+
+| In Hollowreach | Path of Exile equivalent | Effect |
+| --- | --- | --- |
+| Scroll of Insight | Scroll of Wisdom | Identify |
+| Portal Scroll | Portal Scroll | Portal to town, return to the same instance |
+| Orb of Awakening | Transmutation | Normal → Magic |
+| Orb of Accretion | Augmentation | Add a mod to a magic item |
+| Orb of Flux | Alteration | Reroll a magic item |
+| Sovereign Orb | Regal | Magic → Rare (+1 mod) |
+| Orb of Transfiguration | Alchemy | Normal → Rare |
+| Orb of Upheaval | Chaos | Reroll a rare item |
+| Ascendant Orb | Exalted | Add a mod to a rare item |
+| Orb of Purging | Scouring | Remove all mods |
+| Orb of Severance | Annulment | Remove a random mod |
+| Orb of Providence | Divine | Reroll mod values |
+| Orb of Grace | Blessed | Reroll implicit values |
+| Prismatic Orb | Chromatic | Reroll socket colours |
+| Setter's Orb | Jeweller's | Reroll socket count |
+| Orb of Binding | Fusing | Reroll socket links |
+| Abyssal Orb | Vaal | Corrupt (unpredictable outcomes) |
+| Gambler's Orb | Chance | Normal → random rarity, may become unique |
+| Tempering Stone / Plating Scrap / Glazier's Bead / Lapidary's Prism | Whetstone / Scrap / Bauble / GCP | Quality |
+| Orb of Unlearning | Regret | Passive refund point |
+
+### Gems, sockets and links
+- **23 active skills** (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+  novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
+  and **31 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
+  controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).
+- Supports only affect active gems in **linked sockets** and only if the skill has matching
+  **tags** (a projectile support won't support a melee strike). Supports add **mana multipliers**.
+- Socket **colours** follow the item's attribute requirements (red/green/blue), with rare white sockets.
+- Gems have level/attribute requirements, **gain experience**, and show a *level up* button when ready
+  (you choose when to level). Quality gives per-gem bonuses. `+level` mods boost socketed gems.
+- Auras **reserve mana** and are toggled from the skill bar.
+
+### Character & combat
+- 6 classes with different attributes and starting positions on a **~390-node passive tree**
+  (small nodes, notables, attribute rings and **9 keystones**: Hollow Vessel (≈CI), Blood Pact (≈Blood Magic),
+  Arcane Ward (≈MoM), Ironclad (≈Iron Reflexes), Unerring Discipline (≈Resolute Technique), Phantom Step,
+  Elemental Overload, Close Quarters, Wrath of Ages). Allocation walks the shortest path; refunds keep the tree connected.
+- **PoE modifier math**: `(base + flat) × (1 + Σincreased) × Π(more)`, damage **conversion** and
+  **"gained as extra"**, per-tag scaling (spell/attack/melee/projectile/area/elemental…).
+- Defences: **armour** (`A / (A + 5·D)`), **evasion** vs accuracy (PoE hit-chance formula), **block**,
+  **resistances with caps and act penalties** (−20/−40/−60%), **energy shield** with recharge delay,
+  life/mana **leech**, regen, penetration.
+- **Ailments**: ignite, chill, freeze, shock, bleed and stacking poison; bosses resist ailment duration.
+- **Flasks** with charges gained from kills and refilled in town.
+
+### World
+- Town hub (**Duskhaven**) with stash (4 tabs), vendor, waypoint and map device.
+- **10 story areas across 4 acts**, procedurally generated (outdoor paths, cellular caves, room
+  dungeons), with 17 monster types and **10 unique bosses** with telegraphed attacks.
+  First kills grant a passive point and unlock the next area.
+- Monster packs with **magic and rare monsters** (rare names and modifiers such as Hasted, Vampiric,
+  Flame-touched), group aggro and a flow-field AI.
+- **Maps**: drop from level 36+, can be crafted with currency; prefixes buff monsters, suffixes
+  debuff you, and together they raise item quantity/rarity and pack size.
+- Loot: rarity/quantity scaling, loot beams, coloured labels with overlap avoidance, value-based drop sounds.
+- **Vendor recipes**: full rare set → Orb of Upheaval (×2 unidentified), R-G-B links → Prismatic Orb,
+  6 sockets → Setter's Orbs, 6-link → Orb of Providence, quality gems/flasks → quality currency.
+
+## Project layout
+
+```
+src/
+  core/      RNG, vector math, event bus
+  stats/     stat keys + modifier engine, character stat derivation
+  data/      bases, affixes, uniques, currency, gems, classes, passive tree, monsters, areas, scaling curves
+  items/     item model, generation, crafting (currency), grids, tooltips, rare names
+  skills/    gem utilities, skill resolution (active + supports), damage calc, skill behaviours
+  game/      actors, combat, monsters & AI, map generation, pathfinding, loot, vendor, equip rules, save, Game loop
+  render/    Three.js scene, procedural models, particles & VFX
+  ui/        HUD, panels, passive tree, tooltips, icons, input, audio, character select
+tests/       vitest suites (items, stats/combat, rules, headless gameplay simulation)
+```
+
+Content is data-driven: add bases in `src/data/bases.ts`, affixes in `src/data/affixes.ts`,
+uniques in `src/data/uniques.ts`, gems in `src/data/gems.ts`, monsters in `src/data/monsters.ts`
+and areas in `src/data/areas.ts`. Balance curves live in `src/data/scaling.ts`.
+
+## Notes
+
+- Names of currencies, classes, uniques and keystones are original so the project doesn't ship
+  another game's trademarks; the mechanics intentionally mirror Path of Exile.
+- Not (yet) implemented: ascendancy classes, jewels, trading, vaal skills and essences. Dual-wielded
+  off-hand weapons contribute their stats but attacks use the main hand.

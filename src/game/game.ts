@@ -36,6 +36,8 @@ export interface GameEvents extends Record<string, unknown> {
   panel: { panel: 'stash' | 'vendor' | 'waypoint' | 'map_device' };
   death: null;
   save: null;
+  drop: { item: Item };
+  pickup: { item: Item };
 }
 
 export interface InputState {
@@ -88,6 +90,8 @@ export class Game implements SkillHost {
   private vendorLevel = -1;
   private flowTimer = 0;
   private saveTimer = 0;
+  /** Held slot on the previous frame (auras toggle on the press edge only). */
+  private prevHeld: number | null = null;
   private recalcPending = false;
   deathTimer = 0;
   /** Session statistics. */
@@ -191,6 +195,15 @@ export class Game implements SkillHost {
     }
     this.lastMinions = null;
     if (inst.town) {
+      // like PoE, flasks refill in town; we also restore pools for convenience
+      for (const slot of ['flask1', 'flask2', 'flask3', 'flask4', 'flask5'] as EquipSlot[]) {
+        const f = this.char.equipment[slot];
+        const fp = f ? flaskProps(f) : undefined;
+        if (f?.flask && fp) f.flask.charges = fp.maxCharges;
+      }
+      p.life = p.maxLifeUsable;
+      p.mana = p.unreservedMana;
+      p.ailments = { ignite: null, bleed: null, poison: [], chill: null, freeze: null, shock: null };
       this.town.interactables = this.town.interactables.filter((i) => i.kind !== 'area_portal');
       if (this.portalInstance) this.town.addInteractable('area_portal', this.town.portalPos!, `Portal: ${this.portalInstance.name}`, 1);
     }
@@ -362,10 +375,12 @@ export class Game implements SkillHost {
     p.moving = false;
 
     // Skills
+    const pressed = inp.heldSlot !== this.prevHeld;
+    this.prevHeld = inp.heldSlot;
     if (inp.heldSlot !== null) {
       const uid = this.char.skillBar[inp.heldSlot] ?? (inp.heldSlot === 0 ? 'default_attack' : null);
       if (uid) {
-        const handled = this.tryUseSkill(uid, inp.cursor, inp.hoverMonster ?? undefined, dt);
+        const handled = this.tryUseSkill(uid, inp.cursor, inp.hoverMonster ?? undefined, dt, pressed);
         if (handled) return;
       }
     }
@@ -430,7 +445,7 @@ export class Game implements SkillHost {
   }
 
   /** Returns true if the skill input was consumed this frame (used or approaching target). */
-  private tryUseSkill(uid: string, cursor: Vec2, hover: Monster | undefined, dt: number): boolean {
+  private tryUseSkill(uid: string, cursor: Vec2, hover: Monster | undefined, dt: number, pressed: boolean): boolean {
     const p = this.player;
     const sk = p.skills.get(uid);
     const st = p.skillStats.get(uid);
@@ -448,10 +463,7 @@ export class Game implements SkillHost {
       return false;
     }
     if (a.behaviour === 'aura') {
-      if (p.manaWarn <= 0) {
-        this.toggleAura(uid);
-        p.manaWarn = 0.5;
-      }
+      if (pressed) this.toggleAura(uid);
       return true;
     }
     const target = hover && !hover.dead && hover.team === 'enemy' ? hover : undefined;
@@ -1031,6 +1043,7 @@ export class Game implements SkillHost {
     const r = this.rng.float(0.3, 1.6);
     const pos = this.map.nearestFloor({ x: at.x + Math.cos(a) * r, y: at.y + Math.sin(a) * r });
     this.area.groundItems.push({ id: newEntityId(), item: it, pos, age: 0 });
+    this.events.emit('drop', { item: it });
   }
 
   addXp(amount: number): void {
@@ -1064,6 +1077,7 @@ export class Game implements SkillHost {
       return false;
     }
     area.groundItems = area.groundItems.filter((g) => g !== gi);
+    this.events.emit('pickup', { item: gi.item });
     this.events.emit('inventory', null);
     return true;
   }
