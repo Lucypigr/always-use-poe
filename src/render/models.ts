@@ -549,6 +549,19 @@ export function interactableModel(kind: string, look?: HumanoidOpts): THREE.Grou
       g.add(rig.root);
       break;
     }
+    case 'bench': {
+      // crafting bench: heavy table with an anvil and a glowing rune
+      const wood = mat('#5a3e24');
+      g.add(mesh(new THREE.BoxGeometry(1.6, 0.14, 0.9), wood, 0, 0.8, 0));
+      for (const [x, z] of [[-0.7, -0.35], [0.7, -0.35], [-0.7, 0.35], [0.7, 0.35]]) g.add(mesh(new THREE.BoxGeometry(0.12, 0.8, 0.12), wood, x, 0.4, z));
+      g.add(mesh(new THREE.BoxGeometry(0.5, 0.22, 0.28), mat('#4a4a52', { metalness: 0.7, roughness: 0.4 }), -0.3, 0.98, 0));
+      g.add(mesh(new THREE.BoxGeometry(0.3, 0.08, 0.2), mat('#b8a070', { metalness: 0.6 }), 0.35, 0.91, 0.1));
+      const rune = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: '#b4b4ff' }));
+      rune.position.set(0.4, 1.25, -0.15);
+      rune.name = 'spin';
+      g.add(rune);
+      break;
+    }
     case 'quest': {
       // a glowing reliquary on a small stone plinth
       g.add(mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.3, 8), mat('#4a4438'), 0, 0.15, 0));

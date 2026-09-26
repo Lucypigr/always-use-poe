@@ -147,7 +147,7 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
   **corruption** (with corrupted implicits and white sockets), **unidentified** drops.
 - **320+ bases**: 12 weapon classes, 6 defence types × 5 armour slots × 6 tiers, jewellery, quivers,
   life/mana/hybrid/utility flasks (with flask prefixes/suffixes), and **maps**.
-- **37 uniques** with build-enabling mechanics (Kaom's Heart, Headhunter, Starforge, Quill Rain, Rise of the Phoenix…) (a 6-link white-socket robe, a keystone chest, +1
+- **49 uniques** with build-enabling mechanics (Kaom's Heart, Headhunter, Starforge, Quill Rain, Rise of the Phoenix…) (a 6-link white-socket robe, a keystone chest, +1
   projectile bow, minion wand…).
 
 ### Currency (original names, familiar behaviour)
@@ -176,9 +176,9 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 | Orb of Unlearning | Regret | Passive refund point |
 
 ### Gems, sockets and links
-- **40 active skills** (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+- **52 active skills** (incl. 17 auras & heralds) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
   novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
-  and **44 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
+  and **45 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
   controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).
 - Supports only affect active gems in **linked sockets** and only if the skill has matching
   **tags** (a projectile support won't support a melee strike). Supports add **mana multipliers**.
@@ -186,6 +186,18 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 - Gems have level/attribute requirements, **gain experience**, and show a *level up* button when ready
   (you choose when to level). Quality gives per-gem bonuses. `+level` mods boost socketed gems.
 - Auras **reserve mana** and are toggled from the skill bar.
+
+### Auras, heralds and the crafting bench
+- **Auras** (toggle from the skill bar, reserve mana): 壁壘 (Determination), 灰燼之怒 (Anger), 寒冬之握
+  (Hatred), 雷霆之怒 (Wrath), 迅捷光環 (Haste), 優雅 (Grace), 紀律 (Discipline), 元素淨化 (Purity of
+  Elements), 活力 (Vitality), 精準 (Precision), 清明光環 (Clarity), 狂熱 (Zealotry), 驕傲 (Pride), 惡意 (Malevolence).
+- **Heralds** (25% reservation): 冰霜先驅 — chilled / frozen enemies shatter and explode; 灰燼先驅 — kills
+  ignite nearby enemies; 雷霆先驅 — bolts strike nearby enemies every second.
+- 啟蒙（輔） (Enlighten) and uniques with *reduced reservation* / *increased aura effect* (譏諷之面 Leer Cast,
+  奧爾的起義 Aul's Uprising, 稜鏡守護者 Prism Guardian, 頭狼嚎叫 Alpha's Howl) let you run more auras.
+- **Crafting bench** (工藝台 in town, `src/data/bench.ts`, `src/items/bench.ts`): pay currency to add one
+  chosen mod (best tier allowed by item level, one crafted mod per item, removable), recolour all sockets,
+  link all sockets or set the socket count. Crafted mods show in light blue.
 
 ### Character & combat
 - 6 classes with different attributes and starting positions on a **~390-node passive tree**
@@ -201,7 +213,7 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 - **Flasks** with charges gained from kills and refilled in town.
 
 ### World
-- Town hub (**Duskhaven**) with stash (4 tabs), vendor, waypoint and map device.
+- Town hub (**Duskhaven**) with stash (4 tabs), vendor, crafting bench, waypoint and map device.
 - **10 story areas across 4 acts**, procedurally generated (outdoor paths, cellular caves, room
   dungeons), with 17 monster types and **10 unique bosses** with telegraphed attacks.
   First kills grant a passive point and unlock the next area.

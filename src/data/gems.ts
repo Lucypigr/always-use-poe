@@ -548,6 +548,149 @@ export const GEMS: GemDef[] = [
     quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
   },
 
+  // ============================================================================ AURAS & HERALDS
+  {
+    id: 'wrath', name: '雷霆之怒', color: 'B', reqLevel: 24,
+    tags: ['aura', 'area', 'lightning'],
+    description: '施放光環，使你的攻擊與法術附加閃電傷害。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 50, params: {}, auraAffectsAllies: true,
+      levelStats: (l) => {
+        const hi = L(12, 150)(l);
+        return [flat('attack_lightning_min', 1), flat('attack_lightning_max', hi), flat('spell_lightning_min', 1), flat('spell_lightning_max', r(hi * 0.7))];
+      },
+      levelText: (l) => [`附加 1 - ${L(12, 150)(l)} 閃電傷害（攻擊）`, `附加 1 - ${r(L(12, 150)(l) * 0.7)} 閃電傷害（法術）`],
+    },
+    quality: [inc('lightning_damage', 0.5)], qualityText: '增加 {0}% 閃電傷害',
+  },
+  {
+    id: 'grace', name: '優雅', color: 'G', reqLevel: 24,
+    tags: ['aura', 'area'],
+    description: '施放光環，大幅提升你的閃避值。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 50, params: {},
+      levelStats: (l) => [flat('evasion', L(150, 1500)(l)), more('evasion', L(15, 30)(l))],
+      levelText: (l) => [`+${L(150, 1500)(l)} 閃避值`, `總增 ${L(15, 30)(l)}% 閃避值`],
+    },
+    quality: [inc('evasion', 1)], qualityText: '增加 {0}% 閃避值',
+  },
+  {
+    id: 'discipline', name: '紀律', color: 'B', reqLevel: 24,
+    tags: ['aura', 'area'],
+    description: '施放光環，給予額外能量護盾並加快其充能。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 35, params: {},
+      levelStats: (l) => [flat('energy_shield', L(30, 250)(l)), inc('es_recharge', L(10, 30)(l))],
+      levelText: (l) => [`+${L(30, 250)(l)} 最大能量護盾`, `增加 ${L(10, 30)(l)}% 能量護盾充能速度`],
+    },
+    quality: [inc('energy_shield', 0.5)], qualityText: '增加 {0}% 最大能量護盾',
+  },
+  {
+    id: 'purity', name: '元素淨化', color: 'B', reqLevel: 24,
+    tags: ['aura', 'area'],
+    description: '施放光環，提高你的全部元素抗性。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 35, params: {},
+      levelStats: (l) => [flat('all_ele_res', L(15, 32)(l)), ...(l >= 20 ? [flat('max_all_ele_res', 1)] : [])],
+      levelText: (l) => [`+${L(15, 32)(l)}% 全部元素抗性`, ...(l >= 20 ? ['+1% 全部元素抗性上限'] : [])],
+    },
+    quality: [flat('all_ele_res', 0.1)], qualityText: '+{0}% 全部元素抗性',
+  },
+  {
+    id: 'vitality', name: '活力', color: 'R', reqLevel: 16,
+    tags: ['aura', 'area'],
+    description: '施放光環，持續回復你的生命。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 35, params: {},
+      levelStats: (l) => [flat('life_regen_pct', lvl(0.7, 2, l))],
+      levelText: (l) => [`每秒回復 ${lvl(0.7, 2, l).toFixed(1)}% 生命`],
+    },
+    quality: [inc('life', 0.25)], qualityText: '增加 {0}% 最大生命',
+  },
+  {
+    id: 'precision', name: '精準', color: 'G', reqLevel: 1,
+    tags: ['aura', 'area'],
+    description: '施放光環，提高命中值與暴擊率。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 15, params: {},
+      levelStats: (l) => [flat('accuracy', L(60, 600)(l)), inc('crit_chance', L(15, 45)(l))],
+      levelText: (l) => [`+${L(60, 600)(l)} 命中值`, `增加 ${L(15, 45)(l)}% 暴擊率`],
+    },
+    quality: [inc('accuracy', 1)], qualityText: '增加 {0}% 命中值',
+  },
+  {
+    id: 'zealotry', name: '狂熱', color: 'B', reqLevel: 36,
+    tags: ['aura', 'area'],
+    description: '施放光環，強化你的法術傷害與法術暴擊。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 50, params: {},
+      levelStats: (l) => [more('spell_damage', L(10, 20)(l)), inc('spell_crit_chance', L(40, 90)(l))],
+      levelText: (l) => [`法術傷害總增 ${L(10, 20)(l)}%`, `增加 ${L(40, 90)(l)}% 法術暴擊率`],
+    },
+    quality: [inc('spell_damage', 0.5)], qualityText: '增加 {0}% 法術傷害',
+  },
+  {
+    id: 'pride', name: '驕傲', color: 'R', reqLevel: 36,
+    tags: ['aura', 'area', 'physical'],
+    description: '施放光環，使你造成更多物理傷害。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 50, params: {},
+      levelStats: (l) => [more('phys_damage', L(12, 25)(l))],
+      levelText: (l) => [`物理傷害總增 ${L(12, 25)(l)}%`],
+    },
+    quality: [inc('phys_damage', 0.5)], qualityText: '增加 {0}% 物理傷害',
+  },
+  {
+    id: 'malevolence', name: '惡意', color: 'B', reqLevel: 36,
+    tags: ['aura', 'area', 'duration'],
+    description: '施放光環，強化你的持續傷害與技能持續時間。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 50, params: {},
+      levelStats: (l) => [more('dot_damage', L(12, 22)(l)), inc('skill_duration', L(8, 15)(l))],
+      levelText: (l) => [`持續傷害總增 ${L(12, 22)(l)}%`, `增加 ${L(8, 15)(l)}% 技能效果持續時間`],
+    },
+    quality: [inc('dot_damage', 0.5)], qualityText: '增加 {0}% 持續傷害',
+  },
+  {
+    id: 'herald_ice', name: '冰霜先驅', color: 'G', reqLevel: 16,
+    tags: ['aura', 'spell', 'area', 'cold'],
+    description: '附加冰冷傷害。被冰緩或冰凍的敵人死亡時會碎裂爆炸，對周圍敵人造成冰冷傷害。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 25, params: { herald: 1, radius: 2.4 },
+      baseDamage: { cold: [0.8, 1.2] }, damageScale: 0.9, effectiveness: 0.5, crit: 5,
+      levelStats: (l) => {
+        const lo = L(3, 38)(l), hi = L(5, 58)(l);
+        return [flag('herald_ice'), flat('attack_cold_min', lo), flat('attack_cold_max', hi), flat('spell_cold_min', r(lo * 0.7)), flat('spell_cold_max', r(hi * 0.7))];
+      },
+      levelText: (l) => [`附加 ${L(3, 38)(l)} - ${L(5, 58)(l)} 冰冷傷害（攻擊）`, '被冰緩／冰凍的敵人死亡時碎裂爆炸'],
+    },
+    quality: [inc('cold_damage', 0.75)], qualityText: '增加 {0}% 冰冷傷害',
+  },
+  {
+    id: 'herald_ash', name: '灰燼先驅', color: 'R', reqLevel: 16,
+    tags: ['aura', 'spell', 'area', 'fire'],
+    description: '獲得額外火焰傷害。擊殺敵人時，灰燼會點燃其周圍的敵人。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 25, params: { herald: 2, radius: 2.4 },
+      baseDamage: { fire: [0.8, 1.2] }, damageScale: 0.6, effectiveness: 0.5, crit: 5,
+      levelStats: (l) => [flag('herald_ash'), flat('phys_as_extra_fire', L(8, 15)(l))],
+      levelText: (l) => [`獲得 ${L(8, 15)(l)}% 物理傷害的額外火焰傷害`, '擊殺敵人時點燃其周圍的敵人'],
+    },
+    quality: [inc('burning_damage', 0.75)], qualityText: '增加 {0}% 燃燒傷害',
+  },
+  {
+    id: 'herald_thunder', name: '雷霆先驅', color: 'B', reqLevel: 16,
+    tags: ['aura', 'spell', 'area', 'lightning'],
+    description: '附加閃電傷害。戰鬥中雷霆會不斷落在你附近的敵人身上。',
+    active: {
+      behaviour: 'aura', manaCost: [0, 0], reservation: 25, params: { herald: 3, radius: 8 },
+      baseDamage: { lightning: [0.1, 1.9] }, damageScale: 0.8, effectiveness: 0.5, crit: 5,
+      levelStats: (l) => [flag('herald_thunder'), flat('attack_lightning_min', 1), flat('attack_lightning_max', L(8, 90)(l)), flat('spell_lightning_min', 1), flat('spell_lightning_max', L(6, 63)(l))],
+      levelText: (l) => [`附加 1 - ${L(8, 90)(l)} 閃電傷害（攻擊）`, '每秒一道雷霆打擊附近的敵人'],
+    },
+    quality: [inc('lightning_damage', 0.75)], qualityText: '增加 {0}% 閃電傷害',
+  },
+
   // ============================================================================ SUPPORTS — red
   {
     id: 'brutal_force', name: '蠻力（輔）', color: 'R', reqLevel: 8, tags: ['attack', 'melee', 'physical'],
@@ -1005,6 +1148,16 @@ export const GEMS: GemDef[] = [
       text: (l) => [`穿透 ${pct(L(18, 37)(l))} 閃電抗性`],
     },
     quality: [inc('lightning_damage', 0.5)], qualityText: '增加 {0}% 閃電傷害',
+  },
+  {
+    id: 'enlighten', name: '啟蒙（輔）', color: 'B', reqLevel: 8, tags: ['aura'],
+    description: '被輔助的光環保留更少魔力。',
+    support: {
+      anyOf: ['aura'], manaMult: 1,
+      stats: (l) => [more('reservation', -L(10, 40)(l))],
+      text: (l) => [`總減 ${L(10, 40)(l)}% 魔力保留`],
+    },
+    quality: [inc('reservation', -0.25)], qualityText: '魔力保留減少 {0}%',
   },
 ];
 

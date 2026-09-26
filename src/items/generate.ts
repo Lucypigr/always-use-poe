@@ -104,7 +104,7 @@ function colorWeights(base: ItemBase): Record<'R' | 'G' | 'B', number> {
   return { R: w('str'), G: w('dex'), B: w('int') };
 }
 
-function rollColor(base: ItemBase, r: RNG): SocketColor {
+export function rollColor(base: ItemBase, r: RNG): SocketColor {
   const w = colorWeights(base);
   return r.weighted(['R', 'G', 'B'] as const, (c) => w[c]) ?? 'R';
 }
@@ -160,7 +160,7 @@ export function itemTags(it: Item): Set<string> {
   return new Set(getBase(it.baseId).tags);
 }
 
-function valueScale(def: ModDef, tags: Set<string>): number {
+export function valueScale(def: ModDef, tags: Set<string>): number {
   if (!def.scale) return 1;
   for (const [tag, m] of Object.entries(def.scale)) if (tags.has(tag)) return m;
   return 1;

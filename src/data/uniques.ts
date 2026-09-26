@@ -34,6 +34,11 @@ registerMods([
   defineMod({ id: 'u_bleed_chance', type: 'unique', text: '攻擊有 {0}% 機率造成流血', stats: [modStat('bleed_chance')], spawn: [], tiers: [tier(1, 0, 0)] }),
   defineMod({ id: 'u_poison_chance', type: 'unique', text: '擊中有 {0}% 機率使敵人中毒', stats: [modStat('poison_chance')], spawn: [], tiers: [tier(1, 0, 0)] }),
   defineMod({ id: 'u_headhunter', type: 'unique', text: ['獵首者', '擊殺稀有怪物時，獲得其詞綴 20 秒'], stats: [modFlag('headhunter')], spawn: [], tiers: [{ ilvl: 1, values: [] }] }),
+  defineMod({ id: 'u_reservation', type: 'unique', text: '魔力保留減少 {0}%', stats: [modStat('reservation', 'inc', 0, -1)], spawn: [], tiers: [tier(1, 0, 0)] }),
+  defineMod({ id: 'u_aura_effect', type: 'unique', text: '增加 {0}% 你的光環技能效果', stats: [modStat('aura_effect', 'inc')], spawn: [], tiers: [tier(1, 0, 0)] }),
+  defineMod({ id: 'u_area_damage', type: 'unique', text: '增加 {0}% 範圍傷害', stats: [modStat('area_damage', 'inc')], spawn: [], tiers: [tier(1, 0, 0)] }),
+  defineMod({ id: 'u_damage', type: 'unique', text: '增加 {0}% 傷害', stats: [modStat('damage', 'inc')], spawn: [], tiers: [tier(1, 0, 0)] }),
+  defineMod({ id: 'u_explode_shocked', type: 'unique', text: ['感電的敵人死亡時會爆炸', '對周圍敵人造成其最大生命 8% 的閃電傷害'], stats: [modFlag('explode_on_kill')], spawn: [], tiers: [{ ilvl: 1, values: [] }] }),
   defineMod({ id: 'u_close_quarters', type: 'unique', text: ['近身作戰', '投射物對附近目標最多總增 40% 傷害，對遠處目標傷害較低'], stats: [modFlag('ks_close_quarters')], spawn: [], tiers: [{ ilvl: 1, values: [] }] }),
 ]);
 
@@ -235,6 +240,67 @@ export const UNIQUES: UniqueDef[] = [
     id: 'seven_league', name: '七里靴', base: 'boots_str_1',
     mods: [{ mod: 'u_move_speed', values: [[50, 50]] }],
     flavour: '「然後，他一步就到了天涯海角。」',
+  },
+  // ------------------------------------------------------------------ aura, herald & crafting uniques
+  {
+    id: 'aul_uprising', name: '奧爾的起義', base: 'amulet_jade', level: 30, dropWeight: 40,
+    mods: [{ mod: 'all_attributes', values: [[10, 20]] }, { mod: 'life', values: [[50, 70]] }, { mod: 'u_reservation', values: [[20, 25]] }, { mod: 'u_aura_effect', values: [[8, 12]] }],
+    flavour: '水晶之王的力量，如今流淌在反叛者的血脈中。',
+  },
+  {
+    id: 'prism_guardian', name: '稜鏡守護者', base: 'shield_str_int_1',
+    mods: [{ mod: 'u_reservation', values: [[15, 20]] }, { mod: 'all_res', values: [[10, 15]] }, { mod: 'life', values: [[40, 60]] }, { mod: 'local_aes_inc', values: [[60, 80]] }],
+    flavour: '光被折射成無數色彩，每一道都是一面盾牌。',
+  },
+  {
+    id: 'leer_cast', name: '譏諷之面', base: 'helmet_dex_int_2',
+    mods: [{ mod: 'u_aura_effect', values: [[18, 24]] }, { mod: 'int', values: [[20, 30]] }, { mod: 'life', values: [[40, 60]] }, { mod: 'local_ees_inc', values: [[80, 110]] }],
+    flavour: '它的笑容會感染身邊的每一個人。',
+  },
+  {
+    id: 'alphas_howl', name: '頭狼嚎叫', base: 'helmet_dex_2',
+    mods: [{ mod: 'u_reservation', values: [[8, 10]] }, { mod: 'local_evasion_inc', values: [[80, 100]] }, { mod: 'cold_res', values: [[20, 30]] }, { mod: 'life', values: [[30, 50]] }],
+    flavour: '狼群聽從牠的號令，寒冬也是。',
+  },
+  {
+    id: 'carcass_jack', name: '腐屍之甲', base: 'body_armour_str_dex_2',
+    mods: [{ mod: 'u_aoe', values: [[10, 15]] }, { mod: 'u_area_damage', values: [[40, 50]] }, { mod: 'life', values: [[50, 70]] }, { mod: 'all_res', values: [[10, 15]] }],
+    flavour: '穿上它的人，不會再在乎氣味。',
+  },
+  {
+    id: 'inpulsa', name: '英帕爾薩的破碎之心', base: 'body_armour_dex_int_3', dropWeight: 40,
+    mods: [{ mod: 'life', values: [[60, 80]] }, { mod: 'u_damage', values: [[25, 35]] }, { mod: 'local_ees_inc', values: [[120, 160]] }, { mod: 'u_explode_shocked', values: [] }],
+    flavour: '心碎的聲音，就像雷鳴。',
+  },
+  {
+    id: 'taming', name: '馴服之戒', base: 'ring_gold',
+    mods: [{ mod: 'elemental_damage', values: [[20, 30]] }, { mod: 'all_res', values: [[10, 15]] }, { mod: 'ignite_chance', values: [[10, 10]] }, { mod: 'freeze_chance', values: [[10, 10]] }, { mod: 'shock_chance', values: [[10, 10]] }],
+    flavour: '野性從未被消滅，只是學會了聽話。',
+  },
+  {
+    id: 'astramentis', name: '星辰之心', base: 'amulet_onyx', dropWeight: 50,
+    mods: [{ mod: 'all_attributes', values: [[80, 100]] }],
+    flavour: '把整片星空戴在胸前，你便無所不能。',
+  },
+  {
+    id: 'wanderlust', name: '流浪者之靴', base: 'boots_dex_0',
+    mods: [{ mod: 'dex', values: [[5, 10]] }, { mod: 'u_move_speed', values: [[20, 20]] }, { mod: 'mana_regen', values: [[20, 40]] }],
+    flavour: '路的盡頭？那只是另一條路的起點。',
+  },
+  {
+    id: 'lifesprig', name: '生命之芽', base: 'wand_0',
+    mods: [{ mod: 'spell_gem_level', values: [[1, 1]] }, { mod: 'spell_damage', values: [[20, 30]] }, { mod: 'mana', values: [[20, 30]] }],
+    flavour: '在最貧瘠的土地上，也會有新芽冒出。',
+  },
+  {
+    id: 'dream_fragments', name: '夢境碎片', base: 'ring_sapphire',
+    mods: [{ mod: 'mana', values: [[30, 40]] }, { mod: 'cold_res', values: [[30, 40]] }, { mod: 'mana_regen', values: [[20, 30]] }, { mod: 'u_reservation', values: [[4, 6]] }],
+    flavour: '醒來時，夢的碎片仍在指尖閃爍。',
+  },
+  {
+    id: 'thunderfist', name: '雷拳', base: 'gloves_str_1',
+    mods: [{ mod: 'attack_lightning_added', values: [[1, 3], [30, 45]] }, { mod: 'attack_speed', values: [[8, 12]] }, { mod: 'life', values: [[30, 50]] }, { mod: 'lightning_res', values: [[20, 30]] }],
+    flavour: '一拳下去，天空也跟著轟鳴。',
   },
 ];
 

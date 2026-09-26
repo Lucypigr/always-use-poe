@@ -68,7 +68,7 @@ export interface GroundItem {
   age: number;
 }
 
-export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit' | 'npc' | 'quest';
+export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit' | 'npc' | 'quest' | 'bench';
 
 export interface Interactable {
   id: number;

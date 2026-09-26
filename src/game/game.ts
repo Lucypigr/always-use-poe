@@ -8,6 +8,7 @@ import { canRefund, passiveStats, pathToNode, PASSIVE_TREE } from '../data/passi
 import { MAX_LEVEL, monsterDamage, monsterLife, resistPenalty, xpMultiplier, xpToNext } from '../data/scaling';
 import { applyCurrency, type CraftResult } from '../items/craft';
 import { addItem, countCurrency, removeItem, spendCurrency } from '../items/grid';
+import { applyBench, benchOptions } from '../items/bench';
 import { currencyId, displayName, flaskProps } from '../items/item';
 import type { EquipSlot, Item } from '../items/types';
 import { executeBehaviour, type SkillContext, type SkillHost } from '../skills/behaviours';
@@ -37,7 +38,7 @@ export interface GameEvents extends Record<string, unknown> {
   area: { name: string; level: number; town: boolean };
   inventory: null;
   stats: null;
-  panel: { panel: 'stash' | 'vendor' | 'waypoint' | 'map_device' };
+  panel: { panel: 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'bench' };
   death: null;
   save: null;
   drop: { item: Item };
@@ -148,6 +149,8 @@ export class Game implements SkillHost {
     const first = computeCharacterStats(this.char, temp, penalty);
     const skills1 = resolveSkills(this.char, first);
     const auraMods: StatMod[] = [];
+    // "increased effect of auras" scales every aura's buff values
+    const auraEffect = Math.max(0, 1 + first.sheet.inc('aura_effect') / 100);
     let reservedPct = 0;
     const activeAuras: string[] = [];
     for (const uid of this.char.activeAuras) {
@@ -157,7 +160,7 @@ export class Game implements SkillHost {
       if (reservedPct + st.reservation > 100) continue;
       reservedPct += st.reservation;
       activeAuras.push(uid);
-      auraMods.push(...(sk.gem.active.levelStats?.(sk.level) ?? []));
+      auraMods.push(...(sk.gem.active.levelStats?.(sk.level) ?? []).map((m) => (m.kind === 'flag' ? m : { ...m, value: m.value * auraEffect })));
     }
     this.char.activeAuras = activeAuras;
     const stats = computeCharacterStats(this.char, [...temp, ...auraMods], penalty);
@@ -322,6 +325,9 @@ export class Game implements SkillHost {
       case 'quest':
         this.collectQuestObject(obj);
         break;
+      case 'bench':
+        this.events.emit('panel', { panel: 'bench' });
+        break;
     }
   }
 
@@ -403,6 +409,31 @@ export class Game implements SkillHost {
 
   refreshNpcLabels(): void {
     for (const it of this.town.interactables) if (it.kind === 'npc' && it.npc) it.label = npcLabel(this.char, it.npc);
+  }
+
+  /**
+   * Crafting bench: pay the option's currency from the inventory and apply it.
+   * Returns false (with a log line) if the option is unavailable or unaffordable.
+   */
+  benchCraft(item: Item, optionId: string): boolean {
+    const opt = benchOptions(item).find((o) => o.id === optionId);
+    if (!opt) return false;
+    if (opt.reason) {
+      this.log(opt.reason, '#ff8080');
+      return false;
+    }
+    const inv = this.char.inventory;
+    for (const [c, n] of opt.cost) {
+      if (countCurrency(inv, c) < n) {
+        this.log(`需要 ${n} 個${CURRENCY_BY_ID[c].name}。`, '#ff8080');
+        return false;
+      }
+    }
+    for (const [c, n] of opt.cost) spendCurrency(inv, c, n);
+    applyBench(item, optionId, this.rng);
+    this.log(`工藝台：${opt.label}`, '#b4b4ff');
+    this.events.emit('inventory', null);
+    return true;
   }
 
   /** The player has heard the giver's introduction to a quest. */
@@ -504,6 +535,7 @@ export class Game implements SkillHost {
     this.updateProjectiles(dt);
     this.updateEffects(dt);
     this.updateRighteousFire(dt);
+    this.updateHeraldOfThunder(dt);
     // pools & damage over time
     const hadBuffs = this.player.buffs.length;
     this.player.tickPools(dt);
@@ -1245,6 +1277,73 @@ export class Game implements SkillHost {
     }
   }
 
+  /** Skill stats of an active herald aura (1 = ice, 2 = ash, 3 = thunder). */
+  private heraldStats(kind: number): { st: SkillStats; radius: number } | null {
+    const p = this.player;
+    for (const uid of this.char.activeAuras) {
+      const sk = p.skills.get(uid);
+      if (sk?.gem.active?.params.herald !== kind) continue;
+      const st = p.skillStats.get(uid);
+      if (st) return { st, radius: (sk.gem.active.params.radius ?? 2.4) * st.areaMult };
+    }
+    return null;
+  }
+
+  private thunderTimer = 0;
+
+  /** Herald of Thunder: a bolt strikes a nearby enemy every second while enemies are around. */
+  private updateHeraldOfThunder(dt: number): void {
+    const p = this.player;
+    if (p.dead || this.area.town || !p.cstats.sheet.has('herald_thunder')) return;
+    this.thunderTimer -= dt;
+    if (this.thunderTimer > 0) return;
+    const h = this.heraldStats(3);
+    if (!h) return;
+    const near = this.area.monsters.filter((m) => !m.dead && m.team === 'enemy' && dist(m.pos, p.pos) <= h.radius && this.map.los(p.pos, m.pos));
+    if (!near.length) return;
+    this.thunderTimer = 1;
+    const t = this.rng.pick(near);
+    this.vfx({ type: 'lightning', points: [{ x: t.pos.x + 0.6, y: t.pos.y - 3 }, { x: t.pos.x - 0.3, y: t.pos.y - 1.4 }, { ...t.pos }], color: '#d8e4ff' });
+    this.hit(t, h.st, p);
+  }
+
+  /** Herald of Ice / Ash and Inpulsa-style explosions when an enemy dies. */
+  private deathExplosions(m: Monster): void {
+    const p = this.player;
+    const sheet = p.cstats.sheet;
+    const chilled = !!(m.ailments.chill || m.ailments.freeze);
+    if (sheet.has('herald_ice') && chilled) {
+      const h = this.heraldStats(1);
+      if (h) {
+        this.vfx({ type: 'explosion', pos: { ...m.pos }, radius: h.radius, color: '#8fd8ff' });
+        for (const a of this.hostiles('player')) if (a !== m && dist(a.pos, m.pos) <= h.radius + a.radius) this.hit(a, h.st, p);
+      }
+    }
+    if (sheet.has('herald_ash')) {
+      const h = this.heraldStats(2);
+      if (h) {
+        const [lo, hi] = h.st.damage.fire;
+        const dps = ((lo + hi) / 2) * 0.5 * h.st.burnMult;
+        this.vfx({ type: 'burn', pos: { ...m.pos }, radius: h.radius, color: '#ff7a2a' });
+        for (const a of this.hostiles('player')) {
+          if (a === m || dist(a.pos, m.pos) > h.radius + a.radius) continue;
+          if (!a.ailments.ignite || a.ailments.ignite.dps < dps) a.ailments.ignite = { dps, time: 3 * a.ailmentDurationMult };
+        }
+      }
+    }
+    if (sheet.has('explode_on_kill') && m.ailments.shock) {
+      // Inpulsa's: shocked enemies explode for 8% of their life as lightning damage
+      const r = 2.4;
+      const dmg = m.stats.maxLife * 0.08;
+      this.vfx({ type: 'explosion', pos: { ...m.pos }, radius: r, color: '#ffe860' });
+      for (const a of this.hostiles('player')) {
+        if (a === m || a.dead || dist(a.pos, m.pos) > r + a.radius) continue;
+        a.takeDamage(dmg * (1 - Math.min(90, a.stats.res.lightning) / 100), false);
+        if (a.dead && a instanceof Monster) this.onKill(a, p);
+      }
+    }
+  }
+
   /** Headhunter: killing a rare monster grants you its modifiers for 20 seconds. */
   private headhunt(m: Monster): void {
     const mods: StatMod[] = [];
@@ -1276,6 +1375,7 @@ export class Game implements SkillHost {
     const p = this.player;
     const cs = p.cstats;
     if (m.rarity === 'rare' && cs.sheet.has('headhunter')) this.headhunt(m);
+    if (!area.town) this.deathExplosions(m);
     if (!p.dead) {
       if (cs.sheet.flat('life_on_kill')) p.heal(cs.sheet.flat('life_on_kill'));
       if (cs.sheet.flat('mana_on_kill')) p.restoreMana(cs.sheet.flat('mana_on_kill'));

@@ -32,6 +32,8 @@ export interface ModRoll {
   tier: number;
   /** Rolled values, one per value range of the tier. */
   values: number[];
+  /** Added at the crafting bench (at most one per item; can be removed there). */
+  crafted?: boolean;
 }
 
 export interface Socket {

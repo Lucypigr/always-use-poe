@@ -70,6 +70,7 @@ export function createTown(rng: RNG): AreaInstance {
   inst.addInteractable('waypoint', layout.waypoint, '傳送點', 1.2);
   inst.addInteractable('map_device', layout.mapDevice, '地圖裝置', 1.2);
   for (const n of NPCS) inst.addInteractable('npc', layout.map.nearestFloor(n.pos), n.name, 0.8).npc = n.id;
+  inst.addInteractable('bench', layout.map.nearestFloor({ x: 27.5, y: 16.5 }), '工藝台', 0.9);
   inst.portalPos = layout.portalSpot;
   return inst;
 }

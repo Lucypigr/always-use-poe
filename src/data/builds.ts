@@ -24,6 +24,22 @@ export interface BuildDef {
 
 export const BUILDS: BuildDef[] = [
   {
+    id: 'herald', name: '先驅・連鎖爆炸', poe: 'Herald of Ice / Ash Stacker', classes: ['tracker', 'blademaster', 'nightblade'],
+    skill: 'rime_blades', supports: ['added_cold', 'hypothermia', 'faster_attacks', 'cold_penetration', 'crit_strikes'],
+    extra: ['herald_ice', 'herald_ash', 'winters_grasp', 'enlighten'],
+    uniques: ['aul_uprising', 'prism_guardian', 'alphas_howl', 'taming'],
+    summary: '同時開啟冰霜與灰燼先驅：冰緩的敵人死亡時碎裂爆炸，灰燼點燃周圍，一隻怪倒下就會引爆整群。',
+    tips: ['先驅每個保留 25% 魔力，搭配啟蒙（輔）與減少魔力保留的傳奇裝備可以多開幾個光環。', '冰霜先驅只會讓被冰緩或冰凍的敵人爆炸，冰冷傷害越多越容易觸發。'],
+  },
+  {
+    id: 'aura_stack', name: '光環堆疊・聖戰士', poe: 'Aura Stacker Guardian / Necromancer', classes: ['zealot', 'arcanist'],
+    skill: 'chain_lightning', supports: ['added_lightning', 'lightning_penetration', 'faster_casting', 'arcane_surge', 'elemental_focus'],
+    extra: ['wrath', 'zealotry', 'purity', 'discipline', 'enlighten'],
+    uniques: ['leer_cast', 'aul_uprising', 'prism_guardian', 'dream_fragments', 'inpulsa'],
+    summary: '靠「減少魔力保留」與「增加光環效果」同時開啟多個光環，全面強化傷害與防禦。',
+    tips: ['光環效果會放大所有光環的數值（譏諷之面、奧爾的起義）。', '英帕爾薩的破碎之心讓感電的敵人死亡時爆炸，適合閃電流派。'],
+  },
+  {
     id: 'rf', name: '正義之火・燃燒坦克', poe: 'Righteous Fire Juggernaut / Chieftain', classes: ['brute', 'zealot'],
     skill: 'righteous_fire', supports: ['efficacy', 'deadly_ailments', 'swift_affliction', 'increased_aoe', 'arcane_surge'],
     extra: ['cinderfall', 'flame_step', 'bulwark'],

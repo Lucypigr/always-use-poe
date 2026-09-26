@@ -239,7 +239,7 @@ export const QUESTS: QuestDef[] = [
     task: '擊敗廢墟要塞的墮落騎士奧德里克',
     intro: ['盜匪只是症狀。要塞的主人——墮落騎士奧德里克——才是根源。', '他替帝國看守這片土地，死後依然在執行命令。他的命令只有一個：不讓任何流放者離開。'],
     outro: ['奧德里克的劍斷了。流放者，你已經走得比任何人都遠。', '但黑衣人去了東方——去了大祭司的城市。我感覺得到，更大的黑暗在那裡等著你。'],
-    reward: { gems: ['greater_volley', 'melee_splash', 'increased_aoe', 'concentrated_effect', 'elemental_focus', 'crit_strikes', 'fire_penetration', 'cold_penetration', 'lightning_penetration'] },
+    reward: { gems: ['greater_volley', 'melee_splash', 'increased_aoe', 'concentrated_effect', 'elemental_focus', 'crit_strikes', 'fire_penetration', 'cold_penetration', 'lightning_penetration', 'herald_ice', 'herald_ash', 'herald_thunder', 'vitality', 'precision', 'enlighten'] },
   },
 
   // ------------------------------------------------------------------ Act 3 — 大祭司之城
@@ -294,7 +294,7 @@ export const QUESTS: QuestDef[] = [
     task: '擊敗冰封山道的霜之巨人',
     intro: ['通往王座的山道被一位古老的王者把守——他曾是征服者，如今只剩憤怒。', '霜之巨人不會讓任何人通過。除非你證明你比他的憤怒更強。'],
     outro: ['狂怒之王的心臟停止了跳動。現在，只剩下王座。'],
-    reward: { gems: ['quickening', 'serenity', 'greater_volley', 'critical_wrath', 'elemental_penetration'] },
+    reward: { gems: ['quickening', 'serenity', 'greater_volley', 'critical_wrath', 'elemental_penetration', 'wrath', 'grace', 'discipline', 'purity', 'zealotry', 'pride', 'malevolence'] },
   },
   {
     id: 'a4_spirit', name: '不屈之魂', act: 4, giver: 'dialla',

@@ -65,6 +65,8 @@ export class UI {
   vendorTab: 'buy' | 'sell' = 'buy';
   sellGrid: Grid = newGrid(12, 5);
   deviceMap: Item | null = null;
+  /** Item placed on the crafting bench. */
+  benchItem: Item | null = null;
   private panels: Record<PanelId, HTMLElement>;
   private cursorEl = h('div', { class: 'cursor-item' });
   private currencyCursor = h('img', { class: 'cursor-currency' });
@@ -112,6 +114,7 @@ export class UI {
         else if (panel === 'vendor') this.openPanel('vendor');
         else if (panel === 'waypoint') this.modals.waypoint();
         else if (panel === 'map_device') this.modals.mapDevice();
+        else if (panel === 'bench') this.modals.bench();
       }),
       ev.on('death', () => setTimeout(() => this.modals.death(), 900)),
       ev.on('dialog', ({ npc }) => this.story.talk(npc)),
@@ -454,6 +457,14 @@ export class UI {
     if (cid) {
       if (CURRENCY_BY_ID[cid].selfUse) this.game.useSelfCurrency(item);
       else this.startApplying(item);
+      this.refreshItems();
+      return;
+    }
+    if (this.modals.isBenchOpen && !currencyId(item) && !item.gem) {
+      removeItem(grid, item);
+      if (this.benchItem) addItem(grid, this.benchItem);
+      this.benchItem = item;
+      this.modals.bench();
       this.refreshItems();
       return;
     }

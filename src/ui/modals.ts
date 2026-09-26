@@ -6,8 +6,11 @@ import { UNIQUE_BY_ID } from '../data/uniques';
 import { createUnique } from '../items/generate';
 import { CURRENCY } from '../data/currency';
 import { SKILL_KEYS } from '../game/character';
-import { addItem } from '../items/grid';
+import { addItem, countCurrency } from '../items/grid';
+import { benchBlocker, benchOptions } from '../items/bench';
+import { CURRENCY_BY_ID } from '../data/currency';
 import { buildTooltip } from '../items/tooltip';
+import { itemSize } from '../items/item';
 import { h } from './dom';
 import { itemEl, tooltipEl } from './itemView';
 import type { UI } from './ui';
@@ -22,8 +25,13 @@ export class Modals {
     return !!this.back;
   }
 
+  /** Side panels that work together with the inventory (map device, crafting bench). */
   get isDeviceOpen(): boolean {
-    return this.kind === 'device';
+    return this.kind === 'device' || this.kind === 'bench';
+  }
+
+  get isBenchOpen(): boolean {
+    return this.kind === 'bench';
   }
 
   close(): void {
@@ -33,6 +41,12 @@ export class Modals {
         if (!addItem(this.ui.game.char.inventory, m)) this.ui.game.dropItem(m, this.ui.game.player.pos);
         this.ui.refreshItems();
       }
+    }
+    if (this.kind === 'bench' && this.ui.benchItem) {
+      const it = this.ui.benchItem;
+      this.ui.benchItem = null;
+      if (!addItem(this.ui.game.char.inventory, it)) this.ui.game.dropItem(it, this.ui.game.player.pos);
+      this.ui.refreshItems();
     }
     this.back?.remove();
     this.back = null;
@@ -123,6 +137,71 @@ export class Modals {
       ),
     );
     this.show('device', box, true, true);
+    if (this.back) {
+      const modal = this.back.firstChild as HTMLElement;
+      modal.style.position = 'absolute';
+      modal.style.left = '16px';
+      modal.style.top = '16px';
+      this.back.style.display = 'block';
+    }
+  }
+
+  /** Crafting bench: place an item, then pick a mod / socket craft and pay for it. */
+  bench(): void {
+    const ui = this.ui;
+    const g = ui.game;
+    ui.openPanel('inventory');
+    const box = h('div', { class: 'bench' }, h('h2', {}, '工藝台'));
+    const it = ui.benchItem;
+    const [sw, sh] = it ? itemSize(it) : [2, 3];
+    const slot = h('div', { class: 'equip-slot', style: `position:relative;width:${sw * 46}px;height:${sh * 46}px;margin:0 auto;cursor:pointer` });
+    slot.append(it ? itemEl(it, 46) : h('div', { class: 'slot-label' }, '放入裝備'));
+    slot.addEventListener('mousedown', () => {
+      if (ui.cursor && !ui.cursor.item.gem && !ui.cursor.item.map) {
+        const prev = ui.benchItem;
+        ui.benchItem = ui.cursor.item;
+        ui.cursor = prev ? { item: prev, from: null } : null;
+      } else if (!ui.cursor && ui.benchItem) {
+        ui.cursor = { item: ui.benchItem, from: null };
+        ui.benchItem = null;
+      } else return;
+      ui.refreshItems();
+      this.bench();
+    });
+    box.append(slot);
+    if (!it) {
+      box.append(h('p', { class: 'muted', style: 'text-align:center' }, ui.touch ? '以「拿取」模式點擊裝備再點擊欄位，或以「使用」模式點擊裝備放入。' : '拿著裝備點擊欄位，或對背包中的裝備按右鍵放入。'));
+      box.append(h('p', { class: 'muted', style: 'text-align:center' }, '支付通貨即可為裝備加上指定詞綴（每件最多一條工藝詞綴），或調整插槽顏色、數量與連結。通貨從背包中扣除。'));
+    } else {
+      box.append(tooltipEl(buildTooltip(it, ui.tctx), ui.alt));
+      const block = benchBlocker(it);
+      if (block) box.append(h('p', { class: 'why', style: 'text-align:center' }, block));
+      const opts = benchOptions(it);
+      const sections: [string, string][] = [['prefix', '前綴'], ['suffix', '後綴'], ['socket', '插槽'], ['other', '其他']];
+      for (const [grp, title] of sections) {
+        const list = opts.filter((o) => o.group === grp);
+        if (!list.length) continue;
+        const sec = h('div', { class: 'bench-sec' }, h('div', { class: 'act-title' }, title));
+        for (const o of list) {
+          const afford = o.cost.every(([c, n]) => countCurrency(g.char.inventory, c) >= n);
+          const cost = o.cost.length ? o.cost.map(([c, n]) => `${CURRENCY_BY_ID[c].name} ×${n}`).join('、') : '免費';
+          const btn = h('button', { class: 'small', disabled: !!o.reason || !afford, title: o.reason ?? (afford ? '' : '通貨不足'), onclick: () => {
+            if (g.benchCraft(it, o.id)) {
+              ui.refreshItems();
+              this.bench();
+            }
+          } }, '工藝');
+          sec.append(h('div', { class: `bench-row${o.reason ? ' off' : ''}` },
+            h('div', { class: 'br-text' }, o.label, o.reason ? h('span', { class: 'why' }, ` — ${o.reason}`) : null),
+            h('div', { class: `br-cost${afford ? '' : ' poor'}` }, cost),
+            btn,
+          ));
+        }
+        box.append(sec);
+      }
+    }
+    box.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
+    this.show('bench', box, true, true);
     if (this.back) {
       const modal = this.back.firstChild as HTMLElement;
       modal.style.position = 'absolute';

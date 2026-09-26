@@ -580,7 +580,7 @@ export class Hud {
     const toY = (y: number) => oy + y * scale;
     for (const it of g.area.interactables) {
       if (!map.explored[Math.floor(it.pos.y) * map.w + Math.floor(it.pos.x)] && !g.area.town) continue;
-      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : it.kind === 'quest' || (it.kind === 'npc' && /^[！？]/.test(it.label)) ? '#ffd040' : it.kind === 'npc' ? '#d8d0b0' : '#60b0ff';
+      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : it.kind === 'quest' || (it.kind === 'npc' && /^[！？]/.test(it.label)) ? '#ffd040' : it.kind === 'npc' ? '#d8d0b0' : it.kind === 'bench' ? '#b4b4ff' : '#60b0ff';
       ctx.beginPath();
       ctx.arc(toX(it.pos.x), toY(it.pos.y), big ? 6 : 4, 0, Math.PI * 2);
       ctx.fill();

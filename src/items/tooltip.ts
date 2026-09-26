@@ -132,8 +132,8 @@ export function buildTooltip(it: Item, ctx?: TooltipContext): Tooltip {
       const isUnique = it.rarity === 'unique';
       const tierNo = def.tiers.length - m.tier;
       const name = def.names?.[m.tier];
-      const detail = isUnique ? '傳奇詞綴' : `${label} · 第 ${tierNo} 階${name ? ` · "${name}"` : ''} · ${def.tiers[m.tier].values.map((v) => fmtRange(v)).join(' / ')}`;
-      for (const text of modText(m, def)) lines.push({ text, cls: 'mod', detail });
+      const detail = isUnique ? '傳奇詞綴' : m.crafted ? `${label} · 工藝詞綴（可在工藝台移除）` : `${label} · 第 ${tierNo} 階${name ? ` · "${name}"` : ''} · ${def.tiers[m.tier].values.map((v) => fmtRange(v)).join(' / ')}`;
+      for (const text of modText(m, def)) lines.push({ text: m.crafted ? `${text}（工藝）` : text, cls: m.crafted ? 'crafted' : 'mod', detail });
     };
     it.prefixes.forEach((m) => add(m, '前綴'));
     it.suffixes.forEach((m) => add(m, '後綴'));
