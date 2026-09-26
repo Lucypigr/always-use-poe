@@ -148,7 +148,7 @@ export class Modals {
   options(): void {
     const g = this.ui.game;
     const st = g.settings;
-    const toggle = (label: string, key: 'showDamageNumbers' | 'alwaysShowLabels' | 'hideNormalItems') => {
+    const toggle = (label: string, key: 'showDamageNumbers' | 'alwaysShowLabels' | 'hideNormalItems' | 'postFx') => {
       const cb = h('input', { type: 'checkbox' }) as HTMLInputElement;
       cb.checked = st[key];
       cb.addEventListener('change', () => {
@@ -170,6 +170,7 @@ export class Modals {
       toggle('顯示傷害數字', 'showDamageNumbers'),
       toggle('總是顯示物品標籤（Z 切換）', 'alwaysShowLabels'),
       toggle('隱藏普通白色物品的標籤', 'hideNormalItems'),
+      toggle('高畫質特效（泛光、調色、暗角、顆粒；手機較吃效能）', 'postFx'),
       h('div', { class: 'row-buttons' },
         h('button', { onclick: () => this.close() }, '繼續'),
         h('button', { onclick: () => this.help() }, '操作與指南'),

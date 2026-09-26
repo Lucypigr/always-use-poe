@@ -70,6 +70,15 @@ shift the view. On iPhone, where web pages can't go fullscreen, add the page to 
 | Item toolbar (while inventory is open) | 拿取 = click · 使用 = right-click · 快速移動 = Ctrl-click · 查看 = inspect only · 詞綴階級 = Alt |
 | Passive tree | Drag to pan, pinch to zoom, tap a node to inspect and tap it again to allocate / refund |
 
+## Graphics
+
+Rendering aims for Path of Exile's grim look (`src/render/post.ts`, `src/render/textures.ts`):
+dim moonlit areas lit mainly by the hero's torch, procedural ground and rock textures with
+normal maps, blood pools, drifting dust / embers, and a post-processing chain — bloom on
+spells and fire, desaturated split-tone colour grading (cool in icy areas), a vignette that
+acts as the light radius, film grain, and a red pulse at low life. It can be switched off in
+選單 → 高畫質特效 for slower phones.
+
 ## Language
 
 All in-game text is Traditional Chinese (繁體中文). Item, gem, currency and area names are

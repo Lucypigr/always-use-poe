@@ -14,64 +14,12 @@ import { maxLinks } from '../items/generate';
 import type { Item, WeaponClass } from '../items/types';
 import { animateRig, groundItemModel, humanoid, interactableModel, mat, monsterRig, propModel, weaponModel, type Rig } from './models';
 import { glowSprite, Particles, VfxManager } from './vfx';
+import { PostFx } from './post';
+import { groundSurface, rockSurface, splatTexture } from './textures';
 
 const CAM_OFFSET = new THREE.Vector3(0, 13.5, 9.2);
 /** Visual scale of character models relative to their collision size. */
 const RIG_SCALE = 1.3;
-
-let floorTex: THREE.Texture | null = null;
-/** Procedural grayscale ground texture (dirt, pebbles, cracks) multiplied with vertex colours. */
-function floorTexture(): THREE.Texture {
-  if (floorTex) return floorTex;
-  const size = 256;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#b8b8b8';
-  ctx.fillRect(0, 0, size, size);
-  const rnd = (() => {
-    let s = 1337;
-    return () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  })();
-  for (let i = 0; i < 900; i++) {
-    const v = 150 + Math.floor(rnd() * 90);
-    ctx.fillStyle = `rgba(${v},${v},${v},0.35)`;
-    const r = 2 + rnd() * 14;
-    const x = rnd() * size;
-    const y = rnd() * size;
-    for (const [ox, oy] of [[0, 0], [size, 0], [-size, 0], [0, size], [0, -size]]) {
-      ctx.beginPath();
-      ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  for (let i = 0; i < 160; i++) {
-    const v = 90 + Math.floor(rnd() * 60);
-    ctx.fillStyle = `rgba(${v},${v},${v},0.8)`;
-    ctx.beginPath();
-    ctx.ellipse(rnd() * size, rnd() * size, 1 + rnd() * 3, 1 + rnd() * 2, rnd() * 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.strokeStyle = 'rgba(70,70,70,0.45)';
-  ctx.lineWidth = 1.2;
-  for (let i = 0; i < 14; i++) {
-    let x = rnd() * size;
-    let y = rnd() * size;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    for (let k = 0; k < 6; k++) {
-      x += (rnd() - 0.5) * 40;
-      y += (rnd() - 0.5) * 40;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-  floorTex = new THREE.CanvasTexture(c);
-  floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
-  floorTex.colorSpace = THREE.SRGBColorSpace;
-  floorTex.anisotropy = 4;
-  return floorTex;
-}
 
 function hash(x: number, y: number): number {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
@@ -131,10 +79,18 @@ export class Renderer {
   private groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private time = 0;
   private target = new THREE.Vector3();
+  private post: PostFx;
+  /** Bloom, colour grading, vignette and grain (setting "高畫質特效"). */
+  postFx = true;
+  private lowEnd: boolean;
+  private decals: { mesh: THREE.Mesh; age: number }[] = [];
+  private decalMat: THREE.MeshBasicMaterial;
+  private dustTimer = 0;
 
   constructor(private container: HTMLElement) {
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.lowEnd = matchMedia('(pointer: coarse)').matches;
+    this.renderer = new THREE.WebGLRenderer({ antialias: !this.lowEnd, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.lowEnd ? 1.5 : 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -158,6 +114,8 @@ export class Renderer {
     this.torch.castShadow = false;
     this.scene.add(this.hemi, this.sun, this.sun.target, this.torch, this.world, this.dynamic, this.particles.points);
     this.vfx = new VfxManager(this.dynamic, this.particles);
+    this.post = new PostFx(this.renderer, this.scene, this.camera, this.lowEnd);
+    this.decalMat = new THREE.MeshBasicMaterial({ map: splatTexture(), color: '#5a0808', transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -170,6 +128,7 @@ export class Renderer {
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h);
+    this.post?.setSize(w, h, this.renderer.getPixelRatio());
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
@@ -199,20 +158,25 @@ export class Renderer {
     this.interMeshes.clear();
     this.flames = [];
     this.hazardMeshes = [];
+    this.decals = [];
     this.playerRig = null;
     this.playerWeaponKey = '';
 
     const map = area.map;
     const theme = map.theme;
-    this.scene.background = new THREE.Color(theme.sky);
-    this.scene.fog = new THREE.Fog(theme.fog, 18, 42);
+    // PoE-style: dim moonlit ambience outside town, the hero's torch does the heavy lifting
+    const fog = new THREE.Color(theme.fog).multiplyScalar(area.town ? 1 : 0.7);
+    this.scene.background = fog.clone();
+    this.scene.fog = new THREE.Fog(fog, area.town ? 20 : 15, area.town ? 44 : 36);
     this.hemi.color.set(theme.ambient);
     this.hemi.groundColor.set(theme.fog);
-    this.hemi.intensity = area.town ? 1.6 : 1.05;
-    this.sun.color.set(theme.light);
-    this.sun.intensity = area.town ? 1.6 : 0.9;
-    this.torch.color.set(theme.light);
-    this.torch.intensity = 38 * theme.lightIntensity;
+    this.hemi.intensity = area.town ? 1.5 : 0.62;
+    this.sun.color.set(theme.light).lerp(new THREE.Color('#9fb0d8'), area.town ? 0 : 0.45);
+    this.sun.intensity = area.town ? 1.5 : 0.6;
+    // warm torchlight, except in icy / void areas where the light takes the area's own colour
+    this.torch.color.set('#ffc98a').lerp(new THREE.Color(theme.light), theme.id === 'frost' || theme.id === 'void' ? 0.85 : 0.3);
+    this.torch.intensity = (area.town ? 45 : 85) * theme.lightIntensity;
+    this.torch.distance = area.town ? 24 : 20;
 
     this.world.add(this.buildFloor(map));
     this.world.add(this.buildWalls(map));
@@ -232,7 +196,7 @@ export class Renderer {
       });
       this.world.add(o);
       if (d.kind === 'brazier') {
-        const light = new THREE.PointLight('#ff9a50', 8, 7, 1.8);
+        const light = new THREE.PointLight('#ff9a50', 14, 8, 1.8);
         light.position.set(d.x, 1.4, d.y);
         this.world.add(light);
       }
@@ -265,7 +229,7 @@ export class Renderer {
         const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]];
         for (const [cx, cy] of corners) {
           positions.push(cx, 0, cy);
-          uvs.push(cx / 5, cy / 5);
+          uvs.push(cx / 7, cy / 7);
           const n = hash(cx * 0.37, cy * 0.37) * 0.6 + hash(Math.floor(cx / 4), Math.floor(cy / 4)) * 0.4;
           tmp.copy(a).lerp(b, n);
           // darken near walls for fake ambient occlusion
@@ -284,7 +248,8 @@ export class Renderer {
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     g.setIndex(idx);
     g.computeVertexNormals();
-    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, map: floorTexture() }));
+    const surf = groundSurface();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, map: surf.map, normalMap: surf.normalMap, normalScale: new THREE.Vector2(1.3, 1.3) }));
     m.receiveShadow = true;
     return m;
   }
@@ -314,7 +279,8 @@ export class Renderer {
       cols.push(c.r, c.g, c.b);
     }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true });
+    const rs = rockSurface();
+    const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88, flatShading: true, map: rs.map, normalMap: rs.normalMap, normalScale: new THREE.Vector2(1.6, 1.6) });
     material.onBeforeCompile = (shader) => {
       shader.uniforms.uPlayer = this.wallUniforms.uPlayer;
       shader.vertexShader = shader.vertexShader
@@ -375,7 +341,11 @@ export class Renderer {
       this.areaUid = area.uid;
       this.buildArea(area);
     }
-    for (const e of game.vfxQueue) this.vfx.handle(e);
+    for (const e of game.vfxQueue) {
+      this.vfx.handle(e);
+      if (e.type === 'death' && !area.town) this.addDecal(e.pos.x, e.pos.y, e.big ? 2.6 : 1.2);
+    }
+    this.updateAmbience(game, dt);
     this.syncPlayer(game, dt);
     this.syncMonsters(area, dt);
     this.syncProjectiles(area.projectiles);
@@ -391,11 +361,47 @@ export class Renderer {
     this.target.lerp(new THREE.Vector3(p.pos.x, 0, p.pos.y), Math.min(1, dt * 12));
     this.camera.position.copy(this.target).addScaledVector(CAM_OFFSET, this.zoom);
     this.camera.lookAt(this.target.x, this.target.y + 0.6, this.target.z);
-    this.torch.position.set(p.pos.x, 3.6, p.pos.y + 1.5);
+    // the torch hangs high above and slightly in front of the hero so it lights the ground, not their head
+    this.torch.position.set(p.pos.x, 6.5, p.pos.y + 2.5);
     this.sun.position.set(this.target.x - 8, 25, this.target.z + 6);
     this.sun.target.position.copy(this.target);
     this.wallUniforms.uPlayer.value.set(p.pos.x, 0, p.pos.y);
-    this.renderer.render(this.scene, this.camera);
+    if (this.postFx) {
+      const lifeFrac = p.stats.maxLife > 1 ? p.life / p.stats.maxLife : 1;
+      this.post.render(dt, { town: area.town, hurt: p.dead ? 0 : Math.max(0, Math.min(1, (0.4 - lifeFrac) / 0.4)), zoom: this.zoom, cold: area.map.theme.id === 'frost' || area.map.theme.id === 'void' });
+    } else this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Blood pools that stay on the ground for a while. */
+  private addDecal(x: number, y: number, size: number): void {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), this.decalMat.clone());
+    m.rotation.x = -Math.PI / 2;
+    m.rotation.z = Math.random() * Math.PI * 2;
+    m.position.set(x, 0.015, y);
+    m.renderOrder = -1;
+    this.dynamic.add(m);
+    this.decals.push({ mesh: m, age: 0 });
+    if (this.decals.length > 60) {
+      const old = this.decals.shift()!;
+      this.dynamic.remove(old.mesh);
+      old.mesh.geometry.dispose();
+    }
+  }
+
+  /** Decal fade-out and drifting dust / embers around the hero. */
+  private updateAmbience(game: Game, dt: number): void {
+    for (const d of this.decals) {
+      d.age += dt;
+      (d.mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(0.85, d.age * 6) * Math.max(0, 1 - Math.max(0, d.age - 40) / 10);
+    }
+    this.dustTimer -= dt;
+    if (this.dustTimer > 0) return;
+    this.dustTimer = this.lowEnd ? 0.25 : 0.1;
+    const p = game.player.pos;
+    const theme = game.area.map.theme;
+    const ember = theme.id === 'inferno' || theme.id === 'forest';
+    const col = new THREE.Color(ember ? '#ff8a3a' : theme.id === 'frost' ? '#e8f0ff' : theme.id === 'void' ? '#b08aff' : '#d8c8a0');
+    this.particles.emit(p.x + (Math.random() - 0.5) * 16, 0.3 + Math.random() * 2.5, p.y + (Math.random() - 0.5) * 12, 1, { color: col, speed: 0.25, up: ember ? 0.5 : 0.1, life: 3.5, size: ember ? 0.12 : 0.08, gravity: ember ? 0.05 : 0 });
   }
 
   private tintRig(rig: Rig, a: Monster['ailments'] | null, flash: number, base?: [string, number]): void {
@@ -409,7 +415,7 @@ export class Renderer {
       else if (a.chill) [color, intensity] = ['#4080ff', 0.35];
       else if (a.poison.length) [color, intensity] = ['#60c020', 0.3];
     }
-    if (flash > 0) [color, intensity] = ['#ffffff', Math.min(1, flash * 8)];
+    if (flash > 0) [color, intensity] = ['#ffffff', Math.min(0.45, flash * 4)];
     for (const m of rig.materials) {
       if (color) {
         m.emissive.set(color);

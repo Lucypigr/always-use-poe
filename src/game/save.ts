@@ -11,6 +11,8 @@ export interface Settings {
   alwaysShowLabels: boolean;
   hideNormalItems: boolean;
   volume: number;
+  /** Bloom, colour grading, vignette and film grain. */
+  postFx: boolean;
 }
 
 export interface AccountData {
@@ -25,7 +27,7 @@ export interface SaveData {
   settings: Settings;
 }
 
-export const DEFAULT_SETTINGS: Settings = { showDamageNumbers: true, alwaysShowLabels: true, hideNormalItems: false, volume: 0.5 };
+export const DEFAULT_SETTINGS: Settings = { showDamageNumbers: true, alwaysShowLabels: true, hideNormalItems: false, volume: 0.5, postFx: true };
 
 export function newAccount(): AccountData {
   return {

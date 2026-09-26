@@ -113,6 +113,7 @@ class App {
       // phones held upright are paused behind the "rotate your phone" screen
       if (!mustRotate()) g.update(dt);
       this.audio.volume = g.settings.volume;
+      this.renderer.postFx = g.settings.postFx;
       for (const e of g.vfxQueue) {
         if (e.type === 'text') this.ui.hud.addText(e);
         else if (e.type === 'impact') this.audio.play('hit');
