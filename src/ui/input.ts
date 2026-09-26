@@ -239,7 +239,8 @@ export class Input {
     inp.stand = this.shift;
     const slot: number | null = this.held.length ? this.held[this.held.length - 1] : null;
     inp.heldSlot = slot;
-    inp.moveHeld = this.lmb === 'move' && slot === null;
+    // holding the left button keeps walking even while a skill key is held (move while casting)
+    inp.moveHeld = this.lmb === 'move';
 
     // Virtual joystick: convert the screen-space deflection into a world direction.
     inp.moveDir = null;
@@ -257,7 +258,6 @@ export class Input {
     // Touch skill buttons: auto-aim at the nearest enemy, else straight ahead.
     if (this.touchSkills.length) {
       inp.heldSlot = this.touchSkills[this.touchSkills.length - 1];
-      inp.moveHeld = false;
       let best = null;
       let bestD = 12;
       for (const m of g.area.monsters) {
@@ -274,8 +274,6 @@ export class Input {
         const dir = inp.moveDir ?? { x: Math.cos(p.facing), y: Math.sin(p.facing) };
         inp.cursor = { x: p.pos.x + dir.x * 5, y: p.pos.y + dir.y * 5 };
       }
-      // keep walking while casting only if the joystick isn't held (skills root you in place)
-      if (inp.moveDir) inp.moveDir = null;
     }
     if (this.releaseLmb) {
       this.releaseLmb = false;

@@ -84,6 +84,12 @@ function skillVisual(gem: GemDef): ProjectileVisual {
 }
 
 const MELEE_BEHAVIOURS = new Set(['melee', 'strike_projectile']);
+/** Skills that move the caster themselves: no walking while they play out. */
+const SELF_MOVING = new Set(['leap', 'dash', 'blink', 'flicker', 'spin']);
+/** Movement speed while using a skill (PoE 2 style: keep walking, slower). */
+const ACTING_MOVE_MULT = 0.6;
+/** Holding the mouse this close to the hero does not move them (prevents jitter). */
+const MOVE_DEADZONE = 0.3;
 
 export class Game implements SkillHost {
   events = new EventBus<GameEvents>();
@@ -530,12 +536,18 @@ export class Game implements SkillHost {
       this.updateTravel(p, dt);
       return;
     }
-    if (p.frozen) return;
-    if (p.action) {
-      this.updateAction(dt);
-      if (p.action) return;
+    if (p.frozen) {
+      p.moving = false;
+      return;
     }
     const inp = this.input;
+    if (p.action) {
+      this.updateAction(dt);
+      if (p.action) {
+        this.moveWhileActing(dt);
+        return;
+      }
+    }
     p.moving = false;
 
     // Skills
@@ -552,13 +564,7 @@ export class Game implements SkillHost {
     if (inp.moveDir) {
       this.interactTarget = null;
       p.path = [];
-      const step = p.stats.moveSpeed * (1 - p.chillSlow) * dt;
-      p.pos.x += inp.moveDir.x * step;
-      p.pos.y += inp.moveDir.y * step;
-      p.facing = Math.atan2(inp.moveDir.y, inp.moveDir.x);
-      p.moving = true;
-      p.stride += dt * p.stats.moveSpeed;
-      this.map.collide(p.pos, p.radius);
+      this.stepDir(inp.moveDir, dt);
       return;
     }
 
@@ -588,19 +594,50 @@ export class Game implements SkillHost {
     if (p.path.length) this.followPath(dt);
   }
 
-  private moveToward(goal: Vec2, dt: number): void {
+  /**
+   * Keep walking (slower, without turning away from the target) while a skill plays out,
+   * so casting on the move never stops the hero dead.
+   */
+  private moveWhileActing(dt: number): void {
     const p = this.player;
+    const inp = this.input;
+    p.moving = false;
+    if (inp.stand || SELF_MOVING.has(p.action!.behaviour)) return;
+    if (inp.moveDir) {
+      p.path = [];
+      this.stepDir(inp.moveDir, dt, ACTING_MOVE_MULT, false);
+    } else if (inp.moveHeld) this.moveToward(inp.cursor, dt, ACTING_MOVE_MULT, false);
+    else if (p.path.length) this.followPath(dt, ACTING_MOVE_MULT, false);
+  }
+
+  private stepDir(dir: Vec2, dt: number, mult = 1, face = true): void {
+    const p = this.player;
+    const step = p.stats.moveSpeed * (1 - p.chillSlow) * mult * dt;
+    p.pos.x += dir.x * step;
+    p.pos.y += dir.y * step;
+    if (face) p.facing = Math.atan2(dir.y, dir.x);
+    p.moving = true;
+    p.stride += dt * p.stats.moveSpeed * mult;
+    this.map.collide(p.pos, p.radius);
+  }
+
+  private moveToward(goal: Vec2, dt: number, mult = 1, face = true): void {
+    const p = this.player;
+    if (dist(p.pos, goal) < MOVE_DEADZONE) {
+      p.path = [];
+      return;
+    }
     if (!p.pathGoal || dist(p.pathGoal, goal) > 0.5 || p.pathTimer <= 0 || !p.path.length) {
       p.pathGoal = { ...goal };
       p.pathTimer = 0.25;
       p.path = findPath(this.map, p.pos, goal, p.radius) ?? [];
     }
-    this.followPath(dt);
+    this.followPath(dt, mult, face);
   }
 
-  private followPath(dt: number): void {
+  private followPath(dt: number, mult = 1, face = true): void {
     const p = this.player;
-    let budget = p.stats.moveSpeed * (1 - p.chillSlow) * dt;
+    let budget = p.stats.moveSpeed * (1 - p.chillSlow) * mult * dt;
     while (budget > 0 && p.path.length) {
       const next = p.path[0];
       const d = dist(p.pos, next);
@@ -612,12 +649,12 @@ export class Game implements SkillHost {
         const dir = normalize({ x: next.x - p.pos.x, y: next.y - p.pos.y });
         p.pos.x += dir.x * budget;
         p.pos.y += dir.y * budget;
-        p.facing = Math.atan2(dir.y, dir.x);
+        if (face) p.facing = Math.atan2(dir.y, dir.x);
         budget = 0;
       }
       p.moving = true;
     }
-    p.stride += dt * p.stats.moveSpeed;
+    if (p.moving) p.stride += dt * p.stats.moveSpeed * mult;
     this.map.collide(p.pos, p.radius);
   }
 
@@ -663,7 +700,8 @@ export class Game implements SkillHost {
     if (st.lifeCost) p.life -= st.lifeCost;
     const aim = target ? target.pos : cursor;
     p.facing = angleTo(p.pos, aim);
-    p.path = [];
+    // casting keeps the current walk (see moveWhileActing); movement skills replace it
+    if (SELF_MOVING.has(a.behaviour)) p.path = [];
     const castPoint = ['leap', 'dash', 'blink', 'summon'].includes(a.behaviour) ? 0.05 : 0.4;
     const hitTimes: number[] = [];
     for (let i = 0; i < st.hitsPerUse; i++) hitTimes.push((st.actionTime * (i + castPoint)) / st.hitsPerUse);

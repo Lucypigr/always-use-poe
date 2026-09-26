@@ -12,7 +12,7 @@ import { FLOOR, type TileMap } from '../game/tilemap';
 import { currencyId } from '../items/item';
 import { maxLinks } from '../items/generate';
 import type { Item, WeaponClass } from '../items/types';
-import { animateRig, groundItemModel, humanoid, interactableModel, mat, monsterRig, propModel, weaponModel, type Rig } from './models';
+import { animateRig, groundItemModel, humanoid, interactableModel, mat, monsterRig, propModel, turnTowards, weaponModel, type Rig } from './models';
 import { glowSprite, Particles, VfxManager } from './vfx';
 import { PostFx } from './post';
 import { groundSurface, rockSurface, splatTexture } from './textures';
@@ -460,12 +460,11 @@ export class Renderer {
     }
     const rig = this.playerRig;
     rig.root.position.set(p.pos.x, 0, p.pos.y);
-    rig.root.rotation.y = Math.PI / 2 - p.facing;
+    turnTowards(rig.root, Math.PI / 2 - p.facing, dt, 22);
     const action = p.action ? p.action.elapsed / p.action.duration : -1;
-    animateRig(rig, { moving: p.moving || !!p.travel, phase: p.stride * 1.3, action, dead: p.dead, deathT: game.deathTimer ? this.time : 0, airborne: p.airborne, time: this.time });
+    animateRig(rig, { moving: p.moving || !!p.travel, phase: p.stride * 1.3, action, dead: p.dead, deathT: game.deathTimer ? this.time : 0, airborne: p.airborne, time: this.time, dt });
     this.tintRig(rig, p.ailments, p.hitFlash);
     rig.root.visible = true;
-    void dt;
   }
 
   private syncMonsters(area: AreaInstance, dt: number): void {
@@ -483,14 +482,15 @@ export class Renderer {
           aura.position.y = 1.2;
           rig.root.add(aura);
         }
+        rig.root.rotation.y = Math.PI / 2 - m.facing;
         this.monsterRigs.set(m.id, rig);
         this.dynamic.add(rig.root);
       }
       rig.root.position.set(m.pos.x, 0, m.pos.y);
-      rig.root.rotation.y = Math.PI / 2 - m.facing;
+      turnTowards(rig.root, Math.PI / 2 - m.facing, dt, 12);
       if (m.moving) m.phase += dt * m.stats.moveSpeed * 1.2;
       const action = m.actionTimer > 0 && m.actionDuration > 0 ? 1 - m.actionTimer / m.actionDuration : -1;
-      animateRig(rig, { moving: m.moving || !!m.travel, phase: m.phase, action, dead: m.dead, deathT: m.deathTimer, airborne: m.airborne, time: this.time });
+      animateRig(rig, { moving: m.moving || !!m.travel, phase: m.phase, action, dead: m.dead, deathT: m.deathTimer, airborne: m.airborne, time: this.time, dt });
       const base: [string, number] | undefined = m.rarity === 'rare' ? ['#a08020', 0.18] : m.rarity === 'magic' ? ['#2040c0', 0.18] : undefined;
       this.tintRig(rig, m.dead ? null : m.ailments, m.dead ? 0 : m.hitFlash, m.dead ? undefined : base);
     }

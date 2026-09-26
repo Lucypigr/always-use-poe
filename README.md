@@ -36,6 +36,10 @@ Progress (characters, stash, settings) is saved to `localStorage` automatically.
 | Left click | Move · pick up items · talk to NPCs · use objects (never casts a skill) |
 | Right click, Space, Q W E R T, Middle click | Skill slots (hold to keep using; aimed at the cursor / monster under it). Click a skill-bar slot to change it |
 | Shift + skill | Use the skill in place |
+
+Like Path of Exile 2 you keep moving while using a skill (at 60% speed, facing the target): hold the
+left button (or the joystick) and a skill key together to kite. Leap / dash / blink / flicker / cyclone
+move you themselves. Turning and animation poses blend smoothly.
 | J | Quest journal |
 | B | Build guide (流派指南) |
 | 1–5 | Drink flasks |

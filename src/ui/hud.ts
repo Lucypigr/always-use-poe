@@ -78,6 +78,8 @@ export class Hud {
   private slowTimer = 0;
   private logLines: { el: HTMLElement; t: number }[] = [];
   showOverlay = false;
+  private lastLife = '';
+  private lastMana = '';
   showLabels = true;
 
   constructor(private ui: UI) {
@@ -296,11 +298,14 @@ export class Hud {
     const lifeMax = Math.max(1, p.maxLifeUsable);
     this.lifeFill.style.height = `${Math.max(0, Math.min(100, (p.life / s.maxLife) * 100))}%`;
     this.lifeEs.style.opacity = s.maxES > 0 ? String(Math.min(1, p.es / s.maxES)) : '0';
-    this.lifeText.innerHTML = `${Math.ceil(p.life)} / ${lifeMax}${s.maxES ? `<span class="es-text">ES ${Math.ceil(p.es)} / ${s.maxES}</span>` : ''}`;
+    // only touch the DOM when a value actually changed (avoids per-frame style/layout work)
+    const lifeHtml = `${Math.ceil(p.life)} / ${lifeMax}${s.maxES ? `<span class="es-text">ES ${Math.ceil(p.es)} / ${s.maxES}</span>` : ''}`;
+    if (lifeHtml !== this.lastLife) this.lifeText.innerHTML = this.lastLife = lifeHtml;
     const maxMana = Math.max(1, s.maxMana);
     this.manaFill.style.height = `${Math.max(0, Math.min(100, (p.mana / maxMana) * 100))}%`;
     this.manaReserved.style.height = `${(p.reserved / maxMana) * 100}%`;
-    this.manaText.textContent = s.maxMana ? `${Math.floor(p.mana)} / ${p.unreservedMana}${p.reserved ? `（保留 ${p.reserved}）` : ''}` : '血之契約';
+    const manaTxt = s.maxMana ? `${Math.floor(p.mana)} / ${p.unreservedMana}${p.reserved ? `（保留 ${p.reserved}）` : ''}` : '血之契約';
+    if (manaTxt !== this.lastMana) this.manaText.textContent = this.lastMana = manaTxt;
     this.xpFill.style.width = `${Math.min(100, (g.char.xp / xpToNext(g.char.level)) * 100)}%`;
 
     // flask durations / active glow

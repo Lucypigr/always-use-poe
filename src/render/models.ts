@@ -367,37 +367,59 @@ export interface AnimState {
   deathT: number;
   airborne: number;
   time: number;
+  /** Frame time; when given, poses blend smoothly instead of snapping. */
+  dt?: number;
 }
 
+type Axis = 'x' | 'y' | 'z';
+
 export function animateRig(rig: Rig, s: AnimState): void {
+  // exponential smoothing: limbs settle in ~0.15 s, the striking arm faster
+  const k = s.dt ? 1 - Math.exp(-s.dt * 16) : 1;
+  const kArm = s.dt ? 1 - Math.exp(-s.dt * 32) : 1;
+  const ease = (o: THREE.Object3D, axis: Axis, v: number, kk = k) => {
+    o.rotation[axis] += (v - o.rotation[axis]) * kk;
+  };
   const swing = s.moving ? Math.sin(s.phase * 2.2) : 0;
   if (rig.legCount === 2) {
-    rig.legs[0].rotation.x = swing * 0.7;
-    rig.legs[1].rotation.x = -swing * 0.7;
+    ease(rig.legs[0], 'x', swing * 0.7, s.moving ? kArm : k);
+    ease(rig.legs[1], 'x', -swing * 0.7, s.moving ? kArm : k);
   } else if (rig.legCount === 4) {
-    rig.legs.forEach((l, i) => (l.rotation.x = swing * 0.6 * (i % 3 === 0 ? 1 : -1)));
+    rig.legs.forEach((l, i) => ease(l, 'x', swing * 0.6 * (i % 3 === 0 ? 1 : -1), s.moving ? kArm : k));
   } else if (rig.legCount > 4) {
-    rig.legs.forEach((l, i) => (l.rotation.z = Math.sin(s.phase * 3 + i * 1.3) * (s.moving ? 0.25 : 0.03)));
+    rig.legs.forEach((l, i) => ease(l, 'z', Math.sin(s.phase * 3 + i * 1.3) * (s.moving ? 0.25 : 0.03)));
   }
   for (const w of rig.wings) w.rotation.z = Math.sin(s.time * 14 + rig.root.id) * 0.8 * (w.position.x < 0 ? 1 : -1);
   if (rig.arms.length >= 2 && rig.kind !== 'crab') {
     const base = rig.kind === 'zombie' ? -1.1 : 0;
-    rig.arms[0].rotation.x = base - swing * 0.5;
+    ease(rig.arms[0], 'x', s.action >= 0 ? base - 0.5 : base - swing * 0.5);
     if (s.action >= 0) {
       // wind up then strike
       const a = s.action < 0.4 ? -2.4 * (s.action / 0.4) : -2.4 + 3.2 * Math.min(1, (s.action - 0.4) / 0.3);
-      rig.arms[1].rotation.x = a;
-    } else rig.arms[1].rotation.x = base + swing * 0.5;
+      ease(rig.arms[1], 'x', a, kArm);
+    } else ease(rig.arms[1], 'x', base + swing * 0.5);
   } else if (rig.kind === 'crab' && rig.arms.length) {
-    rig.arms.forEach((a, i) => (a.rotation.y = s.action >= 0 ? Math.sin(s.action * Math.PI) * (i ? -0.8 : 0.8) : Math.sin(s.time * 3) * 0.1));
+    rig.arms.forEach((a, i) => ease(a, 'y', s.action >= 0 ? Math.sin(s.action * Math.PI) * (i ? -0.8 : 0.8) : Math.sin(s.time * 3) * 0.1));
   }
-  rig.body.position.y = (s.moving ? Math.abs(Math.sin(s.phase * 2.2)) * 0.05 : 0) + s.airborne;
-  if (rig.kind === 'wraith' || rig.kind === 'bat') rig.body.position.y += Math.sin(s.time * 2 + rig.root.id) * 0.1 + (rig.kind === 'wraith' ? 0.25 : 0);
+  const bob = s.moving ? Math.abs(Math.sin(s.phase * 2.2)) * 0.05 : 0;
+  rig.body.position.y += (bob + s.airborne - rig.body.position.y) * (s.airborne ? 1 : k);
+  if (rig.kind === 'wraith' || rig.kind === 'bat') rig.body.position.y = bob + s.airborne + Math.sin(s.time * 2 + rig.root.id) * 0.1 + (rig.kind === 'wraith' ? 0.25 : 0);
   if (s.dead) {
     const t = Math.min(1, s.deathT / 0.5);
     rig.body.rotation.x = -t * Math.PI * 0.5;
     rig.body.position.y = -Math.max(0, s.deathT - 1.5) * 0.6;
-  } else rig.body.rotation.x = 0;
+  } else {
+    // lean into the run, and into the swing
+    const lean = (s.moving ? 0.08 : 0) + (s.action >= 0 ? Math.sin(Math.min(1, s.action) * Math.PI) * 0.12 : 0);
+    ease(rig.body, 'x', lean);
+  }
+}
+
+/** Turn an object toward a yaw along the shortest arc, at `speed` (1/s, exponential). */
+export function turnTowards(o: THREE.Object3D, yaw: number, dt: number, speed = 20): void {
+  let d = yaw - o.rotation.y;
+  d = ((((d + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
+  o.rotation.y += d * (1 - Math.exp(-dt * speed));
 }
 
 // ---------------------------------------------------------------------------------------------
