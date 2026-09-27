@@ -115,9 +115,11 @@ export class UI {
         else if (panel === 'waypoint') this.modals.waypoint();
         else if (panel === 'map_device') this.modals.mapDevice();
         else if (panel === 'bench') this.modals.bench();
+        else if (panel === 'heist') this.modals.heist();
       }),
       ev.on('death', () => setTimeout(() => this.modals.death(), 900)),
       ev.on('dialog', ({ npc }) => this.story.talk(npc)),
+      ev.on('mercenary', ({ obj }) => this.modals.mercenary(obj)),
       ev.on('quest', () => this.hud.refreshQuests()),
       ev.on('log', (m) => this.hud.log(m.text, m.color)),
       ev.on('levelup', ({ level }) => this.hud.toast(`等級 ${level}`)),

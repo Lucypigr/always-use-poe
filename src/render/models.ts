@@ -549,6 +549,29 @@ export function interactableModel(kind: string, look?: HumanoidOpts): THREE.Grou
       g.add(rig.root);
       break;
     }
+    case 'heist':
+    case 'mercenary': {
+      const rig = humanoid('npc', kind === 'heist'
+        ? { skin: '#c89878', torso: '#2a2a30', legs: '#1a1a20', accent: '#c8a060', hood: true }
+        : { skin: '#c8a888', torso: '#6a4a3a', legs: '#3a2a20', accent: '#a0a0a0' });
+      if (kind === 'mercenary') rig.root.position.y = -0.25; // kneeling in defeat
+      g.add(rig.root);
+      break;
+    }
+    case 'strongbox': {
+      g.add(mesh(new THREE.BoxGeometry(0.9, 0.55, 0.6), mat('#4a4038', { metalness: 0.5, roughness: 0.5 }), 0, 0.28, 0));
+      for (const x of [-0.3, 0.3]) g.add(mesh(new THREE.BoxGeometry(0.08, 0.58, 0.63), mat('#a08040', { metalness: 0.8, roughness: 0.3 }), x, 0.29, 0));
+      g.add(mesh(new THREE.BoxGeometry(0.16, 0.16, 0.05), mat('#d8b848', { metalness: 0.9, emissive: '#6a4a10', emissiveIntensity: 0.5 }), 0, 0.35, 0.32));
+      break;
+    }
+    case 'vault': {
+      g.add(mesh(new THREE.BoxGeometry(1.8, 2.4, 0.4), mat('#3a3a42', { metalness: 0.7, roughness: 0.35 }), 0, 1.2, 0));
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 6, 20), mat('#d8b848', { metalness: 0.9, emissive: '#8a6010', emissiveIntensity: 0.6 }));
+      wheel.position.set(0, 1.2, 0.24);
+      wheel.name = 'spin';
+      g.add(wheel);
+      break;
+    }
     case 'bench': {
       // crafting bench: heavy table with an anvil and a glowing rune
       const wood = mat('#5a3e24');

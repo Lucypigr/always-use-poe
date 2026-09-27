@@ -1,4 +1,6 @@
 import { AREAS } from '../data/areas';
+import { HEIST_SITES, HEIST_TARGETS, HEIST_UNLOCK_LEVEL, MERC_ARCHETYPES } from '../data/activities';
+import type { Interactable } from '../game/entities';
 import { BUILDS, type BuildDef } from '../data/builds';
 import { CLASS_BY_ID } from '../data/classes';
 import { GEM_BY_ID } from '../data/gems';
@@ -211,6 +213,62 @@ export class Modals {
     }
   }
 
+  /** Heist board: pick a contract, reroll the offer. */
+  heist(): void {
+    const g = this.ui.game;
+    const box = h('div', { class: 'heist-board' }, h('h2', {}, '劫盜委託'), h('div', { class: 'dialog-sub' }, '阿蒂亞 · 地下組織「指環」的首領'));
+    if (!g.heistUnlocked()) {
+      box.append(h('p', {}, `「你還太嫩了。等你打倒灰燼森林的林地守衛，或者到了等級 ${HEIST_UNLOCK_LEVEL}，再來找我。」`));
+    } else {
+      const data = g.heistData();
+      box.append(h('p', { class: 'muted' }, `潛入守衛森嚴的地點，打開寶庫取得目標。開啟保險箱與時間流逝都會提高警報；警報滿或拿走寶物後進入封鎖，增援會不斷湧來，趕快回到撤離點。已完成 ${data.completed} 次。`));
+      for (const c of data.contracts) {
+        const t = HEIST_TARGETS[c.target];
+        box.append(h('div', { class: 'area-row' },
+          h('div', {}, h('div', {}, `${HEIST_SITES[c.site].name}`), h('div', { class: 'lvl' }, `目標：${t.name}（${t.desc}）`)),
+          h('div', { style: 'display:flex;gap:8px;align-items:center' }, h('span', { class: 'lvl' }, `等級 ${c.level}`), h('button', { class: 'small', onclick: () => {
+            this.close();
+            g.startHeist(c.id);
+          } }, '開始劫盜')),
+        ));
+      }
+      box.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => {
+        if (g.rerollHeistContracts()) this.heist();
+      } }, `更換委託（1 個${CURRENCY_BY_ID.alteration.name}）`)));
+    }
+    box.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '離開')));
+    this.show('heist', box);
+  }
+
+  /** A defeated mercenary: hire them or take their gear. */
+  mercenary(obj: Interactable): void {
+    const g = this.ui.game;
+    const m = obj.merc;
+    if (!m) return;
+    const arch = MERC_ARCHETYPES.find((a) => a.id === m.archetype);
+    const cur = g.char.mercenary;
+    this.show('mercenary', h('div', { class: 'dialog' },
+      h('h2', {}, m.name),
+      h('div', { class: 'dialog-sub' }, `戰敗的傭兵 · ${arch?.name ?? ''}`),
+      h('div', { class: 'dialog-text' },
+        h('p', {}, '「好吧……你贏了。我的劍可以為你所用——或者，你也可以拿走我的一切，讓我自生自滅。」'),
+        h('p', { class: 'muted' }, `${arch?.desc ?? ''} 傭兵會隨你的等級成長、跟隨你到每個區域，倒下後 12 秒會歸隊。`),
+        cur ? h('p', { class: 'why' }, `招募後會取代目前的傭兵 ${cur.name}。`) : null,
+      ),
+      h('div', { class: 'row-buttons wrap' },
+        h('button', { onclick: () => {
+          g.hireMercenary(obj);
+          this.close();
+        } }, '招募'),
+        h('button', { onclick: () => {
+          g.lootMercenary(obj);
+          this.close();
+        } }, '奪取裝備'),
+        h('button', { onclick: () => this.close() }, '稍後再說'),
+      ),
+    ));
+  }
+
   death(): void {
     const g = this.ui.game;
     if (!g.player.dead) return;
@@ -278,6 +336,7 @@ export class Modals {
             tr(['天賦樹'], '拖曳平移、雙指縮放；點擊天賦查看，再點一次配置（已配置的再點一次為重置）'),
             tr(['回城'], '使用傳送卷軸開啟回城傳送門'),
             tr(['流派指南'], '在「選單」中開啟，查看各種流派的核心技能與傳奇裝備'),
+            tr(['劫盜 / 傭兵'], '城鎮中的阿蒂亞提供劫盜委託；在區域中擊敗傭兵後可招募他成為夥伴'),
             tr(['任務'], '開啟任務日誌。城鎮中頭上有「！」的人物有新任務，「？」代表可以領取獎勵'),
             tr(['直向'], '請將手機橫放遊玩；橫放時點擊畫面會自動進入全螢幕'),
           )
@@ -300,6 +359,8 @@ export class Modals {
       h('h3', { style: 'color:#c8aa6e' }, '寶石與插槽'),
       h('p', {}, '主動技能寶石放入同色插槽即可獲得技能（白色插槽可放任何寶石）。輔助寶石會強化所有與其相連插槽中的主動寶石。寶石會獲得經驗，可升級時右側會出現升級按鈕。對已鑲嵌的寶石按右鍵（手機：「使用」模式下點擊）可取下。'),
       h('h3', { style: 'color:#c8aa6e' }, '進程'),
+      h('h3', { style: 'color:#c8aa6e' }, '活動：劫盜與傭兵'),
+      h('p', {}, '劫盜：與城鎮中的阿蒂亞交談選擇委託，潛入守衛森嚴的地點。時間流逝與撬開保險箱都會提高警報，警報滿或拿走寶庫中的目標後進入封鎖，增援會不斷湧來——拿到寶物後回到撤離點即完成劫盜。傭兵：區域與地圖中偶爾會出現傭兵，擊敗後可選擇招募他（跟隨你戰鬥、隨你升級、倒下後會歸隊）或奪走他的裝備。'),
       h('h3', { style: 'color:#c8aa6e' }, '劇情與任務'),
       h('p', {}, '與暮港的居民交談以接受任務。任務目標包括擊敗首領、在區域中尋找任務物品（金色標籤）以及獵殺具名的稀有怪物。完成後回到任務發布者身邊領取寶石、通貨、天賦點數或特殊抉擇等獎勵。'),
       h('p', {}, '首次擊敗每個區域的首領可獲得 1 天賦點並解鎖下一區域。後期章節抗性會受到懲罰（-20%、-40%，終局為 -60%），記得把抗性堆到 75% 上限。擊敗「被遺棄者王座」後，可在地圖裝置使用地圖：地圖詞綴會讓怪物更強，但提高物品數量與稀有度。'),

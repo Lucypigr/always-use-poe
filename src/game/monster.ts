@@ -1,3 +1,4 @@
+import type { MercenaryData } from '../data/activities';
 import type { Vec2 } from '../core/math';
 import type { RNG } from '../core/rng';
 import { MONSTER_BY_ID, RARE_MODS, type MonsterDef, type MonsterSkillDef, type RareMonsterMod } from '../data/monsters';
@@ -41,6 +42,8 @@ export class Monster extends Actor {
   /** Minions: uid of the skill that summoned it, and seconds left to live (0 = permanent). */
   summonUid = '';
   lifetime = 0;
+  /** Mercenary: hostile encounter or hired companion. */
+  merc: MercenaryData | null = null;
   /** Named quest target: quest id and target index. */
   questId = '';
   questIndex = -1;

@@ -1,5 +1,6 @@
 import type { Vec2 } from '../core/math';
 import type { NpcId } from '../data/quests';
+import type { MercenaryData } from '../data/activities';
 import type { Item } from '../items/types';
 import type { SkillStats } from '../skills/skills';
 import type { Actor, Team } from './actor';
@@ -68,7 +69,7 @@ export interface GroundItem {
   age: number;
 }
 
-export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit' | 'npc' | 'quest' | 'bench';
+export type InteractKind = 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'town_portal' | 'area_portal' | 'exit' | 'npc' | 'quest' | 'bench' | 'heist' | 'strongbox' | 'vault' | 'mercenary';
 
 export interface Interactable {
   id: number;
@@ -81,6 +82,8 @@ export interface Interactable {
   /** Quest object (kind 'quest'): quest id and object index. */
   questId?: string;
   questIndex?: number;
+  /** Defeated mercenary (kind 'mercenary'). */
+  merc?: MercenaryData;
 }
 
 let nextEntityId = 1;

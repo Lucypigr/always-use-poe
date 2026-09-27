@@ -139,6 +139,10 @@ export function executeBehaviour(host: SkillHost, behaviour: BehaviourId | 'char
       } else {
         for (const a of actorsInCone(host, team, caster.pos, facing, half, length)) host.hit(a, stats, caster);
         host.vfx({ type: 'slam', pos: caster.pos, angle: facing, halfAngle: half, length, color: ctx.color });
+        if (params.aftershock) {
+          // Earthquake: a bigger, stronger aftershock a moment later
+          host.addEffect({ owner: caster, team: caster.team, pos: { ...caster.pos }, radius: length * 1.35, shape: 'circle', dir: 0, halfAngle: Math.PI, delay: 1 * stats.durationMult, stats, dmgMult: 1.6, color: ctx.color, telegraph: false, vfx: 'slam' });
+        }
       }
       break;
     }

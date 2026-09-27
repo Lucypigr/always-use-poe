@@ -4,6 +4,7 @@ import { armourReduction, chanceToHit } from '../game/combat';
 import { uncappedRes } from '../stats/character';
 import { clear, fmt, h } from './dom';
 import type { UI } from './ui';
+import { MERC_ARCHETYPES } from '../data/activities';
 
 /** Character sheet (PoE's "C" panel): attributes, defences, resistances and offence. */
 export class CharacterSheet {
@@ -75,6 +76,19 @@ export class CharacterSheet {
       row('  · 每秒使用次數', fmt(st.usesPerSecond * st.hitsPerUse, 2));
     }
     row('命中值', fmt(s.accuracy));
+
+    title('傭兵');
+    const merc = c.mercenary;
+    if (merc) {
+      const arch = MERC_ARCHETYPES.find((a) => a.id === merc.archetype);
+      const alive = g.area.monsters.find((m) => m.merc && m.team === 'player' && !m.dead);
+      row(merc.name, `${arch?.name ?? ''} · 等級 ${c.level}`);
+      row('  · 生命', alive ? `${fmt(alive.life)} / ${fmt(alive.stats.maxLife)}` : '倒下（稍後歸隊）');
+      box.append(h('div', { class: 'row' }, h('span', { class: 'k' }, arch?.desc ?? ''), h('button', { class: 'small', onclick: () => {
+        g.dismissMercenary();
+        this.render();
+      } }, '解雇')));
+    } else row('目前沒有傭兵', '在區域中擊敗傭兵即可招募');
 
     title('其他');
     row('物品稀有度增加', `${fmt(s.itemRarity)}%`);

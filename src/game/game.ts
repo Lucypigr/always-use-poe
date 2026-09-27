@@ -1,6 +1,7 @@
 import { EventBus } from '../core/events';
 import { angleTo, dist, fromAngle, normalize, type Vec2 } from '../core/math';
-import { RNG } from '../core/rng';
+import { RNG, uid } from '../core/rng';
+import { HEIST_ALARM, HEIST_SITES, HEIST_TARGETS, HEIST_UNLOCK_LEVEL, MERC_ARCHETYPES, MERC_CHANCE, MERC_NAMES, type HeistContract, type HeistData, type HeistTarget } from '../data/activities';
 import { AREA_BY_ID } from '../data/areas';
 import { CURRENCY_BY_ID, type CurrencyId } from '../data/currency';
 import type { GemDef, SkillTag } from '../data/gems';
@@ -17,9 +18,9 @@ import { computeMinionStats, computeSkillStats, resolveSkills, type SkillStats }
 import { computeCharacterStats } from '../stats/character';
 import { flat, inc, more, type StatMod } from '../stats/stats';
 import { NPC_BY_ID, QUEST_BY_ID, type NpcId, type QuestDef } from '../data/quests';
-import { createCurrency, createGem } from '../items/generate';
+import { createCurrency, createGem, createUnique, randomCurrency, randomEquipment, randomGem, randomMapDrop, randomUnique, createItem, randomBase, applyRarity } from '../items/generate';
 import type { Actor, Team } from './actor';
-import { AreaInstance, createMapArea, createStoryArea, createTown } from './area';
+import { AreaInstance, createHeistArea, createMapArea, createStoryArea, createTown } from './area';
 import { equippedGems, passivePointsUnspent, SKILL_SLOTS, type CharacterData } from './character';
 import { applyHit, rollHit } from './combat';
 import { newEntityId, type AreaEffect, type GroundItem, type Interactable, type Projectile, type ProjectileVisual, type VfxEvent } from './entities';
@@ -38,7 +39,7 @@ export interface GameEvents extends Record<string, unknown> {
   area: { name: string; level: number; town: boolean };
   inventory: null;
   stats: null;
-  panel: { panel: 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'bench' };
+  panel: { panel: 'stash' | 'vendor' | 'waypoint' | 'map_device' | 'bench' | 'heist' };
   death: null;
   save: null;
   drop: { item: Item };
@@ -47,6 +48,8 @@ export interface GameEvents extends Record<string, unknown> {
   dialog: { npc: NpcId };
   /** Quest progress changed ('ready' = an objective was just completed). */
   quest: { ready: boolean };
+  /** Talk to a defeated mercenary. */
+  mercenary: { obj: Interactable };
 }
 
 export interface InputState {
@@ -236,6 +239,8 @@ export class Game implements SkillHost {
     }
     inst.flow.originX = -1;
     inst.flow.update(p.pos);
+    this.mercDown = 0;
+    this.spawnMercenary();
     this.recalc();
     this.events.emit('area', { name: inst.name, level: inst.level, town: inst.town });
     this.log(inst.town ? `你進入了${inst.name}。` : `你進入了${inst.name}（等級 ${inst.level}）。`, '#d8c8a0');
@@ -245,7 +250,8 @@ export class Game implements SkillHost {
   private lastMinions: Monster[] | null = null;
 
   private leaveArea(): void {
-    this.lastMinions = this.area.monsters.filter((m) => m.isMinion && !m.dead);
+    // the hired mercenary is re-created (at the hero's current level) in the next area
+    this.lastMinions = this.area.monsters.filter((m) => m.isMinion && !m.dead && !m.merc);
     this.area.monsters = this.area.monsters.filter((m) => !m.isMinion);
   }
 
@@ -259,6 +265,7 @@ export class Game implements SkillHost {
     this.leaveArea();
     const inst = createStoryArea(areaId, this.rng);
     this.placeQuestContent(inst);
+    this.placeMercEncounter(inst);
     this.portalInstance = null;
     this.enterArea(inst, inst.map.spawn);
   }
@@ -267,6 +274,7 @@ export class Game implements SkillHost {
     if (!mapItem.map) return false;
     this.leaveArea();
     const inst = createMapArea(mapItem, this.rng);
+    this.placeMercEncounter(inst);
     this.portalInstance = inst;
     this.enterArea(inst, inst.map.spawn);
     this.log(`地圖裝置發出嗡鳴。${inst.name}正等待著你。`, '#c8a8ff');
@@ -317,7 +325,20 @@ export class Game implements SkillHost {
         }
         break;
       case 'exit':
+        if (this.area.heist?.looted) this.completeHeist();
         this.goToTown();
+        break;
+      case 'heist':
+        this.events.emit('panel', { panel: 'heist' });
+        break;
+      case 'strongbox':
+        this.openStrongbox(obj);
+        break;
+      case 'vault':
+        this.lootVault(obj);
+        break;
+      case 'mercenary':
+        this.events.emit('mercenary', { obj });
         break;
       case 'npc':
         if (obj.npc) this.events.emit('dialog', { npc: obj.npc });
@@ -536,6 +557,8 @@ export class Game implements SkillHost {
     this.updateEffects(dt);
     this.updateRighteousFire(dt);
     this.updateHeraldOfThunder(dt);
+    this.updateMercenary(dt);
+    this.updateHeist(dt);
     // pools & damage over time
     const hadBuffs = this.player.buffs.length;
     this.player.tickPools(dt);
@@ -992,9 +1015,11 @@ export class Game implements SkillHost {
     }
     let goal: Vec2 | null = null;
     if (target) {
-      const reach = 1.2 + m.radius + target.radius;
-      if (best <= reach) {
-        const skill = m.def.skills[0];
+      const skill = m.def.skills[0];
+      // ranged companions (mercenary archers / mages) shoot from a distance
+      const ranged = skill.kind !== 'melee';
+      const reach = ranged ? skill.range * 0.85 : 1.2 + m.radius + target.radius;
+      if (best <= reach && (!ranged || this.map.los(m.pos, target.pos))) {
         m.facing = angleTo(m.pos, target.pos);
         m.actionTimer = 1 / m.attackSpeed;
         m.actionDuration = m.actionTimer;
@@ -1344,6 +1369,255 @@ export class Game implements SkillHost {
     }
   }
 
+  // ------------------------------------------------------------------------------------------
+  // Mercenaries
+  // ------------------------------------------------------------------------------------------
+
+  /** Seconds until a fallen hired mercenary returns (0 = not down). */
+  private mercDown = 0;
+
+  /** Sometimes a hostile mercenary waits somewhere in a story area or map. */
+  placeMercEncounter(inst: AreaInstance, force = false): Monster | null {
+    if (inst.town || inst.heist) return null;
+    if (!force && (this.char.level < 5 || !this.rng.chance(MERC_CHANCE))) return null;
+    const archetype = this.rng.pick(MERC_ARCHETYPES).id;
+    const name = this.rng.pick(MERC_NAMES);
+    const spots = inst.map.packSpots.filter((s) => dist(s, inst.map.spawn) > 15);
+    const at = inst.map.nearestFloor(spots.length ? this.rng.pick(spots) : inst.map.bossPos);
+    const m = new Monster(monsterDef(archetype), inst.level + 1, 'rare', at, 'enemy', this.rng, [more('monster_life', 150), more('damage', 15)]);
+    m.name = `傭兵 ${name}`;
+    m.merc = { name, archetype };
+    m.pack = inst.nextPack++;
+    inst.monsters.push(m);
+    return m;
+  }
+
+  private mercCompanion(): Monster | undefined {
+    return this.area.monsters.find((m) => m.merc && m.team === 'player' && !m.dead);
+  }
+
+  /** Create the hired mercenary next to the hero, scaled to the hero's level. */
+  private spawnMercenary(): void {
+    const data = this.char.mercenary;
+    if (!data || this.mercCompanion()) return;
+    const def = monsterDef(data.archetype);
+    const L = this.char.level;
+    const p = this.player;
+    const pos = this.area.map.nearestFloor({ x: p.pos.x - 1.2, y: p.pos.y + 0.8 });
+    const m = new Monster(def, L, 'normal', pos, 'player', this.rng);
+    const avg = monsterDamage(L) * 2 * def.damage;
+    makeMinion(m, Math.round(monsterLife(L) * 4 * def.life), [Math.round(avg * 0.8), Math.round(avg * 1.2)], def.attackSpeed * 1.1, def.speed * 1.1, p.id);
+    m.merc = data;
+    m.name = data.name;
+    m.summonUid = 'merc';
+    this.area.monsters.push(m);
+  }
+
+  private updateMercenary(dt: number): void {
+    const data = this.char.mercenary;
+    if (!data || this.mercCompanion()) {
+      this.mercDown = 0;
+      return;
+    }
+    if (this.mercDown <= 0) {
+      this.mercDown = 12;
+      this.log(`${data.name}倒下了，將在 12 秒後歸隊。`, '#ff8080');
+      return;
+    }
+    this.mercDown -= dt;
+    if (this.mercDown <= 0) {
+      this.mercDown = 0;
+      this.spawnMercenary();
+      this.log(`${data.name}回到了你身邊。`, '#a0ff80');
+    }
+  }
+
+  /** Hire a defeated mercenary as your companion (replaces the current one). */
+  hireMercenary(obj: Interactable): void {
+    if (!obj.merc) return;
+    const old = this.mercCompanion();
+    if (old) {
+      old.dead = true;
+      this.area.monsters = this.area.monsters.filter((m) => m !== old);
+    }
+    this.char.mercenary = obj.merc;
+    this.area.interactables = this.area.interactables.filter((i) => i !== obj);
+    this.spawnMercenary();
+    this.log(`${obj.merc.name}加入了你的隊伍。`, '#a0ff80');
+    this.save();
+  }
+
+  /** Take a defeated mercenary's gear instead of hiring them. */
+  lootMercenary(obj: Interactable): void {
+    if (!obj.merc) return;
+    const lvl = this.area.level + 2;
+    const drops = [randomEquipment(lvl, 'rare', this.rng), randomEquipment(lvl, 'rare', this.rng), randomCurrency(lvl, this.rng), randomCurrency(lvl, this.rng)];
+    if (this.rng.chance(0.2)) drops.push(randomEquipment(lvl, 'unique', this.rng));
+    for (const it of drops) this.dropItem(it, obj.pos);
+    this.area.interactables = this.area.interactables.filter((i) => i !== obj);
+    this.log(`你奪走了${obj.merc.name}的裝備。`, '#ffd870');
+  }
+
+  dismissMercenary(): void {
+    const old = this.mercCompanion();
+    if (old) {
+      old.dead = true;
+      this.area.monsters = this.area.monsters.filter((m) => m !== old);
+    }
+    if (this.char.mercenary) this.log(`${this.char.mercenary.name}離開了隊伍。`, '#a0a0a0');
+    this.char.mercenary = null;
+    this.save();
+  }
+
+  // ------------------------------------------------------------------------------------------
+  // Heist
+  // ------------------------------------------------------------------------------------------
+
+  heistUnlocked(): boolean {
+    return this.char.level >= HEIST_UNLOCK_LEVEL || this.char.completedAreas.includes('ashwood');
+  }
+
+  /** The three contracts on offer (generated on demand). */
+  heistData(): HeistData {
+    const h = (this.char.heist ??= { contracts: [], completed: 0 });
+    while (h.contracts.length < 3) h.contracts.push(this.newContract());
+    return h;
+  }
+
+  private newContract(): HeistContract {
+    const level = Math.max(8, Math.min(80, this.char.level + this.rng.int(0, 2)));
+    const targets = (Object.keys(HEIST_TARGETS) as HeistTarget[]).filter((t) => (HEIST_TARGETS[t].minLevel ?? 0) <= level);
+    return { id: uid('h'), site: this.rng.int(0, HEIST_SITES.length - 1), target: this.rng.pick(targets), level };
+  }
+
+  /** Swap all contracts for new ones (costs an Orb of Alteration). */
+  rerollHeistContracts(): boolean {
+    if (!spendCurrency(this.char.inventory, 'alteration', 1)) {
+      this.log(`需要 1 個${CURRENCY_BY_ID.alteration.name}。`, '#ff8080');
+      return false;
+    }
+    this.heistData().contracts = [];
+    this.heistData();
+    this.events.emit('inventory', null);
+    return true;
+  }
+
+  startHeist(contractId: string): boolean {
+    const c = this.heistData().contracts.find((x) => x.id === contractId);
+    if (!c || !this.heistUnlocked()) return false;
+    this.leaveArea();
+    const inst = createHeistArea(c, this.rng);
+    this.portalInstance = inst;
+    this.enterArea(inst, inst.map.spawn);
+    this.log(`潛入${HEIST_SITES[c.site].name}。目標：${HEIST_TARGETS[c.target].name}。警報升滿之前拿到寶庫裡的東西！`, '#ffd870');
+    return true;
+  }
+
+  private triggerLockdown(): void {
+    const h = this.area.heist;
+    if (!h || h.lockdown) return;
+    h.lockdown = true;
+    h.alarm = HEIST_ALARM.lockdown;
+    h.reinforceTimer = 3;
+    for (const m of this.area.monsters) if (m.team === 'enemy') m.aggro = true;
+    this.log('警報大作！整座金庫進入封鎖，增援正在趕來——快撤離！', '#ff6040');
+  }
+
+  private updateHeist(dt: number): void {
+    const h = this.area.heist;
+    if (!h || this.player.dead) return;
+    if (!h.lockdown) {
+      h.alarm += dt * HEIST_ALARM.perSecond;
+      if (h.alarm >= HEIST_ALARM.lockdown) this.triggerLockdown();
+      return;
+    }
+    h.reinforceTimer -= dt;
+    if (h.reinforceTimer > 0) return;
+    h.reinforceTimer = 8;
+    const p = this.player.pos;
+    const pack = this.area.nextPack++;
+    const n = 3 + this.rng.int(0, 2);
+    for (let i = 0; i < n; i++) {
+      const a = this.rng.float(0, Math.PI * 2);
+      const pos = this.map.nearestFloor({ x: p.x + Math.cos(a) * 8, y: p.y + Math.sin(a) * 8 });
+      const m = new Monster(monsterDef(this.rng.pick(['heist_guard', 'heist_archer'])), this.area.level, this.rng.chance(0.2) ? 'magic' : 'normal', pos, 'enemy', this.rng);
+      m.aggro = true;
+      m.pack = pack;
+      this.area.monsters.push(m);
+      this.vfx({ type: 'summon', pos });
+    }
+  }
+
+  private openStrongbox(obj: Interactable): void {
+    const h = this.area.heist;
+    this.area.interactables = this.area.interactables.filter((i) => i !== obj);
+    const cs = this.player.cstats;
+    const drops = rollDrops('rare', { areaLevel: this.area.level, itemQuantity: cs.itemQuantity + 50, itemRarity: cs.itemRarity + 50, isBoss: false }, this.rng);
+    drops.push(randomCurrency(this.area.level, this.rng));
+    for (const it of drops) this.dropItem(it, obj.pos);
+    this.vfx({ type: 'explosion', pos: { ...obj.pos }, radius: 1, color: '#ffd870' });
+    if (h && !h.lockdown) {
+      h.alarm += HEIST_ALARM.perChest;
+      this.log(`你撬開了保險箱。警報 ${Math.min(100, Math.round(h.alarm))}%`, '#ffd870');
+      if (h.alarm >= HEIST_ALARM.lockdown) this.triggerLockdown();
+    }
+  }
+
+  private heistReward(target: HeistTarget, level: number): Item[] {
+    const r = this.rng;
+    switch (target) {
+      case 'currency':
+        return [createCurrency('chaos', r.int(3, 5)), createCurrency('regal', 2), createCurrency('alchemy', 3), createCurrency('fusing', r.int(4, 8)), createCurrency(level >= 30 ? 'exalt' : 'regal', 1), createCurrency(r.chance(0.5) ? 'divine' : 'annul', 1)];
+      case 'unique': {
+        const out: Item[] = [];
+        for (let i = 0; i < 2; i++) {
+          const u = randomUnique(level + 5, r);
+          if (u) out.push(createUnique(u, level, r));
+        }
+        return out;
+      }
+      case 'gems':
+        return [0, 1, 2].map(() => {
+          const g = randomGem(level + 5, r);
+          g.quality = 20;
+          return g;
+        });
+      case 'jewellery':
+        return [0, 1, 2].map(() => {
+          const base = randomBase(level + 5, r, (b) => b.tags.includes('jewellery'));
+          const it = createItem(base.id, level + 5, 'normal', r);
+          applyRarity(it, 'rare', r);
+          it.identified = true;
+          return it;
+        });
+      case 'maps':
+        return [0, 1, 2].map(() => randomMapDrop(level + 4, r)).filter((x): x is Item => !!x);
+    }
+  }
+
+  private lootVault(obj: Interactable): void {
+    const h = this.area.heist;
+    if (!h || h.looted) return;
+    h.looted = true;
+    this.area.interactables = this.area.interactables.filter((i) => i !== obj);
+    for (const it of this.heistReward(h.contract.target, h.contract.level)) this.dropItem(it, obj.pos);
+    this.vfx({ type: 'explosion', pos: { ...obj.pos }, radius: 2, color: '#ffd870' });
+    this.log(`你打開了寶庫，拿到了${HEIST_TARGETS[h.contract.target].name}！`, '#ffd870');
+    this.triggerLockdown();
+  }
+
+  private completeHeist(): void {
+    const h = this.area.heist;
+    if (!h) return;
+    const data = this.heistData();
+    data.contracts = data.contracts.filter((c) => c.id !== h.contract.id);
+    data.completed++;
+    this.area.heist = null;
+    this.heistData();
+    this.log(`劫盜成功！（已完成 ${data.completed} 次）阿蒂亞準備了新的委託。`, '#a0ff80');
+    this.save();
+  }
+
   /** Headhunter: killing a rare monster grants you its modifiers for 20 seconds. */
   private headhunt(m: Monster): void {
     const mods: StatMod[] = [];
@@ -1376,6 +1650,11 @@ export class Game implements SkillHost {
     const cs = p.cstats;
     if (m.rarity === 'rare' && cs.sheet.has('headhunter')) this.headhunt(m);
     if (!area.town) this.deathExplosions(m);
+    if (m.merc) {
+      const it = area.addInteractable('mercenary', { ...m.pos }, `${m.merc.name}（戰敗的傭兵）`, 0.8);
+      it.merc = m.merc;
+      this.log(`${m.merc.name}放下了武器。與他交談，決定是招募他還是奪走他的裝備。`, '#ffd870');
+    }
     if (!p.dead) {
       if (cs.sheet.flat('life_on_kill')) p.heal(cs.sheet.flat('life_on_kill'));
       if (cs.sheet.flat('mana_on_kill')) p.restoreMana(cs.sheet.flat('mana_on_kill'));

@@ -70,6 +70,7 @@ export class Hud {
   private gemLevels: HTMLElement;
   private toastEl: HTMLElement;
   private questEl: HTMLElement;
+  private alarmEl: HTMLElement;
   private labelMap = new Map<number, { el: HTMLElement; w: number; h: number }>();
   private hpMap = new Map<number, HTMLElement>();
   private texts: FloatText[] = [];
@@ -104,7 +105,8 @@ export class Hud {
     this.gemLevels = h('div', { class: 'gem-levels' });
     this.toastEl = h('div', { class: 'toast', style: 'opacity:0' });
     this.questEl = h('div', { class: 'quest-tracker', title: '任務日誌 (J)', onclick: () => ui.story.journal() });
-    this.el.append(this.target, this.boss, this.minimap, this.questEl, this.logEl, this.gemLevels, this.toastEl);
+    this.alarmEl = h('div', { class: 'heist-alarm', style: 'display:none' });
+    this.el.append(this.target, this.boss, this.alarmEl, this.minimap, this.questEl, this.logEl, this.gemLevels, this.toastEl);
 
     // Bottom bar
     const bottom = h('div', { class: 'hud-bottom' });
@@ -164,6 +166,25 @@ export class Hud {
     this.refreshFlasks();
     this.onArea();
     this.refreshQuests();
+  }
+
+  private lastAlarm = '';
+
+  /** Heist alarm meter (heist areas only). */
+  private updateAlarm(): void {
+    const h = this.ui.game.area.heist;
+    const key = h ? `${Math.floor(h.alarm)}:${h.lockdown}:${h.looted}` : '';
+    if (key === this.lastAlarm) return;
+    this.lastAlarm = key;
+    if (!h) {
+      this.alarmEl.style.display = 'none';
+      return;
+    }
+    this.alarmEl.style.display = '';
+    const pct = Math.min(100, h.alarm);
+    const label = h.lockdown ? (h.looted ? '封鎖中！帶著寶物回到撤離點' : '封鎖中！增援不斷湧來') : `警報 ${Math.floor(pct)}%`;
+    this.alarmEl.className = `heist-alarm${h.lockdown ? ' lockdown' : ''}`;
+    this.alarmEl.innerHTML = `<div class="name">${label}</div><div class="bar"><div class="fill" style="width:${pct}%"></div></div>`;
   }
 
   /** Quest tracker under the minimap. */
@@ -332,6 +353,7 @@ export class Hud {
       if (l.t > 9) l.el.style.opacity = '0';
     }
 
+    this.updateAlarm();
     this.updateTarget();
     this.updateLabels();
     this.updateHpBars();
@@ -436,7 +458,7 @@ export class Hud {
       }
     }
     for (const it of g.area.interactables) {
-      const pr = r.project(it.pos, it.kind === 'vendor' || it.kind === 'npc' ? 3 : 2.4);
+      const pr = r.project(it.pos, it.kind === 'vendor' || it.kind === 'npc' || it.kind === 'heist' || it.kind === 'mercenary' ? 3 : 2.4);
       if (!pr.visible || dist(it.pos, p.pos) > 30) continue;
       const id = -it.id;
       seen.add(id);
@@ -580,7 +602,7 @@ export class Hud {
     const toY = (y: number) => oy + y * scale;
     for (const it of g.area.interactables) {
       if (!map.explored[Math.floor(it.pos.y) * map.w + Math.floor(it.pos.x)] && !g.area.town) continue;
-      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : it.kind === 'quest' || (it.kind === 'npc' && /^[！？]/.test(it.label)) ? '#ffd040' : it.kind === 'npc' ? '#d8d0b0' : it.kind === 'bench' ? '#b4b4ff' : '#60b0ff';
+      ctx.fillStyle = it.kind === 'map_device' ? '#c080ff' : it.kind === 'stash' ? '#e0c080' : it.kind === 'vendor' ? '#80ff80' : it.kind === 'quest' || (it.kind === 'npc' && /^[！？]/.test(it.label)) ? '#ffd040' : it.kind === 'npc' ? '#d8d0b0' : it.kind === 'bench' ? '#b4b4ff' : it.kind === 'vault' ? '#ffd040' : it.kind === 'strongbox' ? '#e0c080' : it.kind === 'mercenary' ? '#80ff80' : it.kind === 'heist' ? '#ffb070' : '#60b0ff';
       ctx.beginPath();
       ctx.arc(toX(it.pos.x), toY(it.pos.y), big ? 6 : 4, 0, Math.PI * 2);
       ctx.fill();

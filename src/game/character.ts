@@ -5,6 +5,7 @@ import { createCurrency, createGem, createItem } from '../items/generate';
 import { addItem, newGrid, type Grid } from '../items/grid';
 import type { EquipSlot, Item } from '../items/types';
 import type { QuestState } from './quests';
+import type { HeistData, MercenaryData } from '../data/activities';
 
 export const INV_W = 12;
 export const INV_H = 5;
@@ -37,6 +38,10 @@ export interface CharacterData {
   quests?: Record<string, QuestState>;
   /** The prologue has been shown. */
   storySeen?: boolean;
+  /** Hired mercenary companion. */
+  mercenary?: MercenaryData | null;
+  /** Heist contracts on offer and completed heists. */
+  heist?: HeistData;
 }
 
 export function newCharacter(name: string, classId: ClassId): CharacterData {

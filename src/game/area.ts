@@ -2,6 +2,7 @@ import { angleTo, type Vec2 } from '../core/math';
 import type { RNG } from '../core/rng';
 import { AREA_BY_ID, MAP_LAYOUTS, THEMES, type AreaDef, type Theme } from '../data/areas';
 import { NPCS } from '../data/quests';
+import { HEIST_SITES, HEIST_STRONGBOXES, HEIST_TARGETS, type HeistContract } from '../data/activities';
 import { getMod } from '../data/affixes';
 import { modStats } from '../items/item';
 import { mapStats } from '../items/tooltip';
@@ -34,6 +35,8 @@ export class AreaInstance {
   resPenalty: number;
   portalPos: Vec2 | null = null;
   nextPack = 1;
+  /** Heist state (heist areas only). */
+  heist: HeistState | null = null;
 
   constructor(
     readonly name: string,
@@ -71,6 +74,7 @@ export function createTown(rng: RNG): AreaInstance {
   inst.addInteractable('map_device', layout.mapDevice, '地圖裝置', 1.2);
   for (const n of NPCS) inst.addInteractable('npc', layout.map.nearestFloor(n.pos), n.name, 0.8).npc = n.id;
   inst.addInteractable('bench', layout.map.nearestFloor({ x: 27.5, y: 16.5 }), '工藝台', 0.9);
+  inst.addInteractable('heist', layout.map.nearestFloor({ x: 17.5, y: 30 }), '劫盜頭目 阿蒂亞', 0.8);
   inst.portalPos = layout.portalSpot;
   return inst;
 }
@@ -150,5 +154,27 @@ export function createMapArea(mapItem: Item, rng: RNG): AreaInstance {
   inst.rarity = ms.rarity;
   inst.playerMods = playerMods;
   populate(inst, { pool: layout.monsters, boss: layout.boss, monsterMods, packSizeInc: ms.pack }, rng);
+  return inst;
+}
+
+export interface HeistState {
+  contract: HeistContract;
+  alarm: number;
+  lockdown: boolean;
+  looted: boolean;
+  reinforceTimer: number;
+}
+
+/** A heist: guarded rooms, strongboxes that raise the alarm and a vault holding the target. */
+export function createHeistArea(contract: HeistContract, rng: RNG): AreaInstance {
+  const site = HEIST_SITES[contract.site] ?? HEIST_SITES[0];
+  const map = generateArea(site.theme, [95, 95], 20, rng);
+  const inst = new AreaInstance(`劫盜：${site.name}`, contract.level, map, false, null, null);
+  populate(inst, { pool: ['heist_guard', 'heist_archer', 'heist_guard', 'brute'], monsterMods: [], packSizeInc: 0 }, rng);
+  inst.heist = { contract, alarm: 0, lockdown: false, looted: false, reinforceTimer: 0 };
+  inst.addInteractable('vault', map.bossPos, `寶庫：${HEIST_TARGETS[contract.target].name}`, 1.1);
+  const spots = rng.shuffle(map.packSpots.filter((p) => Math.hypot(p.x - map.spawn.x, p.y - map.spawn.y) > 12));
+  for (const p of spots.slice(0, HEIST_STRONGBOXES)) inst.addInteractable('strongbox', map.nearestFloor({ x: p.x + 1.2, y: p.y + 1 }), '保險箱', 0.7);
+  inst.addInteractable('exit', map.nearestFloor({ x: map.spawn.x + 1.5, y: map.spawn.y }), '撤離點', 1.2);
   return inst;
 }

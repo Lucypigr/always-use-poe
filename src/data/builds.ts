@@ -24,6 +24,22 @@ export interface BuildDef {
 
 export const BUILDS: BuildDef[] = [
   {
+    id: 'earthquake', name: '地震・主宰', poe: 'Earthquake Juggernaut', classes: ['brute', 'zealot'],
+    skill: 'earthquake', supports: ['pulverise', 'brutal_force', 'ruthless', 'increased_duration', 'faster_attacks'],
+    extra: ['ground_slam', 'leap_slam', 'pride', 'vitality'],
+    uniques: ['starforge', 'carcass_jack', 'kaoms_heart', 'abyssal_crown'],
+    summary: '先重擊地面，一秒後餘震以 160% 傷害炸開更大的範圍，連續施放讓餘震不斷疊加。',
+    tips: ['雙手錘的基礎傷害最高。', '增加持續時間會延後餘震，但可以讓你走位後再引爆。'],
+  },
+  {
+    id: 'caustic', name: '腐蝕箭・毒霧射手', poe: 'Caustic Arrow Pathfinder', classes: ['tracker', 'nightblade'],
+    skill: 'caustic_arrow', supports: ['void_manipulation', 'deadly_ailments', 'lesser_volley', 'swift_affliction', 'faster_attacks'],
+    extra: ['barrage', 'malevolence', 'dash_strike'],
+    uniques: ['plague_throat', 'quill_rain', 'wyrmfang'],
+    summary: '毒霧箭命中時炸開，多重投射讓毒霧覆蓋整片區域；遇到首領換成連射集中火力。',
+    tips: ['中毒吃「混沌傷害」「持續傷害」加成，惡意光環也能強化。', '連射適合單體首領。'],
+  },
+  {
     id: 'herald', name: '先驅・連鎖爆炸', poe: 'Herald of Ice / Ash Stacker', classes: ['tracker', 'blademaster', 'nightblade'],
     skill: 'rime_blades', supports: ['added_cold', 'hypothermia', 'faster_attacks', 'cold_penetration', 'crit_strikes'],
     extra: ['herald_ice', 'herald_ash', 'winters_grasp', 'enlighten'],

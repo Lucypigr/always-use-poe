@@ -108,6 +108,20 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
 - Quest tracker under the minimap, quest journal (J), and a prologue for new characters.
   Older saves get their quests for already-beaten bosses marked ready to hand in.
 
+## Activities (league mechanics)
+
+- **Heist (劫盜)** — `src/data/activities.ts`, `createHeistArea` in `src/game/area.ts`. The ring leader
+  阿蒂亞 in town offers three contracts (site, target and level; reroll for an Orb of Alteration). Inside,
+  the alarm rises over time and with every strongbox you crack; at 100% — or as soon as you open the
+  vault — the site locks down and reinforcements keep arriving until you reach the exit. Targets: a
+  currency hoard, two uniques, three 20% quality gems, three high-level rare jewellery pieces or maps.
+  Unlocks after act 1 (or level 12).
+- **Mercenaries (傭兵)** — like *Mercenaries of Trarthus*: 30% of story areas / maps hold a named rare
+  mercenary (blade, archer or fire mage). Beat them, then **hire** them — they follow you everywhere,
+  level with you, fight with their own skills (ranged ones keep their distance) and come back 12 s after
+  falling — or **take their gear** for two rares, currency and a chance at a unique. Manage / dismiss
+  them on the character sheet.
+
 ## Builds (流派)
 
 A build guide in game (**B**, or 選單 → 流派指南; data in `src/data/builds.ts`) lists 11 archetypes
@@ -176,9 +190,9 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 | Orb of Unlearning | Regret | Passive refund point |
 
 ### Gems, sockets and links
-- **52 active skills** (incl. 17 auras & heralds) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+- **64 active skills** (incl. 17 auras & heralds) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
   novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
-  and **45 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
+  and **53 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
   controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).
 - Supports only affect active gems in **linked sockets** and only if the skill has matching
   **tags** (a projectile support won't support a melee strike). Supports add **mana multipliers**.

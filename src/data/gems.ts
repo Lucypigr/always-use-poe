@@ -691,6 +691,147 @@ export const GEMS: GemDef[] = [
     quality: [inc('lightning_damage', 0.75)], qualityText: '增加 {0}% 閃電傷害',
   },
 
+  // ============================================================================ MORE SKILLS
+  {
+    id: 'ground_slam', name: '地面猛擊', color: 'R', reqLevel: 1,
+    tags: ['attack', 'melee', 'slam', 'area', 'physical'],
+    description: '猛擊地面，向前方扇形範圍發出震波。',
+    active: {
+      behaviour: 'slam', weaponDamage: [120, 190], attackSpeedMult: 0.85, manaCost: [6, 10], params: { angle: 60, length: 5 },
+      levelStats: (l) => [inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => [`造成 ${L(120, 190)(l)}% 基礎攻擊傷害`, `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'earthquake', name: '地震', color: 'R', reqLevel: 28,
+    tags: ['attack', 'melee', 'slam', 'area', 'duration', 'physical'],
+    description: '重擊地面，片刻後大地崩裂，餘震造成更大範圍的強力傷害。',
+    active: {
+      behaviour: 'slam', weaponDamage: [110, 170], attackSpeedMult: 0.85, manaCost: [9, 15], params: { angle: 360, length: 2.6, aftershock: 1 },
+      levelText: (l) => [`造成 ${L(110, 170)(l)}% 基礎攻擊傷害`, '1 秒後產生餘震，造成 160% 傷害並擴大範圍'],
+    },
+    quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'smite', name: '懲戒', color: 'R', reqLevel: 12,
+    tags: ['attack', 'melee', 'strike', 'lightning'],
+    description: '以神聖雷霆打擊敵人，閃電會擴散到目標周圍。',
+    active: {
+      behaviour: 'melee', weaponDamage: [120, 185], manaCost: [6, 10], conversion: { lightning: 50 }, params: { arc: 0 },
+      levelStats: () => [flag('splash'), flat('shock_chance', 15)],
+      levelText: (l) => [`造成 ${L(120, 185)(l)}% 基礎攻擊傷害`, '50% 物理傷害轉換為閃電傷害', '閃電擴散到目標周圍', '15% 機率感電'],
+    },
+    quality: [inc('lightning_damage', 1)], qualityText: '增加 {0}% 閃電傷害',
+  },
+  {
+    id: 'lightning_strike', name: '閃電打擊', color: 'G', reqLevel: 12,
+    tags: ['attack', 'melee', 'projectile', 'lightning'],
+    description: '近戰攻擊，並從目標處射出閃電投射物。',
+    active: {
+      behaviour: 'strike_projectile', weaponDamage: [100, 160], manaCost: [6, 9], conversion: { lightning: 50 },
+      params: { count: 4, spread: 40, speed: 26, range: 10, mode: 0 },
+      levelText: (l) => [`造成 ${L(100, 160)(l)}% 基礎攻擊傷害`, '50% 物理傷害轉換為閃電傷害', '發射 4 道閃電'],
+    },
+    quality: [inc('projectile_damage', 1)], qualityText: '增加 {0}% 投射物傷害',
+  },
+  {
+    id: 'barrage', name: '連射', color: 'G', reqLevel: 12,
+    tags: ['attack', 'projectile', 'bow'],
+    description: '快速連續射出一串箭矢，適合擊殺單一強敵。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [55, 85], attackSpeedMult: 2.2, manaCost: [7, 11], weapons: BOW,
+      params: { count: 1, spread: 0, speed: 28, range: 15, size: 0.22, visual: 1 },
+      levelStats: () => [flat('repeats', 3)],
+      levelText: (l) => [`每支箭造成 ${L(55, 85)(l)}% 基礎攻擊傷害`, '每次使用連續射出 4 支箭'],
+    },
+    quality: [inc('projectile_damage', 1)], qualityText: '增加 {0}% 投射物傷害',
+  },
+  {
+    id: 'caustic_arrow', name: '腐蝕箭', color: 'G', reqLevel: 4,
+    tags: ['attack', 'projectile', 'area', 'bow', 'chaos'],
+    description: '射出腐蝕之箭，命中時炸開毒霧，使範圍內的敵人中毒。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [85, 135], manaCost: [7, 11], weapons: BOW, conversion: { chaos: 60 },
+      params: { count: 1, spread: 0, speed: 24, range: 14, size: 0.3, explodeRadius: 1.8, visual: 1 },
+      levelStats: (l) => [flat('poison_chance', 70), more('poison_damage', L(10, 40)(l))],
+      levelText: (l) => [`造成 ${L(85, 135)(l)}% 基礎攻擊傷害`, '60% 物理傷害轉換為混沌傷害', '70% 機率中毒'],
+    },
+    quality: [inc('poison_damage', 1)], qualityText: '增加 {0}% 中毒傷害',
+  },
+  {
+    id: 'poisonous_concoction', name: '毒藥劑', color: 'G', reqLevel: 12,
+    tags: ['attack', 'projectile', 'area', 'chaos'],
+    description: '投擲一瓶劇毒藥劑，爆炸時使敵人中毒。任何武器都能使用。',
+    active: {
+      behaviour: 'projectile', weaponDamage: [90, 140], attackSpeedMult: 1.1, manaCost: [7, 11], conversion: { chaos: 100 },
+      params: { count: 1, spread: 0, speed: 18, range: 10, size: 0.35, explodeRadius: 2 },
+      levelStats: () => [flat('poison_chance', 100)],
+      levelText: (l) => [`造成 ${L(90, 140)(l)}% 基礎攻擊傷害`, '全部物理傷害轉換為混沌傷害', '擊中必定中毒'],
+    },
+    quality: [inc('area_of_effect', 1)], qualityText: '增加 {0}% 效果範圍',
+  },
+  {
+    id: 'ball_lightning', name: '球狀閃電', color: 'B', reqLevel: 16,
+    tags: ['spell', 'projectile', 'area', 'lightning'],
+    description: '射出緩慢移動的閃電球，穿過敵人時不斷電擊周圍的目標。',
+    active: {
+      behaviour: 'projectile', castTime: 0.7, crit: 6, baseDamage: { lightning: [0.1, 1.9] }, damageScale: 0.55, effectiveness: 0.6,
+      manaCost: [8, 22], params: { count: 1, spread: 0, speed: 8, range: 12, size: 0.5, strikes: 2, strikeRadius: 2.6, visual: 4 },
+      levelStats: () => [flat('pierce', 99)],
+      levelText: () => ['穿透所有敵人', '命中時電擊附近 2 名敵人'],
+    },
+    quality: [inc('area_of_effect', 1)], qualityText: '增加 {0}% 效果範圍',
+  },
+  {
+    id: 'shock_nova', name: '震擊新星', color: 'B', reqLevel: 24,
+    tags: ['spell', 'area', 'lightning', 'nova'],
+    description: '在你周圍釋放一圈閃電，容易使敵人感電。',
+    active: {
+      behaviour: 'nova', castTime: 0.7, crit: 6, baseDamage: { lightning: [0.1, 1.9] }, damageScale: 0.9, effectiveness: 1,
+      manaCost: [11, 26], params: { radius: 3.3 },
+      levelStats: (l) => [flat('shock_chance', 25), inc('shock_effect', L(0, 30)(l))],
+      levelText: (l) => ['25% 機率感電', `增加 ${L(0, 30)(l)}% 感電效果`],
+    },
+    quality: [inc('shock_effect', 1)], qualityText: '增加 {0}% 感電效果',
+  },
+  {
+    id: 'cold_snap', name: '寒冰爆', color: 'B', reqLevel: 12,
+    tags: ['spell', 'area', 'cold'],
+    description: '在目標處引爆一團寒冰，極易凍結敵人。',
+    active: {
+      behaviour: 'rain', castTime: 0.85, crit: 6, baseDamage: { cold: [0.8, 1.2] }, damageScale: 1.1, effectiveness: 1,
+      manaCost: [10, 24], params: { radius: 0, impacts: 1, impactRadius: 2.2, duration: 0 },
+      levelStats: (l) => [flat('freeze_chance', L(20, 40)(l))],
+      levelText: (l) => [`${L(20, 40)(l)}% 機率冰凍`],
+    },
+    quality: [inc('area_of_effect', 1)], qualityText: '增加 {0}% 效果範圍',
+  },
+  {
+    id: 'bladefall', name: '刃雨', color: 'B', reqLevel: 28,
+    tags: ['spell', 'area', 'physical'],
+    description: '召喚一片虛幻刀刃從天而降，覆蓋目標區域。',
+    active: {
+      behaviour: 'rain', castTime: 0.75, crit: 6, baseDamage: { phys: [0.8, 1.2] }, damageScale: 0.5, effectiveness: 0.5,
+      manaCost: [12, 26], params: { radius: 2.6, impacts: 9, impactRadius: 0.9, duration: 0.6 },
+      levelStats: (l) => [flat('bleed_chance', 15), inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => ['召喚 9 把刀刃', '15% 機率造成流血', `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('area_damage', 1)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'glacial_cascade', name: '冰川之錐', color: 'B', reqLevel: 28,
+    tags: ['spell', 'area', 'cold'],
+    description: '一連串冰錐從地面刺出，貫穿面前一長條區域。',
+    active: {
+      behaviour: 'slam', castTime: 0.7, crit: 6, baseDamage: { cold: [0.8, 1.2] }, damageScale: 1, effectiveness: 0.9,
+      manaCost: [12, 28], params: { angle: 26, length: 7.5 },
+      levelStats: (l) => [inc('area_of_effect', L(0, 20)(l))],
+      levelText: (l) => ['冰錐貫穿前方長條區域', `增加 ${L(0, 20)(l)}% 效果範圍`],
+    },
+    quality: [inc('cold_damage', 1)], qualityText: '增加 {0}% 冰冷傷害',
+  },
+
   // ============================================================================ SUPPORTS — red
   {
     id: 'brutal_force', name: '蠻力（輔）', color: 'R', reqLevel: 8, tags: ['attack', 'melee', 'physical'],
@@ -1158,6 +1299,86 @@ export const GEMS: GemDef[] = [
       text: (l) => [`總減 ${L(10, 40)(l)}% 魔力保留`],
     },
     quality: [inc('reservation', -0.25)], qualityText: '魔力保留減少 {0}%',
+  },
+  {
+    id: 'ruthless', name: '殘暴（輔）', color: 'R', reqLevel: 12, tags: ['melee'],
+    description: '被輔助的近戰攻擊更加兇殘，並擊退敵人。',
+    support: {
+      anyOf: ['melee'], manaMult: 1.3,
+      stats: (l) => [more('melee_damage', L(15, 30)(l)), flag('knockback')],
+      text: (l) => [`總增 ${L(15, 30)(l)}% 近戰傷害`, '擊中時擊退敵人'],
+    },
+    quality: [inc('melee_damage', 0.5)], qualityText: '增加 {0}% 近戰傷害',
+  },
+  {
+    id: 'inspiration', name: '激勵（輔）', color: 'R', reqLevel: 12, tags: [],
+    description: '被輔助的技能消耗更少魔力，元素傷害與暴擊提高。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1,
+      stats: (l) => [more('mana_cost', -30), more('elemental_damage', L(10, 25)(l)), inc('crit_chance', 20)],
+      text: (l) => ['總減 30% 魔力消耗', `總增 ${L(10, 25)(l)}% 元素傷害`, '增加 20% 暴擊率'],
+    },
+    quality: [inc('elemental_damage', 0.5)], qualityText: '增加 {0}% 元素傷害',
+  },
+  {
+    id: 'life_gain_on_hit', name: '擊中回血（輔）', color: 'R', reqLevel: 8, tags: ['attack'],
+    description: '被輔助的攻擊每擊中一名敵人就回復生命。',
+    support: {
+      anyOf: ['attack'], manaMult: 1.1,
+      stats: (l) => [flat('life_on_hit', L(5, 40)(l))],
+      text: (l) => [`每擊中一名敵人回復 ${L(5, 40)(l)} 生命`],
+    },
+    quality: [inc('damage', 0.5)], qualityText: '增加 {0}% 傷害',
+  },
+  {
+    id: 'ice_bite', name: '冰咬（輔）', color: 'G', reqLevel: 12, tags: ['cold'],
+    description: '被輔助的技能更容易冰凍敵人，冰冷傷害提高。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1.2,
+      stats: (l) => [flat('freeze_chance', 15), more('cold_damage', L(10, 25)(l))],
+      text: (l) => ['15% 機率冰凍', `總增 ${L(10, 25)(l)}% 冰冷傷害`],
+    },
+    quality: [inc('cold_damage', 0.5)], qualityText: '增加 {0}% 冰冷傷害',
+  },
+  {
+    id: 'slower_projectiles', name: '投射物減速（輔）', color: 'G', reqLevel: 8, tags: ['projectile'],
+    description: '被輔助的投射物飛得較慢，但傷害更高。',
+    support: {
+      anyOf: ['projectile'], manaMult: 1.2,
+      stats: (l) => [more('projectile_damage', L(20, 39)(l)), inc('projectile_speed', -30)],
+      text: (l) => [`總增 ${L(20, 39)(l)}% 投射物傷害`, '投射物速度減少 30%'],
+    },
+    quality: [inc('projectile_damage', 0.5)], qualityText: '增加 {0}% 投射物傷害',
+  },
+  {
+    id: 'unbound_ailments', name: '無拘異常（輔）', color: 'G', reqLevel: 24, tags: ['duration'],
+    description: '被輔助的技能造成的異常狀態更強、更持久。',
+    support: {
+      anyOf: ['attack', 'spell'], noneOf: ['aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [inc('chill_effect', L(20, 40)(l)), inc('shock_effect', L(20, 40)(l)), inc('ailment_duration', 20), more('dot_damage', L(10, 20)(l))],
+      text: (l) => [`增加 ${L(20, 40)(l)}% 冰緩與感電效果`, '增加 20% 異常狀態持續時間', `總增 ${L(10, 20)(l)}% 持續傷害`],
+    },
+    quality: [inc('ailment_duration', 0.5)], qualityText: '增加 {0}% 異常狀態持續時間',
+  },
+  {
+    id: 'spell_cascade', name: '法術連鎖（輔）', color: 'B', reqLevel: 31, tags: ['spell', 'area'],
+    description: '被輔助的範圍法術連續施放三次，覆蓋更多區域。',
+    support: {
+      anyOf: ['area'], noneOf: ['attack', 'aura', 'minion', 'movement'], manaMult: 1.4,
+      stats: (l) => [flat('repeats', 2), more('cast_speed', L(90, 120)(l)), more('damage', -35), more('area_of_effect', -15)],
+      text: (l) => ['被輔助的法術額外重複 2 次', `總增 ${L(90, 120)(l)}% 施法速度`, '總減 35% 傷害', '總減 15% 效果範圍'],
+    },
+    quality: [inc('area_damage', 0.5)], qualityText: '增加 {0}% 範圍傷害',
+  },
+  {
+    id: 'intensify', name: '強化（輔）', color: 'B', reqLevel: 18, tags: ['spell', 'area'],
+    description: '被輔助的範圍法術造成更多範圍傷害。',
+    support: {
+      anyOf: ['area'], noneOf: ['attack', 'aura', 'minion'], manaMult: 1.3,
+      stats: (l) => [more('area_damage', L(20, 39)(l)), inc('cast_speed', 10)],
+      text: (l) => [`總增 ${L(20, 39)(l)}% 範圍傷害`, '增加 10% 施法速度'],
+    },
+    quality: [inc('area_damage', 0.5)], qualityText: '增加 {0}% 範圍傷害',
   },
 ];
 

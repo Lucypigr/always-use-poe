@@ -92,9 +92,9 @@ export interface QuestDef {
   reward: QuestReward;
 }
 
-const SKILLS_STR = ['crushing_blow', 'bone_breaker', 'sweeping_cleave', 'earthshatter', 'magma_strike', 'righteous_fire'];
-const SKILLS_DEX = ['split_shot', 'double_strike', 'ice_shot', 'venom_strike', 'rime_blades', 'storm_arrow', 'lacerate', 'toxic_rain'];
-const SKILLS_INT = ['fireball', 'freezing_pulse', 'raging_spirits', 'frost_nova', 'chain_lightning', 'sparkstorm', 'raise_bones', 'raise_zombie', 'essence_drain', 'contagion', 'blade_vortex', 'kinetic_blast'];
+const SKILLS_STR = ['crushing_blow', 'bone_breaker', 'ground_slam', 'sweeping_cleave', 'earthshatter', 'magma_strike', 'smite', 'righteous_fire'];
+const SKILLS_DEX = ['split_shot', 'double_strike', 'ice_shot', 'caustic_arrow', 'venom_strike', 'rime_blades', 'storm_arrow', 'lacerate', 'toxic_rain', 'lightning_strike', 'barrage', 'poisonous_concoction'];
+const SKILLS_INT = ['fireball', 'freezing_pulse', 'raging_spirits', 'frost_nova', 'chain_lightning', 'sparkstorm', 'raise_bones', 'raise_zombie', 'essence_drain', 'contagion', 'blade_vortex', 'kinetic_blast', 'cold_snap', 'ball_lightning'];
 
 export const QUESTS: QuestDef[] = [
   // ------------------------------------------------------------------ Act 1 — 流放之岸
@@ -135,7 +135,7 @@ export const QUESTS: QuestDef[] = [
     task: '在泥灘窪地找到三塊符文石',
     intro: ['泥灘裡埋著三塊古老的符文石。拼在一起，據說能打開通往森林深處的舊水道。', '找到它們。別被那些鴕獸踩扁了。'],
     outro: ['就是這三塊。你看，符文拼起來是一扇門的形狀。', '拿著這個，你會需要比拳頭更好用的東西。'],
-    reward: { gems: [...SKILLS_STR.slice(2), ...SKILLS_DEX.slice(3), ...SKILLS_INT.slice(3)] },
+    reward: { gems: [...SKILLS_STR.slice(2, 6), ...SKILLS_DEX.slice(3, 8), ...SKILLS_INT.slice(3, 8)] },
   },
   {
     id: 'a1_dweller', name: '深淵的居住者', act: 1, giver: 'tarkleigh', main: true,
@@ -257,7 +257,7 @@ export const QUESTS: QuestDef[] = [
     task: '在黑水洞窟找到三尊半身像',
     intro: ['反抗軍的領袖維多里歐在地下藏了一批物資，線索刻在三尊他自己的半身像裡——他一向很自戀。', '找到那三尊半身像，我們就能找到物資。'],
     outro: ['你找到了！維多里歐的寶庫……比我想像的還要豐富。這些分給你。'],
-    reward: { gems: [...SKILLS_STR, ...SKILLS_DEX, ...SKILLS_INT], currency: [['chaos', 1]] },
+    reward: { gems: [...SKILLS_STR.slice(4), ...SKILLS_DEX.slice(6), ...SKILLS_INT.slice(8)], currency: [['chaos', 1]] },
   },
   {
     id: 'a3_piety', name: '皮耶緹的寵物', act: 3, giver: 'clarissa', main: true,
@@ -310,7 +310,7 @@ export const QUESTS: QuestDef[] = [
     task: '在被遺棄者王座取得夢魘的三個器官',
     intro: ['夢魘是用被遺棄之王的血肉餵養的。他的心、肺與臟腑被分別封存在王座的深處。', '毀掉它們，夢魘就會衰弱。這很噁心，我知道。'],
     outro: ['夢魘在尖叫——你聽到了嗎？它感覺到了。'],
-    reward: { gems: [...SKILLS_STR, ...SKILLS_DEX, ...SKILLS_INT], currency: [['exalt', 1]] },
+    reward: { gems: [...SKILLS_STR.slice(4), ...SKILLS_DEX.slice(6), ...SKILLS_INT.slice(8)], currency: [['exalt', 1]] },
   },
   {
     id: 'a4_nightmare', name: '永恆夢魘', act: 4, giver: 'dialla', main: true,

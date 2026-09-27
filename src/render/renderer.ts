@@ -627,6 +627,12 @@ export class Renderer {
         if (it.kind === 'vendor') o.rotation.y = 0.3;
         // town NPCs face the square
         if (it.kind === 'npc') o.rotation.y = Math.atan2(23 - it.pos.x, 20 - it.pos.y);
+        if (it.kind === 'heist' || it.kind === 'mercenary') o.rotation.y = Math.atan2(23 - it.pos.x, 20 - it.pos.y);
+        if (it.kind === 'vault') {
+          const light = new THREE.PointLight('#ffc860', 14, 9, 1.6);
+          light.position.set(0, 2, 1);
+          o.add(light);
+        }
         if (it.kind === 'quest') {
           const light = new THREE.PointLight('#ffc860', 8, 6, 1.6);
           light.position.y = 1.3;
