@@ -86,6 +86,9 @@ export class Renderer {
   private decals: { mesh: THREE.Mesh; age: number }[] = [];
   private decalMat: THREE.MeshBasicMaterial;
   private dustTimer = 0;
+  /** Portrait screens pull the camera back (and widen the view) so enough width stays visible. */
+  private viewScale = 1;
+  private fogBase: [number, number] = [15, 36];
 
   constructor(private container: HTMLElement) {
     this.lowEnd = matchMedia('(pointer: coarse)').matches;
@@ -129,6 +132,9 @@ export class Renderer {
     const h = this.container.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h);
     this.post?.setSize(w, h, this.renderer.getPixelRatio());
+    const portrait = h > w;
+    this.camera.fov = portrait ? 55 : 40;
+    this.viewScale = portrait ? 1.55 : 1;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
@@ -167,7 +173,8 @@ export class Renderer {
     // PoE-style: dim moonlit ambience outside town, the hero's torch does the heavy lifting
     const fog = new THREE.Color(theme.fog).multiplyScalar(area.town ? 1 : 0.7);
     this.scene.background = fog.clone();
-    this.scene.fog = new THREE.Fog(fog, area.town ? 20 : 15, area.town ? 44 : 36);
+    this.fogBase = area.town ? [20, 44] : [15, 36];
+    this.scene.fog = new THREE.Fog(fog, this.fogBase[0], this.fogBase[1]);
     this.hemi.color.set(theme.ambient);
     this.hemi.groundColor.set(theme.fog);
     this.hemi.intensity = area.town ? 1.5 : 0.62;
@@ -359,7 +366,13 @@ export class Renderer {
 
     const p = game.player;
     this.target.lerp(new THREE.Vector3(p.pos.x, 0, p.pos.y), Math.min(1, dt * 12));
-    this.camera.position.copy(this.target).addScaledVector(CAM_OFFSET, this.zoom);
+    const camScale = this.zoom * this.viewScale;
+    this.camera.position.copy(this.target).addScaledVector(CAM_OFFSET, camScale);
+    // fog is measured from the camera, so it moves out with it
+    if (this.scene.fog instanceof THREE.Fog) {
+      this.scene.fog.near = this.fogBase[0] * camScale;
+      this.scene.fog.far = this.fogBase[1] * camScale;
+    }
     this.camera.lookAt(this.target.x, this.target.y + 0.6, this.target.z);
     // the torch hangs high above and slightly in front of the hero so it lights the ground, not their head
     this.torch.position.set(p.pos.x, 6.5, p.pos.y + 2.5);

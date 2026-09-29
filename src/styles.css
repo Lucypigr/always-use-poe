@@ -406,15 +406,7 @@ input[type="text"] { background: #0e0c0a; border: 1px solid var(--gold-dim); col
 .touch-controls.panel-open .joy-zone, .touch-controls.panel-open .touch-extra { display: none; }
 /* phones: landscape only (see landscape.ts) */
 body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscroll-behavior: none; touch-action: manipulation; }
-.portrait-block { display: none; position: fixed; inset: 0; z-index: 1000; background: radial-gradient(ellipse at 50% 35%, #2a1e12 0%, #0a0806 70%); color: var(--text); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 6px; touch-action: none; }
-.portrait-block h2 { color: var(--gold); margin: 18px 0 4px; font-size: 24px; }
-.portrait-block p { margin: 4px 0; max-width: 320px; line-height: 1.5; }
-.portrait-block .pb-note { color: var(--text-dim); font-size: 13px; }
-.portrait-block button { margin-top: 14px; padding: 10px 18px; font-size: 16px; }
-.pb-phone { width: 46px; height: 80px; border: 3px solid var(--gold); border-radius: 8px; position: relative; animation: pb-rotate 2.4s ease-in-out infinite; }
-.pb-phone::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 10px; height: 3px; margin-left: -5px; background: var(--gold); border-radius: 2px; }
-@keyframes pb-rotate { 0%, 25% { transform: rotate(0deg); } 55%, 100% { transform: rotate(-90deg); } }
-@media (orientation: portrait) { body.touch-device .portrait-block { display: flex; } }
+
 
 .touch .globe { width: 58px; height: 58px; top: 8px; bottom: auto; border-width: 2px; }
 .touch .globe.life { left: 8px; }
@@ -477,3 +469,53 @@ body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscrol
 .touch .panel.right.solo > .grid { grid-column: 2; grid-row: 2; }
 .touch .panel.right.solo .inv-help { grid-column: 2; grid-row: 3; }
 .touch .panel.right.paired .equip, .touch .panel.right.paired .inv-help { display: none; }
+
+/* ------------------------------------------------------------------ phones held upright (portrait) */
+@media (orientation: portrait) {
+  /* top bar: globes · area name · minimap, then two rows of buttons */
+  .touch .globe { width: 50px; height: 50px; top: 6px; }
+  .touch .globe.life { left: 6px; }
+  .touch .globe.mana { left: 60px; }
+  .touch .globe-text { top: 58px; width: 54px; font-size: 10px; }
+  .touch .globe-text.life { left: 4px; }
+  .touch .globe-text.mana { left: 58px; }
+  .touch .hud-top-left { left: 116px; top: 4px; max-width: calc(100vw - 232px); }
+  .touch .hud-top-left .area-name { font-size: 13px; }
+  .touch .hud-top-left .area-sub { font-size: 10.5px; }
+  .touch .buffs { max-width: calc(100vw - 232px); }
+  .touch .minimap { width: 100px; height: 100px; right: 6px; top: 6px; }
+  .touch .menu-buttons { top: 112px; right: auto; left: 6px; flex-wrap: wrap; max-width: calc(100vw - 12px); }
+  .touch-extra { top: 146px; right: auto; left: 6px; flex-wrap: wrap; max-width: calc(100vw - 12px); }
+  .touch .menu-buttons button, .touch-controls button.tbtn { padding: 4px 8px; font-size: 12px; min-height: 30px; }
+  .touch .quest-tracker { top: 186px; left: 8px; right: auto; width: 48vw; }
+  .touch .quest-tracker .qt-row:nth-child(n+3) { display: none; }
+  .touch .gem-levels { top: 186px; right: 8px; }
+  .touch .target-frame, .touch .boss-bar, .touch .heist-alarm { top: 256px; width: 72vw; min-width: 0; }
+  .touch .toast { top: 300px; }
+  /* bottom: joystick left, skills (4 × 2) and flasks right */
+  .touch-controls .joy-zone { width: 44%; height: 45%; }
+  .touch .skills { right: 8px; bottom: 14px; grid-template-columns: repeat(4, 48px); gap: 5px; }
+  .touch .skill-slot { width: 48px; height: 48px; }
+  .touch .skill-slot .skill-icon { width: 38px; height: 38px; font-size: 15px; }
+  .touch .flasks { left: auto; right: 8px; transform: none; bottom: 126px; }
+  .touch .flask-slot { width: 34px; height: 52px; }
+  .touch .log { left: 8px; transform: none; bottom: 200px; width: 62vw; font-size: 11px; }
+  .panel-open.touch .log { display: none; }
+  .touch-toolbar { flex-wrap: wrap; justify-content: center; width: 96vw; }
+  .touch-toolbar button { padding: 4px 8px; font-size: 12px; }
+  /* panels use the full width; a second panel (stash, vendor, character, bench) sits above the inventory */
+  .touch .panel { max-height: calc((100vh - 80px) / var(--pz, 0.6)); }
+  .touch .panel.right { right: auto; left: 6px; }
+  /* panel lengths are zoomed by --pz, so divide to keep the gap above the toolbar in real pixels */
+  .touch .panel.right.paired { top: auto; bottom: calc(84px / var(--pz, 0.6)); }
+  .touch .panel.left, .touch .panel.right.paired { max-height: calc((50vh - 44px) / var(--pz, 0.6)); }
+  .touch .modal-bench, .touch .modal-device { max-height: 46vh; overflow: auto; }
+  .touch .bench { zoom: 0.62; width: 150vw; }
+  .touch .tooltip { zoom: 0.7; max-width: 92vw; }
+  .touch .modal { max-height: 86vh; }
+  .touch .reward-pick { grid-template-columns: repeat(2, 1fr); }
+  .touch .build-wrap { grid-template-columns: 1fr; }
+  .touch .build-list { max-height: 26vh; }
+  .touch .build-detail { max-height: 44vh; }
+  .touch .area-row { flex-wrap: wrap; gap: 4px; }
+}

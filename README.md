@@ -58,10 +58,12 @@ click an item to apply it (hold **Shift** to keep applying). Right-click a socke
 ### Touch screens (phones / tablets)
 
 On devices whose primary pointer is a finger the game switches to touch controls
-(`src/ui/touchControls.ts`). Phones are **landscape only** (`src/ui/landscape.ts`): held upright,
-the game pauses behind a "rotate your phone" screen, and in landscape the first tap enters
-fullscreen (and locks the orientation where the browser allows it) so the address bar can't
-shift the view. On iPhone, where web pages can't go fullscreen, add the page to the home screen.
+(`src/ui/touchControls.ts`). Phones can be held **either way** (`src/ui/fullscreen.ts`): in
+portrait the HUD stacks at the top, skills and flasks sit bottom-right, item panels use the full
+width (a second panel stacks above the inventory) and the camera pulls back with a wider field of
+view so you see about as much of the map as in landscape. The first tap enters fullscreen so the
+address bar can't shift the view; turning the phone re-lays out the screen. On iPhone, where web
+pages can't go fullscreen, add the page to the home screen.
 
 | Touch | Action |
 | --- | --- |
