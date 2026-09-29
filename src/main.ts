@@ -11,7 +11,7 @@ import { Audio } from './ui/audio';
 import { showCharSelect } from './ui/charSelect';
 import { clear } from './ui/dom';
 import { Input } from './ui/input';
-import { installLandscapeGuard, mustRotate } from './ui/landscape';
+import { installTouchScreen } from './ui/fullscreen';
 import { isTouchDevice } from './ui/touch';
 import { TouchControls } from './ui/touchControls';
 import { UI } from './ui/ui';
@@ -30,7 +30,7 @@ class App {
 
   constructor() {
     this.renderer = new Renderer(document.getElementById('game')!);
-    installLandscapeGuard();
+    installTouchScreen(isTouchDevice());
     const unlock = () => this.audio.unlock();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
@@ -110,8 +110,7 @@ class App {
     const g = this.game;
     if (g && this.ui && this.input) {
       this.input.update();
-      // phones held upright are paused behind the "rotate your phone" screen
-      if (!mustRotate()) g.update(dt);
+      g.update(dt);
       this.audio.volume = g.settings.volume;
       this.renderer.postFx = g.settings.postFx;
       for (const e of g.vfxQueue) {

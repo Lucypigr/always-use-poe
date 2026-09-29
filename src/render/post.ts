@@ -45,7 +45,8 @@ const GradeShader = {
       // contrast around mid grey (crushes blacks a little)
       c = (c - 0.5) * uContrast + 0.5;
       // light radius / vignette, centred slightly below the middle where the hero stands
-      vec2 d = (vUv - vec2(0.5, 0.47)) * vec2(uAspect, 1.0);
+      // distances in units of the shorter screen side, so portrait screens get a round light radius too
+      vec2 d = (vUv - vec2(0.5, 0.47)) * (uAspect >= 1.0 ? vec2(uAspect, 1.0) : vec2(1.0, 1.0 / uAspect));
       float r = length(d);
       float v = smoothstep(uRadius * 0.45, uRadius * 1.25, r);
       c *= 1.0 - v * uVignette;
@@ -92,7 +93,7 @@ export class PostFx {
     (u.uLightTint.value as THREE.Color).lerp(opts.cold ? this.cool : this.warm, Math.min(1, dt * 3));
     u.uTime.value += dt;
     u.uVignette.value = opts.town ? 0.55 : 0.85;
-    u.uRadius.value = (opts.town ? 0.8 : 0.62) / Math.max(0.7, opts.zoom);
+    u.uRadius.value = ((opts.town ? 0.8 : 0.62) * (u.uAspect.value < 1 ? 1.35 : 1)) / Math.max(0.7, opts.zoom);
     u.uHurt.value += (opts.hurt - u.uHurt.value) * Math.min(1, dt * 4);
     this.composer.render(dt);
   }

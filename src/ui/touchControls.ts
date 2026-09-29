@@ -2,7 +2,7 @@ import { CURRENCY_BY_ID } from '../data/currency';
 import { currencyId } from '../items/item';
 import { h } from './dom';
 import type { Input } from './input';
-import { enterFullscreen, exitFullscreen, fullscreenSupported, isFullscreen } from './landscape';
+import { enterFullscreen, exitFullscreen, fullscreenSupported, isFullscreen, isPortrait } from './fullscreen';
 import { fromTouch, TOUCH_MODES, type TouchItemMode } from './touch';
 import type { UI } from './ui';
 
@@ -119,7 +119,7 @@ export class TouchControls {
     for (const [t, type, fn, capture] of this.listeners) t.removeEventListener(type, fn, capture);
     this.listeners = [];
     this.root.remove();
-    document.body.classList.remove('touch');
+    document.body.classList.remove('touch', 'panel-open');
   }
 
   private setMode(m: TouchItemMode): void {
@@ -185,17 +185,22 @@ export class TouchControls {
     const ui = this.ui;
     const w = window.innerWidth;
     const hh = window.innerHeight;
-    const left = ui.open.has('stash') || ui.open.has('vendor') || ui.open.has('character');
-    const solo = ui.open.has('inventory') && !left;
-    const key = `${w}x${hh}:${solo}:${left}`;
+    const portrait = isPortrait();
+    const left = ui.open.has('stash') || ui.open.has('vendor') || ui.open.has('character') || (portrait && ui.modals.isDeviceOpen);
+    // landscape: inventory alone is laid out wide (paper doll beside the grid)
+    const solo = !portrait && ui.open.has('inventory') && !left;
+    const key = `${w}x${hh}:${solo}:${left}:${portrait}`;
     if (key === this.layoutKey) return;
     this.layoutKey = key;
     const inv = ui.root.querySelector<HTMLElement>('.panel.right');
     inv?.classList.toggle('solo', solo);
     inv?.classList.toggle('paired', ui.open.has('inventory') && left);
-    const z = solo
-      ? Math.min(1, (w - 12) / 1150, (hh - 56) / 470)
-      : Math.max(0.45, Math.min(1, (w / 2 - 10) / 600, (hh - 56) / 560));
+    let z: number;
+    if (portrait) {
+      // portrait: panels use the full width; a second panel stacks above the inventory
+      z = left ? Math.min(1, (w - 12) / 600, (hh - 70) / 880) : Math.min(1, (w - 12) / 590, (hh - 190) / 760);
+    } else if (solo) z = Math.min(1, (w - 12) / 1150, (hh - 56) / 470);
+    else z = Math.max(0.45, Math.min(1, (w / 2 - 10) / 600, (hh - 56) / 560));
     document.documentElement.style.setProperty('--pz', z.toFixed(3));
   }
 
@@ -243,6 +248,7 @@ export class TouchControls {
     const itemPanel = ui.open.has('inventory') || ui.open.has('stash') || ui.open.has('vendor') || ui.modals.isDeviceOpen;
     this.toolbar.style.display = itemPanel ? '' : 'none';
     this.root.classList.toggle('panel-open', ui.open.size > 0);
+    document.body.classList.toggle('panel-open', ui.open.size > 0 || ui.modals.isDeviceOpen);
     this.layout();
     if (this.tiersBtn.classList.contains('on') !== ui.alt) this.tiersBtn.classList.toggle('on', ui.alt);
   }

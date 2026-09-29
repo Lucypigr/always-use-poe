@@ -65,7 +65,8 @@ describe('movement feel', () => {
     game.update(1 / 30);
     game.input.heldSlot = null;
     for (let i = 0; i < 90; i++) game.update(1 / 30);
-    expect(dist(p.pos, goal)).toBeLessThan(0.6);
+    // the hero walks to the nearest walkable spot of the clicked point
+    expect(dist(p.pos, game.map.nearestFloor(goal))).toBeLessThan(0.6);
   });
 
   it('holding the mouse on the hero does not jitter', () => {

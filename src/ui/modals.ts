@@ -59,7 +59,7 @@ export class Modals {
     this.back?.remove();
     this.kind = kind;
     const back = h('div', { class: 'modal-back', style: overlayOnly ? 'background:transparent;pointer-events:none' : '' });
-    const modal = h('div', { class: 'modal', style: overlayOnly ? 'pointer-events:auto' : '' }, content);
+    const modal = h('div', { class: `modal modal-${kind}`, style: overlayOnly ? 'pointer-events:auto' : '' }, content);
     back.append(modal);
     if (dismissable) back.addEventListener('mousedown', (e) => e.target === back && this.close());
     this.ui.root.append(back);
@@ -338,7 +338,7 @@ export class Modals {
             tr(['流派指南'], '在「選單」中開啟，查看各種流派的核心技能與傳奇裝備'),
             tr(['劫盜 / 傭兵'], '城鎮中的阿蒂亞提供劫盜委託；在區域中擊敗傭兵後可招募他成為夥伴'),
             tr(['任務'], '開啟任務日誌。城鎮中頭上有「！」的人物有新任務，「？」代表可以領取獎勵'),
-            tr(['直向'], '請將手機橫放遊玩；橫放時點擊畫面會自動進入全螢幕'),
+            tr(['直 / 橫'], '直向、橫向都能玩，轉動手機會自動調整介面；第一次點擊畫面會自動進入全螢幕'),
           )
         : h('table', {},
         tr([k('LMB')], '移動 / 撿取物品 / 與人物和物件互動（左鍵不會施放技能）'),
