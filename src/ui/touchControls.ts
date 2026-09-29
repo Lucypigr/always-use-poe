@@ -1,14 +1,14 @@
 import { CURRENCY_BY_ID } from '../data/currency';
 import { currencyId } from '../items/item';
 import { h } from './dom';
-import type { Input } from './input';
+import { AIM_DEAD_ZONE, type Input } from './input';
 import { enterFullscreen, exitFullscreen, fullscreenSupported, isFullscreen, isPortrait } from './fullscreen';
 import { fromTouch, TOUCH_MODES, type TouchItemMode } from './touch';
 import type { UI } from './ui';
 
 /**
  * On-screen controls for phones and tablets: a virtual joystick for movement, hold-to-cast
- * skill buttons (auto-aimed at the nearest enemy), extra menu buttons and an item-action
+ * skill buttons (auto-aimed at the nearest enemy, or drag to aim), extra menu buttons and an item-action
  * toolbar that stands in for right-click / Ctrl-click while inventory panels are open.
  */
 export class TouchControls {
@@ -83,19 +83,38 @@ export class TouchControls {
       b.textContent = (b.textContent ?? '').replace(/\s*\([A-Z]\)$/, '');
     });
 
-    // Skill buttons: hold to cast. Tapping only opens the picker in edit mode or on empty slots.
+    // Skill buttons: hold to cast at the nearest enemy, or drag off the button to aim (an arrow
+    // on the ground shows where). Movement skills fire when the finger lifts; dragging back onto
+    // the button cancels them. Tapping only opens the picker in edit mode or on empty slots.
     ui.root.querySelectorAll<HTMLElement>('.hud .skills .skill-slot').forEach((el, i) => {
+      let start: { x: number; y: number } | null = null;
+      let aimed = false;
+      let cancel = false;
       el.addEventListener('pointerdown', (e) => {
         if (e.pointerType !== 'touch' || ui.editSkills) return;
         e.preventDefault();
         el.setPointerCapture?.(e.pointerId);
         el.classList.add('pressed');
+        start = { x: e.clientX, y: e.clientY };
+        aimed = cancel = false;
         input.pressTouchSkill(i);
       });
+      el.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'touch' || !start) return;
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        const far = Math.hypot(dx, dy) > AIM_DEAD_ZONE;
+        aimed ||= far;
+        cancel = aimed && !far && input.aimsOnRelease(i);
+        input.aimTouchSkill(i, far ? { dx, dy } : null);
+        el.classList.toggle('aiming', far);
+        el.classList.toggle('cancel', cancel);
+      });
       const up = (e: PointerEvent) => {
-        if (e.pointerType !== 'touch') return;
-        el.classList.remove('pressed');
-        input.releaseTouchSkill(i);
+        if (e.pointerType !== 'touch' || !start) return;
+        start = null;
+        el.classList.remove('pressed', 'aiming', 'cancel');
+        input.releaseTouchSkill(i, cancel || e.type === 'pointercancel');
       };
       el.addEventListener('pointerup', up);
       el.addEventListener('pointercancel', up);

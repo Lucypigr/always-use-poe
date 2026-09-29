@@ -89,6 +89,13 @@ export class Renderer {
   /** Portrait screens pull the camera back (and widen the view) so enough width stays visible. */
   private viewScale = 1;
   private fogBase: [number, number] = [15, 36];
+  /** Touch aiming: arrow on the ground from the hero to where a held skill will go. */
+  aim: { from: Vec2; to: Vec2; manual: boolean; ring: boolean } | null = null;
+  private aimGroup: THREE.Group;
+  private aimShaft: THREE.Mesh;
+  private aimHead: THREE.Mesh;
+  private aimRing: THREE.Mesh;
+  private aimMat: THREE.MeshBasicMaterial;
 
   constructor(private container: HTMLElement) {
     this.lowEnd = matchMedia('(pointer: coarse)').matches;
@@ -119,8 +126,42 @@ export class Renderer {
     this.vfx = new VfxManager(this.dynamic, this.particles);
     this.post = new PostFx(this.renderer, this.scene, this.camera, this.lowEnd);
     this.decalMat = new THREE.MeshBasicMaterial({ map: splatTexture(), color: '#5a0808', transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+    // aim arrow: shaft along +X from the origin, head at its tip, ring at the landing point
+    this.aimMat = new THREE.MeshBasicMaterial({ color: '#ffcc66', transparent: true, opacity: 0.55, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    const shaft = new THREE.PlaneGeometry(1, 0.22).translate(0.5, 0, 0).rotateX(-Math.PI / 2);
+    const head = new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0.42), new THREE.Vector2(0.7, 0), new THREE.Vector2(0, -0.42)])).rotateX(-Math.PI / 2);
+    this.aimShaft = new THREE.Mesh(shaft, this.aimMat);
+    this.aimHead = new THREE.Mesh(head, this.aimMat);
+    this.aimRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 32).rotateX(-Math.PI / 2), this.aimMat);
+    this.aimGroup = new THREE.Group();
+    this.aimGroup.add(this.aimShaft, this.aimHead);
+    this.aimGroup.visible = this.aimRing.visible = false;
+    this.aimGroup.renderOrder = this.aimRing.renderOrder = 5;
+    this.scene.add(this.aimGroup, this.aimRing);
     this.resize();
     window.addEventListener('resize', () => this.resize());
+  }
+
+  private syncAim(): void {
+    const a = this.aim;
+    this.aimGroup.visible = this.aimRing.visible = false;
+    if (!a) return;
+    const dx = a.to.x - a.from.x;
+    const dy = a.to.y - a.from.y;
+    const len = Math.max(1.4, Math.hypot(dx, dy));
+    const start = 0.7; // leave the hero's feet clear
+    this.aimMat.color.set(a.manual ? '#ffcc66' : '#c8b890');
+    this.aimMat.opacity = (a.manual ? 0.6 : 0.35) * (0.85 + Math.sin(this.time * 8) * 0.15);
+    this.aimGroup.visible = true;
+    this.aimGroup.position.set(a.from.x, 0.06, a.from.y);
+    this.aimGroup.rotation.y = -Math.atan2(dy, dx);
+    this.aimShaft.position.x = start;
+    this.aimShaft.scale.x = Math.max(0.1, len - start - 0.7);
+    this.aimHead.position.x = len - 0.7;
+    if (a.ring) {
+      this.aimRing.visible = true;
+      this.aimRing.position.set(a.to.x, 0.06, a.to.y);
+    }
   }
 
   get canvas(): HTMLCanvasElement {
@@ -363,6 +404,7 @@ export class Renderer {
     for (const h of this.hazardMeshes) (h.material as THREE.MeshBasicMaterial).opacity = 0.4 + Math.sin(this.time * 2 + h.id) * 0.15;
     this.particles.update(dt);
     this.vfx.update(dt);
+    this.syncAim();
 
     const p = game.player;
     this.target.lerp(new THREE.Vector3(p.pos.x, 0, p.pos.y), Math.min(1, dt * 12));

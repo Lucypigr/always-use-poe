@@ -429,6 +429,8 @@ body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscrol
 .touch .skill-slot .skill-icon { width: 46px; height: 46px; border-radius: 50%; font-size: 17px; }
 .touch .skill-slot .key { display: none; }
 .touch .skill-slot.pressed { border-color: #ffe0a0; box-shadow: 0 0 12px rgba(255, 220, 140, 0.7); }
+.touch .skill-slot.aiming { border-color: #ffcc66; box-shadow: 0 0 0 4px rgba(255, 204, 102, 0.35), 0 0 16px rgba(255, 204, 102, 0.8); }
+.touch .skill-slot.cancel { border-color: #ff5040; box-shadow: 0 0 0 4px rgba(255, 80, 64, 0.35); }
 .touch .xp-bar { left: 8px; right: 8px; bottom: 2px; height: 5px; }
 .touch .log { left: 50%; transform: translateX(-50%); bottom: 82px; width: min(460px, 46vw); font-size: 12px; }
 .touch .gem-levels { top: 90px; right: 146px; }
