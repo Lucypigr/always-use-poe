@@ -54,7 +54,11 @@ describe('heist', () => {
     expect(g.area.groundItems.length).toBeGreaterThan(n);
     // reinforcements arrive during lockdown
     const enemies = g.area.monsters.filter((m) => m.team === 'enemy' && !m.dead).length;
-    for (let i = 0; i < 120; i++) g.update(1 / 30);
+    // keep the (ungeared) hero alive while standing among the reinforcements
+    for (let i = 0; i < 120; i++) {
+      g.player.life = g.player.stats.maxLife;
+      g.update(1 / 30);
+    }
     expect(g.area.monsters.filter((m) => m.team === 'enemy').length).toBeGreaterThan(enemies);
     const exit = g.area.interactables.find((i) => i.kind === 'exit')!;
     g.clickInteractable(exit);
