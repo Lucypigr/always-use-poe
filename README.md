@@ -70,6 +70,8 @@ pages can't go fullscreen, add the page to the home screen.
 | Drag in the lower-left area | Virtual joystick — move |
 | Tap the ground / a label | Move there · pick up / talk / use; pinch to zoom |
 | Hold a round skill button (lower right) | Use the skill, auto-aimed at the nearest enemy |
+| Hold a skill button and drag off it | Aim by hand — an arrow on the ground shows direction and distance |
+| Movement skills (leap, dash, blink) | Aim while held, fire on release; drag back onto the button to cancel |
 | 編輯技能 then tap a slot | Change the skill in that slot |
 | Flask slots | Drink |
 | 地圖 · 標籤 · 回城 · 全螢幕 · 任務 | Overlay map · item labels · portal scroll · fullscreen · quest journal |
