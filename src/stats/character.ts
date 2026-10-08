@@ -74,6 +74,17 @@ function baseMods(c: CharacterData): StatMod[] {
 }
 
 /** Modifiers from all equipped items (global item stats + armour/shield base values). */
+/** Modifiers from jewels socketed in allocated jewel sockets of the passive tree. */
+export function jewelMods(c: CharacterData): StatMod[] {
+  const out: StatMod[] = [];
+  if (!c.jewels) return out;
+  const allocated = new Set(c.passives);
+  for (const [node, jewel] of Object.entries(c.jewels)) {
+    if (allocated.has(Number(node))) out.push(...globalItemStats(jewel));
+  }
+  return out;
+}
+
 export function equipmentMods(c: CharacterData): StatMod[] {
   const out: StatMod[] = [];
   for (const [slot, item] of Object.entries(c.equipment) as [EquipSlot, Item | undefined][]) {
@@ -95,7 +106,7 @@ export function equipmentMods(c: CharacterData): StatMod[] {
  * `extra` carries temporary modifiers: auras, flask effects, map penalties, area resist penalty.
  */
 export function computeCharacterStats(c: CharacterData, extra: StatMod[] = [], resPenalty = 0): CharacterStats {
-  const sheet = new StatSheet([...baseMods(c), ...equipmentMods(c), ...passiveStats(PASSIVE_TREE, c.passives), ...ascendancyStats(c), ...extra]);
+  const sheet = new StatSheet([...baseMods(c), ...equipmentMods(c), ...passiveStats(PASSIVE_TREE, c.passives), ...ascendancyStats(c), ...jewelMods(c), ...extra]);
   const allAttr = sheet.flat('all_attributes');
   const str = Math.round((sheet.flat('str') + allAttr) * (1 + sheet.inc('str') / 100));
   const dex = Math.round((sheet.flat('dex') + allAttr) * (1 + sheet.inc('dex') / 100));

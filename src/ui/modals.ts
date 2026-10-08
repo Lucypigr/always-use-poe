@@ -7,6 +7,7 @@ import { BUILDS, type BuildDef } from '../data/builds';
 import { CLASS_BY_ID } from '../data/classes';
 import { GEM_BY_ID } from '../data/gems';
 import { UNIQUE_BY_ID } from '../data/uniques';
+import { isJewel } from '../items/item';
 import { createUnique } from '../items/generate';
 import { CURRENCY } from '../data/currency';
 import { SKILL_KEYS } from '../game/character';
@@ -439,6 +440,53 @@ export class Modals {
     }
     body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
     this.show('ascendancy', body);
+  }
+
+  /** Pick a jewel from the inventory for a jewel socket of the passive tree (or take the current one out). */
+  jewelSocket(nodeId: number): void {
+    const g = this.ui.game;
+    const c = g.char;
+    const cur = c.jewels?.[nodeId];
+    const done = () => {
+      this.ui.refreshItems();
+      this.ui.tree.render();
+    };
+    const body = h('div', { class: 'jewel-pick' }, h('h2', {}, '珠寶插槽'));
+    if (cur) {
+      body.append(
+        h('div', { class: 'jp-sub' }, '目前的珠寶'),
+        h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(cur, this.ui.tctx), false), h('button', { onclick: () => {
+          if (g.unsocketJewel(nodeId)) {
+            done();
+            this.jewelSocket(nodeId);
+          }
+        } }, '取下')),
+      );
+    }
+    const jewels = c.inventory.items.map((e) => e.item).filter(isJewel);
+    body.append(h('div', { class: 'jp-sub' }, jewels.length ? '背包中的珠寶（未鑑定的珠寶不會生效，請先鑑定）' : '背包中沒有珠寶。擊敗怪物有機會掉落珠寶。'));
+    const list = h('div', { class: 'jp-list' });
+    for (const j of jewels) {
+      list.append(h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(j, this.ui.tctx), false), h('button', { onclick: () => {
+        if (g.socketJewel(nodeId, j)) {
+          done();
+          this.close();
+        }
+      } }, cur ? '更換' : '放入')));
+    }
+    body.append(list);
+    const buttons = h('div', { class: 'row-buttons' });
+    if (!cur) {
+      buttons.append(h('button', { onclick: () => {
+        if (g.refundPassive(nodeId)) {
+          done();
+          this.close();
+        }
+      } }, '重置此天賦點（消耗 1 重置點數）'));
+    }
+    buttons.append(h('button', { onclick: () => this.close() }, '關閉'));
+    body.append(buttons);
+    this.show('jewel', body);
   }
 
   builds(selected?: BuildDef): void {

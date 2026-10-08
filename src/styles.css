@@ -551,3 +551,14 @@ body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscrol
 .touch .asc { min-width: 0; }
 .touch .asc-cards, .touch .asc-cols { grid-template-columns: 1fr; }
 .touch .asc-root .asc-node { width: auto; }
+
+/* Jewels */
+.jewel-pick { min-width: 380px; max-width: 520px; max-height: 80vh; overflow: auto; }
+.jp-sub { margin: 10px 0 4px; color: #aa9e82; font-size: 13px; }
+.jp-list { display: flex; flex-direction: column; gap: 6px; }
+.jp-row { display: flex; gap: 10px; align-items: center; }
+.jp-row .tooltip { position: static; flex: 1; min-width: 0; pointer-events: auto; }
+.node-tip .jewel-tip { border-top: 1px solid #3a3020; margin-top: 4px; padding-top: 4px; }
+.node-tip .jewel-tip.magic b { color: #8a9aff; }
+.node-tip .jewel-tip.rare b { color: #f0e070; }
+.node-tip .jewel-tip.unique b { color: #e08a30; }

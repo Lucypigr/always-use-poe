@@ -145,6 +145,7 @@ export function buildTooltip(it: Item, ctx?: TooltipContext): Tooltip {
     if (u) sections.push([{ text: u.flavour, cls: 'flavour' }]);
   }
   if (base.flask) sections.push([{ text: '按右鍵或對應數字鍵飲用。', cls: 'hint' }]);
+  if (base.cls === 'jewel') sections.push([{ text: '放入天賦樹上已配置的珠寶插槽才會生效。', cls: 'hint' }]);
 
   const title = it.rarity === 'rare' || it.rarity === 'unique' ? [displayName(it), baseName(it)] : [displayName(it)];
   if (!it.identified && it.rarity !== 'normal') title.splice(0, title.length, baseName(it));

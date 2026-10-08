@@ -12,7 +12,7 @@ import { CLASSES, type ClassId } from './classes';
  * (Strength bottom-left, Dexterity bottom-right, Intelligence top).
  */
 
-export type PassiveKind = 'start' | 'attr' | 'small' | 'notable' | 'keystone';
+export type PassiveKind = 'start' | 'attr' | 'small' | 'notable' | 'keystone' | 'jewel';
 
 export interface PassiveNode {
   id: number;
@@ -252,6 +252,9 @@ export interface PassiveTree {
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }
 
+/** Number of jewel sockets on the tree. */
+export const JEWEL_SOCKETS = 12;
+
 export function buildPassiveTree(): PassiveTree {
   const rng = new RNG(0xa11ce);
   const nodes: PassiveNode[] = [];
@@ -377,6 +380,14 @@ export function buildPassiveTree(): PassiveTree {
     }
     const id = add(1210, ks.angle, 'keystone', { name: ks.name, stats: ks.stats, text: ks.text });
     link(prev, id);
+  }
+
+  // 8. Jewel sockets: dead-end sockets hanging off the outer attribute ring. They are added last
+  // (and use no RNG) so node ids of existing saves stay valid.
+  for (let k = 0; k < JEWEL_SOCKETS; k++) {
+    const deg = k * (360 / JEWEL_SOCKETS) + 10;
+    const id = add(1000, deg, 'jewel', { name: '珠寶插槽', stats: [], text: ['可放入 1 顆珠寶'] });
+    link(nearest(ring2, deg).id, id);
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]));

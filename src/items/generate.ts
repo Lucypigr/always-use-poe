@@ -1,12 +1,14 @@
 import { rng as defaultRng, uid, type RNG } from '../core/rng';
 import { allMods, getMod, type ModDef, type ModType } from '../data/affixes';
-import { EQUIPMENT_BASES, getBase } from '../data/bases';
+import { BASES, EQUIPMENT_BASES, getBase } from '../data/bases';
 import { CURRENCY, CURRENCY_BY_ID, type CurrencyId } from '../data/currency';
 import { GEMS, getGem } from '../data/gems';
 import { UNIQUES, UNIQUE_BY_ID, type UniqueDef } from '../data/uniques';
 import { explicitMods } from './item';
 import { rareName } from './names';
 import type { Attr, Item, ItemBase, ModRoll, Rarity, Socket, SocketColor } from './types';
+
+const JEWEL_BASES = BASES.filter((b) => b.cls === 'jewel');
 
 // ---------------------------------------------------------------------------------------------
 // Construction helpers
@@ -209,7 +211,7 @@ export function modCandidates(it: Item, type: ModType): Candidate[] {
 
 export function affixLimit(it: Item): number {
   if (it.rarity === 'magic') return 1;
-  if (it.rarity === 'rare') return 3;
+  if (it.rarity === 'rare') return it.baseId.startsWith('jewel_') ? 2 : 3;
   return 0;
 }
 
@@ -338,6 +340,23 @@ export function randomEquipment(ilvl: number, rarity: Rarity, r: RNG = defaultRn
     rarity = 'rare';
   }
   const base = randomBase(ilvl, r);
+  const it = createItem(base.id, ilvl, rarity, r);
+  if (it.rarity !== 'normal') it.identified = false;
+  return it;
+}
+
+/** A random jewel: mostly magic and rare, occasionally a unique jewel. */
+export function randomJewel(ilvl: number, r: RNG = defaultRng): Item {
+  if (r.chance(0.06)) {
+    const ok = UNIQUES.filter((u) => u.base.startsWith('jewel_') && (u.level ?? 0) <= ilvl + 5);
+    const u = r.weighted(ok, (x) => x.dropWeight ?? 50);
+    if (u) {
+      const it = createUnique(u, ilvl, r);
+      return it;
+    }
+  }
+  const base = r.pick(JEWEL_BASES);
+  const rarity: Rarity = r.chance(0.35) ? 'rare' : r.chance(0.7) ? 'magic' : 'normal';
   const it = createItem(base.id, ilvl, rarity, r);
   if (it.rarity !== 'normal') it.identified = false;
   return it;

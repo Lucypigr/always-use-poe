@@ -174,6 +174,10 @@ export function itemIcon(it: Item): string {
   }
   if (base.weapon) return cached(`w:${base.cls}:${h}:${accent}`, () => weaponSvg(base.cls, h, accent));
   if (base.defence) return cached(`a:${base.cls}:${base.defence}:${accent}`, () => armourSvg(base.cls, h, base.defence!, accent));
+  if (base.cls === 'jewel') {
+    const body = base.id === 'jewel_red' ? ['#ff8a7a', '#8a1a10'] : base.id === 'jewel_green' ? ['#8aff8a', '#1a6a1a'] : ['#8aaaff', '#1a2a8a'];
+    return cached(`jewel:${base.id}:${accent}`, () => svg(100, 100, `<polygon points="50,6 86,34 74,86 26,86 14,34" fill="url(#jw)" stroke="${accent}" stroke-width="5"/><polygon points="50,6 62,40 50,86 38,40" fill="rgba(255,255,255,0.22)"/>`, grad('jw', body[0], body[1])));
+  }
   return cached(`j:${base.cls}:${accent}`, () => jewellerySvg(base.cls, h, accent));
 }
 

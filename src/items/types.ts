@@ -12,7 +12,7 @@ export type ArmourClass = 'helmet' | 'body_armour' | 'gloves' | 'boots' | 'shiel
 export type ItemClass =
   | WeaponClass | ArmourClass | 'quiver' | 'amulet' | 'ring' | 'belt'
   | 'life_flask' | 'mana_flask' | 'hybrid_flask' | 'utility_flask'
-  | 'currency' | 'gem' | 'map';
+  | 'jewel' | 'currency' | 'gem' | 'map';
 
 export type DefenceType = 'str' | 'dex' | 'int' | 'str_dex' | 'str_int' | 'dex_int';
 

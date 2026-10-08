@@ -138,6 +138,14 @@ Every class has **three ascendancies** (18 in total, `src/data/ascendancy.ts`): 
   can't take everything. Click to allocate (parent first); click an allocated node to refund it for a
   refund point, if nothing depends on it.
 
+## Jewels (珠寶)
+
+Three jewel bases (緋紅 / 翠綠 / 蔚藍) drop from monsters as magic, rare and a few unique jewels
+(`src/data/jewels.ts`, uniques in `src/data/uniques.ts`): 13 prefixes and 20 suffixes with three item-level
+tiers (magic: 1 + 1 mods, rare: up to 2 + 2). The passive tree has **12 jewel sockets** (diamond nodes on the
+outer ring). Allocate one, click it and pick a jewel from your inventory; its mods apply while the socket is
+allocated. Unidentified jewels need a Scroll of Insight first. Take a jewel out before refunding its socket.
+
 ## Builds (流派)
 
 A build guide in game (**B**, or 選單 → 流派指南; data in `src/data/builds.ts`) lists 11 archetypes
@@ -278,5 +286,5 @@ and areas in `src/data/areas.ts`. Balance curves live in `src/data/scaling.ts`.
 
 - Names of currencies, classes, uniques and keystones are original so the project doesn't ship
   another game's trademarks; the mechanics intentionally mirror Path of Exile.
-- Not (yet) implemented: jewels, trading, vaal skills and essences. Dual-wielded
+- Not (yet) implemented: trading, vaal skills and essences. Dual-wielded
   off-hand weapons contribute their stats but attacks use the main hand.

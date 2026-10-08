@@ -13,6 +13,7 @@ export const currencyId = (it: Item): CurrencyId | undefined =>
   isCurrency(it) ? (it.baseId.slice('currency:'.length) as CurrencyId) : undefined;
 export const isGem = (it: Item): boolean => !!it.gem;
 export const isMap = (it: Item): boolean => !!it.map;
+export const isJewel = (it: Item): boolean => it.baseId.startsWith('jewel_');
 export const isFlask = (it: Item): boolean => !!it.flask;
 
 export function itemBase(it: Item): ItemBase {

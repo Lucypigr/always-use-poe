@@ -11,7 +11,7 @@ import { MAX_LEVEL, monsterDamage, monsterLife, resistPenalty, xpMultiplier, xpT
 import { applyCurrency, type CraftResult } from '../items/craft';
 import { addItem, countCurrency, removeItem, spendCurrency } from '../items/grid';
 import { applyBench, benchOptions } from '../items/bench';
-import { currencyId, displayName, flaskProps } from '../items/item';
+import { currencyId, displayName, flaskProps, isJewel } from '../items/item';
 import type { EquipSlot, Item } from '../items/types';
 import { executeBehaviour, type SkillContext, type SkillHost } from '../skills/behaviours';
 import { addGemXp, levelGem } from '../skills/gemUtil';
@@ -1862,6 +1862,10 @@ export class Game implements SkillHost {
       this.log('需要後悔石才能重置天賦。', '#ff8080');
       return false;
     }
+    if (this.char.jewels?.[nodeId]) {
+      this.log('請先取下該插槽中的珠寶。', '#ff8080');
+      return false;
+    }
     const start = PASSIVE_TREE.startOf[this.char.classId];
     if (!canRefund(PASSIVE_TREE, new Set(this.char.passives), nodeId, start)) {
       this.log('重置該天賦會使其他天賦斷開，無法重置。', '#ff8080');
@@ -1869,6 +1873,39 @@ export class Game implements SkillHost {
     }
     this.char.passives = this.char.passives.filter((n) => n !== nodeId);
     this.char.refundPoints--;
+    this.recalc();
+    return true;
+  }
+
+  /** Put a jewel from the inventory into an allocated jewel socket (the old jewel goes back to the inventory). */
+  socketJewel(nodeId: number, jewel: Item): boolean {
+    const c = this.char;
+    const node = PASSIVE_TREE.byId.get(nodeId);
+    if (!node || node.kind !== 'jewel' || !c.passives.includes(nodeId) || !isJewel(jewel)) return false;
+    const old = c.jewels?.[nodeId];
+    if (!removeItem(c.inventory, jewel)) return false;
+    if (old && !addItem(c.inventory, old)) {
+      addItem(c.inventory, jewel);
+      this.log('背包已滿，無法換下原本的珠寶。', '#ff8080');
+      return false;
+    }
+    (c.jewels ??= {})[nodeId] = jewel;
+    this.events.emit('inventory', null);
+    this.recalc();
+    return true;
+  }
+
+  /** Take the jewel out of a socket and put it in the inventory. */
+  unsocketJewel(nodeId: number): boolean {
+    const c = this.char;
+    const jewel = c.jewels?.[nodeId];
+    if (!jewel) return false;
+    if (!addItem(c.inventory, jewel)) {
+      this.log('背包已滿。', '#ff8080');
+      return false;
+    }
+    delete c.jewels![nodeId];
+    this.events.emit('inventory', null);
     this.recalc();
     return true;
   }
