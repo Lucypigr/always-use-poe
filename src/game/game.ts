@@ -5,6 +5,7 @@ import { HEIST_ALARM, HEIST_SITES, HEIST_TARGETS, HEIST_UNLOCK_LEVEL, MERC_ARCHE
 import { AREA_BY_ID } from '../data/areas';
 import { CURRENCY_BY_ID, type CurrencyId } from '../data/currency';
 import type { GemDef, SkillTag } from '../data/gems';
+import { ASCENDANCY_BY_ID, ASCENDANCY_TRIALS, ASC_NODE_BY_ID, ASC_POINTS_PER_TRIAL, ascendancyUnlocked, ascPointsUnspent } from '../data/ascendancy';
 import { canRefund, passiveStats, pathToNode, PASSIVE_TREE } from '../data/passives';
 import { MAX_LEVEL, monsterDamage, monsterLife, resistPenalty, xpMultiplier, xpToNext } from '../data/scaling';
 import { applyCurrency, type CraftResult } from '../items/craft';
@@ -1693,6 +1694,9 @@ export class Game implements SkillHost {
         this.char.completedAreas.push(area.def.id);
         this.char.bonusPassivePoints++;
         this.log('任務完成！你獲得了 1 點天賦點數。', '#a0ff80');
+        if (ASCENDANCY_TRIALS.includes(area.def.id)) {
+          this.log(`昇華試煉完成！你獲得了 ${ASC_POINTS_PER_TRIAL} 點昇華點數（按 U 開啟昇華）。`, '#ffd070');
+        }
         if (area.def.next && !this.char.unlockedAreas.includes(area.def.next)) {
           this.char.unlockedAreas.push(area.def.next);
           this.log(`解鎖新區域：${AREA_BY_ID[area.def.next].name}`, '#a0ff80');
@@ -1865,6 +1869,54 @@ export class Game implements SkillHost {
     }
     this.char.passives = this.char.passives.filter((n) => n !== nodeId);
     this.char.refundPoints--;
+    this.recalc();
+    return true;
+  }
+
+  chooseAscendancy(id: string): boolean {
+    const def = ASCENDANCY_BY_ID[id];
+    if (!def || def.classId !== this.char.classId || this.char.ascendancy || !ascendancyUnlocked(this.char)) return false;
+    this.char.ascendancy = id;
+    this.char.ascNodes = [];
+    this.log(`你昇華為${def.name}！`, '#ffd070');
+    this.recalc();
+    return true;
+  }
+
+  allocateAscendancy(nodeId: string): boolean {
+    const c = this.char;
+    const node = ASC_NODE_BY_ID[nodeId];
+    if (!node || !c.ascendancy || !nodeId.startsWith(`${c.ascendancy}:`)) return false;
+    const have = (c.ascNodes ??= []);
+    if (have.includes(nodeId)) return false;
+    if (node.requires && !have.includes(node.requires)) {
+      this.log('需要先配置前一個昇華天賦。', '#ff8080');
+      return false;
+    }
+    if (ascPointsUnspent(c) <= 0) {
+      this.log('昇華點數不足。', '#ff8080');
+      return false;
+    }
+    have.push(nodeId);
+    this.recalc();
+    return true;
+  }
+
+  /** Refund one ascendancy node (not one that others depend on); costs a refund point. */
+  refundAscendancy(nodeId: string): boolean {
+    const c = this.char;
+    const have = c.ascNodes ?? [];
+    if (!have.includes(nodeId)) return false;
+    if (have.some((n) => ASC_NODE_BY_ID[n]?.requires === nodeId)) {
+      this.log('重置該昇華天賦會使其他天賦斷開，無法重置。', '#ff8080');
+      return false;
+    }
+    if (c.refundPoints <= 0) {
+      this.log('需要後悔石才能重置天賦。', '#ff8080');
+      return false;
+    }
+    c.ascNodes = have.filter((n) => n !== nodeId);
+    c.refundPoints--;
     this.recalc();
     return true;
   }

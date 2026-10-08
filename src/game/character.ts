@@ -23,6 +23,9 @@ export interface CharacterData {
   equipment: Partial<Record<EquipSlot, Item>>;
   inventory: Grid;
   passives: number[];
+  /** Chosen ascendancy class id and its allocated node ids (missing on older saves). */
+  ascendancy?: string;
+  ascNodes?: string[];
   refundPoints: number;
   bonusPassivePoints: number;
   /** Skill bar: gem uid per slot, or 'default_attack'. */

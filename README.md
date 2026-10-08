@@ -126,6 +126,18 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
   falling — or **take their gear** for two rares, currency and a chance at a unique. Manage / dismiss
   them on the character sheet.
 
+## Ascendancy classes (昇華)
+
+Every class has **three ascendancies** (18 in total, `src/data/ascendancy.ts`): 蠻兵 → 不朽者 / 狂戰士 / 酋長
+(Juggernaut / Berserker / Chieftain), 追獵者 → 銳眼 / 掠奪者 / 開路者, 秘術師 → 元素使 / 祕儀者 / 死靈師,
+劍術大師 → 斬殺者 / 角鬥士 / 衛士, 狂信者 → 審判官 / 護法 / 守護者, 夜刃 → 刺客 / 詐欺師 / 破壞者.
+
+- Beat the boss of 灰燼森林 (the first trial) to unlock it, then press **U** (or 選單 → 昇華) and pick one for good.
+- Each trial boss (灰燼森林, 廢墟要塞, 餘燼神殿, 被遺棄者王座) grants **2 ascendancy points**, 8 in total.
+- Each ascendancy is a 10-node tree (a root plus three 3-node branches ending in a big notable), so you
+  can't take everything. Click to allocate (parent first); click an allocated node to refund it for a
+  refund point, if nothing depends on it.
+
 ## Builds (流派)
 
 A build guide in game (**B**, or 選單 → 流派指南; data in `src/data/builds.ts`) lists 11 archetypes
@@ -266,5 +278,5 @@ and areas in `src/data/areas.ts`. Balance curves live in `src/data/scaling.ts`.
 
 - Names of currencies, classes, uniques and keystones are original so the project doesn't ship
   another game's trademarks; the mechanics intentionally mirror Path of Exile.
-- Not (yet) implemented: ascendancy classes, jewels, trading, vaal skills and essences. Dual-wielded
+- Not (yet) implemented: jewels, trading, vaal skills and essences. Dual-wielded
   off-hand weapons contribute their stats but attacks use the main hand.

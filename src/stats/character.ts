@@ -1,3 +1,4 @@
+import { ascendancyStats } from '../data/ascendancy';
 import { CLASS_BY_ID } from '../data/classes';
 import { passiveStats, PASSIVE_TREE } from '../data/passives';
 import type { CharacterData } from '../game/character';
@@ -94,7 +95,7 @@ export function equipmentMods(c: CharacterData): StatMod[] {
  * `extra` carries temporary modifiers: auras, flask effects, map penalties, area resist penalty.
  */
 export function computeCharacterStats(c: CharacterData, extra: StatMod[] = [], resPenalty = 0): CharacterStats {
-  const sheet = new StatSheet([...baseMods(c), ...equipmentMods(c), ...passiveStats(PASSIVE_TREE, c.passives), ...extra]);
+  const sheet = new StatSheet([...baseMods(c), ...equipmentMods(c), ...passiveStats(PASSIVE_TREE, c.passives), ...ascendancyStats(c), ...extra]);
   const allAttr = sheet.flat('all_attributes');
   const str = Math.round((sheet.flat('str') + allAttr) * (1 + sheet.inc('str') / 100));
   const dex = Math.round((sheet.flat('dex') + allAttr) * (1 + sheet.inc('dex') / 100));
