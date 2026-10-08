@@ -24,10 +24,13 @@
  *   portal     – opens a portal to town                   (≈ Portal Scroll)
  */
 
+import { ESSENCES } from './essences';
+
 export type CurrencyId =
   | 'identify' | 'portal' | 'transmute' | 'augment' | 'alteration' | 'regal' | 'alchemy' | 'chaos' | 'exalt'
   | 'scour' | 'annul' | 'divine' | 'blessed' | 'chromatic' | 'jeweller' | 'fusing' | 'vaal' | 'chance'
-  | 'whetstone' | 'armour_scrap' | 'bauble' | 'gcp' | 'regret';
+  | 'whetstone' | 'armour_scrap' | 'bauble' | 'gcp' | 'regret'
+  | `ess_${string}`;
 
 export interface CurrencyDef {
   id: CurrencyId;
@@ -68,6 +71,7 @@ export const CURRENCY: CurrencyDef[] = [
   { id: 'annul', name: '剝離石', description: '移除物品上的一條隨機詞綴', stackSize: 20, dropWeight: 10, minLevel: 25, tier: 3, colors: ['#ffffff', '#9aa0b0'] },
   { id: 'divine', name: '神聖石', description: '隨機重骰物品隨機詞綴的數值', stackSize: 10, dropWeight: 6, minLevel: 30, tier: 3, colors: ['#fffbe0', '#e0b030'] },
   { id: 'exalt', name: '崇高石', description: '為稀有物品附加一條新的隨機詞綴', stackSize: 10, dropWeight: 4, minLevel: 30, tier: 3, colors: ['#ffe9a8', '#d98c1d'] },
+  ...ESSENCES,
 ];
 
 export const CURRENCY_BY_ID = Object.fromEntries(CURRENCY.map((c) => [c.id, c])) as Record<CurrencyId, CurrencyDef>;

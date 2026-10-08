@@ -6,7 +6,7 @@ import { lvl } from '../data/scaling';
 import { UNIQUE_BY_ID } from '../data/uniques';
 import { gemRequirements, gemXpToNext } from '../skills/gemUtil';
 import {
-  armourProps, attributeReqs, baseName, currencyId, displayName, flaskProps, localSheet, mapName, modText, requiredLevel, weaponProps,
+  allRolls, armourProps, attributeReqs, baseName, clusterContents, currencyId, displayName, flaskProps, localSheet, mapName, modText, requiredLevel, weaponProps,
 } from './item';
 import type { Attr, Item } from './types';
 
@@ -139,13 +139,27 @@ export function buildTooltip(it: Item, ctx?: TooltipContext): Tooltip {
     it.suffixes.forEach((m) => add(m, '後綴'));
     sections.push(lines);
   }
+  for (const e of clusterContents(it)) {
+    sections.push([{ text: e.name, cls: 'prop' }, ...e.text.map((text) => ({ text, cls: 'mod' as LineClass }))]);
+  }
+  if (it.abyss) {
+    const lines: TooltipLine[] = [{ text: `深淵插槽：${it.abyss.map((j) => (j ? '◆' : '◇')).join(' ')}`, cls: 'prop' }];
+    for (const j of it.abyss) {
+      if (!j) continue;
+      lines.push({ text: displayName(j), cls: 'unique' });
+      for (const m of allRolls(j)) for (const text of modText(m)) lines.push({ text, cls: 'mod' });
+    }
+    sections.push(lines);
+  }
   if (it.corrupted) sections.push([{ text: '已汙染', cls: 'corrupted' }]);
   if (it.uniqueId) {
     const u = UNIQUE_BY_ID[it.uniqueId];
     if (u) sections.push([{ text: u.flavour, cls: 'flavour' }]);
   }
   if (base.flask) sections.push([{ text: '按右鍵或對應數字鍵飲用。', cls: 'hint' }]);
-  if (base.cls === 'jewel') sections.push([{ text: '放入天賦樹上已配置的珠寶插槽才會生效。', cls: 'hint' }]);
+  if (base.cls === 'jewel') {
+    sections.push([{ text: it.baseId === 'abyss_jewel' ? '鑲嵌於裝備的深淵插槽（角色資訊 → 深淵珠寶）才會生效。' : '放入天賦樹上已配置的珠寶插槽才會生效。', cls: 'hint' }]);
+  }
 
   const title = it.rarity === 'rare' || it.rarity === 'unique' ? [displayName(it), baseName(it)] : [displayName(it)];
   if (!it.identified && it.rarity !== 'normal') title.splice(0, title.length, baseName(it));

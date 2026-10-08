@@ -333,6 +333,21 @@ export const UNIQUES: UniqueDef[] = [
     mods: [{ mod: 'u_life_leech', values: [[0.2, 0.4]] }, { mod: 'jw_life', values: [[5, 7]] }, { mod: 'jw_phys', values: [[10, 14]] }],
     flavour: '它還在跳動，且渴望更多。',
   },
+  {
+    id: 'wide_eye', name: '廣域之眼', base: 'jewel_blue', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_small', values: [[40, 60]] }, { mod: 'jw_aoe', values: [[8, 12]] }],
+    flavour: '它看見的，不只是眼前的一點。',
+  },
+  {
+    id: 'brute_core', name: '蠻力核心', base: 'jewel_red', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_attr', values: [[80, 120]] }, { mod: 'jw_str', values: [[10, 15]] }],
+    flavour: '力量不問出處，只問夠不夠多。',
+  },
+  {
+    id: 'glory_light', name: '顯赫之光', base: 'jewel_green', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_notable', values: [[25, 35]] }, { mod: 'jw_life', values: [[3, 5]] }],
+    flavour: '真正的光芒，從不需要多餘的火炬。',
+  },
 ];
 
 export const UNIQUE_BY_ID: Record<string, UniqueDef> = Object.fromEntries(UNIQUES.map((u) => [u.id, u]));

@@ -7,7 +7,7 @@ import { BUILDS, type BuildDef } from '../data/builds';
 import { CLASS_BY_ID } from '../data/classes';
 import { GEM_BY_ID } from '../data/gems';
 import { UNIQUE_BY_ID } from '../data/uniques';
-import { isJewel } from '../items/item';
+import { displayName, isAbyssJewel, isJewel } from '../items/item';
 import { createUnique } from '../items/generate';
 import { CURRENCY } from '../data/currency';
 import { SKILL_KEYS } from '../game/character';
@@ -316,6 +316,7 @@ export class Modals {
         h('button', { onclick: () => this.help() }, '操作與指南'),
         h('button', { onclick: () => this.builds() }, '流派指南'),
         h('button', { onclick: () => this.ascendancy() }, '昇華 (U)'),
+        h('button', { onclick: () => this.abyss() }, '深淵珠寶'),
       ),
       h('div', { class: 'row-buttons' }, h('button', { onclick: () => {
         this.close();
@@ -350,6 +351,7 @@ export class Modals {
         tr([k('Shift'), '+', k('技能')], '站在原地施放，不移動'),
         tr([k('J')], '任務日誌'),
         tr([k('U')], '昇華：完成試煉後選擇昇華職業並配置昇華天賦'),
+        tr(['珠寶'], '天賦樹上的菱形珠寶插槽放入珠寶；星團珠寶提供一組天賦；深淵珠寶鑲嵌在裝備的深淵插槽（選單 → 深淵珠寶）'),
         tr([k('B')], '流派指南：各種流派的核心技能、輔助寶石與傳奇裝備'),
         tr([k('1'), '–', k('5')], '飲用藥劑'),
         tr([k('I'), ' ', k('C'), ' ', k('P')], '背包、角色資訊、天賦樹'),
@@ -440,6 +442,38 @@ export class Modals {
     }
     body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
     this.show('ascendancy', body);
+  }
+
+  /** Abyssal sockets of equipped gear: socket abyss jewels from the inventory. */
+  abyss(): void {
+    const g = this.ui.game;
+    const c = g.char;
+    const body = h('div', { class: 'jewel-pick' }, h('h2', {}, '深淵珠寶'));
+    const gear = Object.values(c.equipment).filter((it) => it?.abyss?.length);
+    const jewels = c.inventory.items.map((e) => e.item).filter(isAbyssJewel);
+    if (!gear.length) body.append(h('p', {}, '身上的裝備沒有深淵插槽。頭盔、胸甲、手套、鞋子與腰帶有機率帶有深淵插槽。'));
+    const refresh = () => {
+      this.ui.refreshItems();
+      this.abyss();
+    };
+    for (const host of gear) {
+      body.append(h('div', { class: 'jp-sub' }, displayName(host!)));
+      host!.abyss!.forEach((cur, i) => {
+        const row = h('div', { class: 'jp-row' });
+        if (cur) {
+          row.append(tooltipEl(buildTooltip(cur, this.ui.tctx), false), h('button', { onclick: () => g.unsocketAbyss(host!, i) && refresh() }, '取下'));
+          body.append(row);
+        } else {
+          body.append(h('div', { class: 'jp-sub' }, `深淵插槽 ${i + 1}（空）`));
+          for (const j of jewels) {
+            body.append(h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(j, this.ui.tctx), false), h('button', { onclick: () => g.socketAbyss(host!, i, j) && refresh() }, '鑲嵌')));
+          }
+          if (!jewels.length) body.append(h('div', { class: 'jp-sub' }, '背包中沒有深淵珠寶。'));
+        }
+      });
+    }
+    body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
+    this.show('abyss', body);
   }
 
   /** Pick a jewel from the inventory for a jewel socket of the passive tree (or take the current one out). */

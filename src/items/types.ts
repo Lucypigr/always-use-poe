@@ -79,6 +79,10 @@ export interface Item {
   gem?: GemState;
   flask?: FlaskState;
   map?: MapState;
+  /** Cluster jewel: a themed bundle of small passives and notables. */
+  cluster?: { theme: string; notables: string[] };
+  /** Abyssal sockets on gear: socketed abyss jewels (null = empty). */
+  abyss?: (Item | null)[];
 }
 
 export interface WeaponProps {

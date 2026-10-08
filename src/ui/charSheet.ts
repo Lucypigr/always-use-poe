@@ -95,6 +95,7 @@ export class CharacterSheet {
     row('物品稀有度增加', `${fmt(s.itemRarity)}%`);
     row('物品數量增加', `${fmt(s.itemQuantity)}%`);
     row('生命偷取', `${fmt(s.sheet.flat('life_leech'), 1)}%`);
+    box.append(h('div', { class: 'row' }, h('span', { class: 'k' }, '深淵插槽'), h('button', { class: 'small', onclick: () => this.ui.modals.abyss() }, '深淵珠寶')));
     row('昇華點數', c.ascendancy ? `剩餘 ${ascPointsUnspent(c)} / ${ascPointsTotal(c)}` : ascendancyUnlocked(c) ? '可以昇華了（按 U）' : '尚未解鎖');
     row('天賦點數', `已配置 ${c.passives.length - 1}，重置點數 ${c.refundPoints}`);
     row('死亡次數', fmt(c.deaths));

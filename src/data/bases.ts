@@ -314,6 +314,13 @@ const JEWELS: ItemBase[] = [
   { id: 'jewel_blue', name: '蔚藍珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['jewel', 'jewel_blue'], dropWeight: 1 },
 ];
 
+const CLUSTERS: ItemBase[] = [
+  { id: 'jewel_cluster_s', name: '小型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'jewel_cluster_m', name: '中型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 30, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'jewel_cluster_l', name: '大型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 55, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'abyss_jewel', name: '深淵珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['abyss_jewel'], dropWeight: 0 },
+];
+
 const SPECIAL: ItemBase[] = [
   { id: 'gem', name: '寶石', cls: 'gem', w: 1, h: 1, level: 1, req: {}, tags: ['gem'] },
   { id: 'map', name: '地圖', cls: 'map', w: 1, h: 1, level: 40, req: {}, tags: ['map'] },
@@ -324,6 +331,7 @@ export const BASES: ItemBase[] = [
   ...makeArmourBases(),
   ...JEWELLERY,
   ...JEWELS,
+  ...CLUSTERS,
   ...makeFlaskBases(),
   ...SPECIAL,
 ];

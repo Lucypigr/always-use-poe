@@ -2,6 +2,7 @@ import { getMod, type ModDef } from '../data/affixes';
 import { getBase } from '../data/bases';
 import { CURRENCY_BY_ID, type CurrencyId } from '../data/currency';
 import { getGem, type GemDef } from '../data/gems';
+import { CLUSTER_SIZES, clusterEffects } from '../data/jewels';
 import { UNIQUE_BY_ID } from '../data/uniques';
 import { isLocalStat, StatSheet, type StatMod } from '../stats/stats';
 import type { Attr, Item, ItemBase, ModRoll, WeaponProps } from './types';
@@ -13,7 +14,9 @@ export const currencyId = (it: Item): CurrencyId | undefined =>
   isCurrency(it) ? (it.baseId.slice('currency:'.length) as CurrencyId) : undefined;
 export const isGem = (it: Item): boolean => !!it.gem;
 export const isMap = (it: Item): boolean => !!it.map;
+/** Tree jewels (including cluster jewels), not abyss jewels. */
 export const isJewel = (it: Item): boolean => it.baseId.startsWith('jewel_');
+export const isAbyssJewel = (it: Item): boolean => it.baseId === 'abyss_jewel';
 export const isFlask = (it: Item): boolean => !!it.flask;
 
 export function itemBase(it: Item): ItemBase {
@@ -102,6 +105,21 @@ export function allRolls(it: Item): ModRoll[] {
 export function globalItemStats(it: Item): StatMod[] {
   const out: StatMod[] = [];
   for (const r of allRolls(it)) for (const s of modStats(r)) if (!isLocalStat(s.stat)) out.push(s);
+  return out;
+}
+
+/** Cluster jewel contents as named effects (for tooltips). */
+export function clusterContents(it: Item): { name: string; text: string[] }[] {
+  if (!it.cluster) return [];
+  return clusterEffects(it.cluster, CLUSTER_SIZES[it.baseId] ?? { smalls: 2, notables: 1 }).map((e) => ({ name: e.name, text: e.fx.map((f) => f.text) }));
+}
+
+/** Global stats of a jewel socketed in the passive tree (cluster jewels add their passives). */
+export function treeJewelStats(it: Item): StatMod[] {
+  const out = globalItemStats(it);
+  if (it.cluster) {
+    for (const e of clusterEffects(it.cluster, CLUSTER_SIZES[it.baseId] ?? { smalls: 2, notables: 1 })) out.push(...e.fx.map((f) => f.mod));
+  }
   return out;
 }
 

@@ -174,6 +174,12 @@ export function itemIcon(it: Item): string {
   }
   if (base.weapon) return cached(`w:${base.cls}:${h}:${accent}`, () => weaponSvg(base.cls, h, accent));
   if (base.defence) return cached(`a:${base.cls}:${base.defence}:${accent}`, () => armourSvg(base.cls, h, base.defence!, accent));
+  if (base.id.startsWith('jewel_cluster')) {
+    return cached(`cluster:${base.id}:${accent}`, () => svg(100, 100, `<polygon points="50,4 88,26 88,74 50,96 12,74 12,26" fill="url(#cl)" stroke="${accent}" stroke-width="5"/>${[[50, 30], [30, 62], [70, 62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9" fill="#fff6c8" opacity="0.85"/>`).join('')}`, grad('cl', '#c8a8ff', '#3a1a7a')));
+  }
+  if (base.id === 'abyss_jewel') {
+    return cached(`abyss:${accent}`, () => svg(100, 100, `<polygon points="50,4 90,50 50,96 10,50" fill="url(#ab)" stroke="${accent}" stroke-width="5"/><polygon points="50,24 70,50 50,76 30,50" fill="#05010a" opacity="0.8"/>`, grad('ab', '#7a4aa8', '#0a0214')));
+  }
   if (base.cls === 'jewel') {
     const body = base.id === 'jewel_red' ? ['#ff8a7a', '#8a1a10'] : base.id === 'jewel_green' ? ['#8aff8a', '#1a6a1a'] : ['#8aaaff', '#1a2a8a'];
     return cached(`jewel:${base.id}:${accent}`, () => svg(100, 100, `<polygon points="50,6 86,34 74,86 26,86 14,34" fill="url(#jw)" stroke="${accent}" stroke-width="5"/><polygon points="50,6 62,40 50,86 38,40" fill="rgba(255,255,255,0.22)"/>`, grad('jw', body[0], body[1])));

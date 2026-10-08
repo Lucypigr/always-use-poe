@@ -1,11 +1,12 @@
 import { rng as defaultRng, type RNG } from '../core/rng';
-import { getMod } from '../data/affixes';
+import { getMod, type ModDef } from '../data/affixes';
 import { getBase } from '../data/bases';
 import type { CurrencyId } from '../data/currency';
+import { ESSENCE_INFO, isEssence } from '../data/essences';
 import { MAX_GEM_LEVEL } from '../data/gems';
 import {
   addRandomMod, applyRarity, maxSockets, modCandidates, rerollLinks, rerollSocketColors, rerollSocketCount,
-  rollValues, uniqueRanges, uniquesForBase, createUnique,
+  itemTags, rollValues, uniqueRanges, uniquesForBase, createUnique,
 } from './generate';
 import { explicitMods, isCurrency } from './item';
 import { rareName } from './names';
@@ -36,9 +37,40 @@ function hasGems(it: Item): boolean {
   return it.sockets.some((s) => s.gem);
 }
 
+/** The mod (and tier) an essence guarantees on this item, if the item can roll any of its mods. */
+function essenceMod(currency: CurrencyId, it: Item): { def: ModDef; tier: number } | undefined {
+  const info = ESSENCE_INFO[currency];
+  if (!info) return undefined;
+  const tags = itemTags(it);
+  for (const id of info.mods) {
+    const def = getMod(id);
+    if ((def.type !== 'prefix' && def.type !== 'suffix') || !def.spawn.some((t) => tags.has(t))) continue;
+    return { def, tier: Math.min(def.tiers.length - 1, Math.round(info.frac * (def.tiers.length - 1))) };
+  }
+  return undefined;
+}
+
+function applyEssence(currency: CurrencyId, it: Item, r: RNG): void {
+  const pick = essenceMod(currency, it)!;
+  it.rarity = 'rare';
+  it.prefixes = [];
+  it.suffixes = [];
+  it.name = rareName(r, getBase(it.baseId).cls);
+  const roll = { id: pick.def.id, tier: pick.tier, values: rollValues(pick.def, pick.tier, it, r) };
+  (pick.def.type === 'prefix' ? it.prefixes : it.suffixes).push(roll);
+  for (let i = r.chance(0.35) ? 4 : 3; i > 0; i--) addRandomMod(it, r);
+}
+
 /** Check whether a currency can be applied without applying it. */
 export function canApply(currency: CurrencyId, it: Item): CraftResult {
   if (isCurrency(it)) return fail('無法對通貨使用通貨');
+  if (it.cluster) return fail('星團珠寶無法使用通貨');
+  if (isEssence(currency)) {
+    if (!isEquipmentLike(it) || it.flask || it.map) return fail('只能用於裝備');
+    if (it.corrupted) return fail('已汙染的物品無法修改');
+    if (it.rarity !== 'normal') return fail('物品必須是普通稀有度');
+    return essenceMod(currency, it) ? ok() : fail('此物品無法使用該精髓');
+  }
   if (currency === 'portal' || currency === 'regret') return fail('此物品需從背包中使用');
   if (it.corrupted && currency !== 'identify') return fail('已汙染的物品無法修改');
   if (!it.identified && currency !== 'identify' && currency !== 'vaal') return fail('物品必須先鑑定');
@@ -196,6 +228,10 @@ export function applyCurrency(currency: CurrencyId, it: Item, r: RNG = defaultRn
   const check = canApply(currency, it);
   if (!check.ok) return check;
   const base = it.map ? undefined : getBase(it.baseId);
+  if (isEssence(currency)) {
+    applyEssence(currency, it, r);
+    return ok();
+  }
   switch (currency) {
     case 'identify':
       it.identified = true;

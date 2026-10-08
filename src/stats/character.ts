@@ -2,7 +2,8 @@ import { ascendancyStats } from '../data/ascendancy';
 import { CLASS_BY_ID } from '../data/classes';
 import { passiveStats, PASSIVE_TREE } from '../data/passives';
 import type { CharacterData } from '../game/character';
-import { armourProps, globalItemStats, weaponProps } from '../items/item';
+import { armourProps, globalItemStats, treeJewelStats, weaponProps } from '../items/item';
+import { JEWEL_RADIUS, RADIUS_MODS } from '../data/jewels';
 import type { EquipSlot, Item } from '../items/types';
 import { flat, inc, more, StatSheet, type StatMod } from './stats';
 
@@ -74,13 +75,33 @@ function baseMods(c: CharacterData): StatMod[] {
 }
 
 /** Modifiers from all equipped items (global item stats + armour/shield base values). */
-/** Modifiers from jewels socketed in allocated jewel sockets of the passive tree. */
+/** Boost a passive node's numeric modifiers by `pct` percent (flags can't be scaled). */
+function boostMods(mods: StatMod[], pct: number): StatMod[] {
+  return mods.filter((m) => m.kind !== 'flag').map((m) => ({ ...m, value: (m.value * pct) / 100 }));
+}
+
+/**
+ * Modifiers from jewels socketed in allocated jewel sockets of the passive tree, including the
+ * radius effects that boost allocated passives around the socket.
+ */
 export function jewelMods(c: CharacterData): StatMod[] {
   const out: StatMod[] = [];
   if (!c.jewels) return out;
   const allocated = new Set(c.passives);
-  for (const [node, jewel] of Object.entries(c.jewels)) {
-    if (allocated.has(Number(node))) out.push(...globalItemStats(jewel));
+  for (const [nodeKey, jewel] of Object.entries(c.jewels)) {
+    const nodeId = Number(nodeKey);
+    if (!allocated.has(nodeId)) continue;
+    out.push(...treeJewelStats(jewel));
+    const socket = PASSIVE_TREE.byId.get(nodeId);
+    if (!socket) continue;
+    for (const roll of jewel.prefixes) {
+      const kind = RADIUS_MODS[roll.id];
+      if (!kind) continue;
+      for (const id of allocated) {
+        const n = PASSIVE_TREE.byId.get(id);
+        if (n && n.kind === kind && Math.hypot(n.x - socket.x, n.y - socket.y) <= JEWEL_RADIUS) out.push(...boostMods(n.stats, roll.values[0] ?? 0));
+      }
+    }
   }
   return out;
 }
@@ -90,6 +111,7 @@ export function equipmentMods(c: CharacterData): StatMod[] {
   for (const [slot, item] of Object.entries(c.equipment) as [EquipSlot, Item | undefined][]) {
     if (!item || slot.startsWith('flask')) continue;
     out.push(...globalItemStats(item));
+    for (const j of item.abyss ?? []) if (j) out.push(...globalItemStats(j));
     const ap = armourProps(item);
     if (ap) {
       if (ap.armour) out.push(flat('armour', ap.armour));

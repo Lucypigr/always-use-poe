@@ -11,7 +11,7 @@ import { MAX_LEVEL, monsterDamage, monsterLife, resistPenalty, xpMultiplier, xpT
 import { applyCurrency, type CraftResult } from '../items/craft';
 import { addItem, countCurrency, removeItem, spendCurrency } from '../items/grid';
 import { applyBench, benchOptions } from '../items/bench';
-import { currencyId, displayName, flaskProps, isJewel } from '../items/item';
+import { currencyId, displayName, flaskProps, isAbyssJewel, isJewel } from '../items/item';
 import type { EquipSlot, Item } from '../items/types';
 import { executeBehaviour, type SkillContext, type SkillHost } from '../skills/behaviours';
 import { addGemXp, levelGem } from '../skills/gemUtil';
@@ -1890,6 +1890,37 @@ export class Game implements SkillHost {
       return false;
     }
     (c.jewels ??= {})[nodeId] = jewel;
+    this.events.emit('inventory', null);
+    this.recalc();
+    return true;
+  }
+
+  /** Put an abyss jewel from the inventory into an abyssal socket of an equipped item. */
+  socketAbyss(host: Item, index: number, jewel: Item): boolean {
+    const c = this.char;
+    if (!host.abyss || index < 0 || index >= host.abyss.length || !isAbyssJewel(jewel)) return false;
+    if (!Object.values(c.equipment).includes(host)) return false;
+    const old = host.abyss[index];
+    if (!removeItem(c.inventory, jewel)) return false;
+    if (old && !addItem(c.inventory, old)) {
+      addItem(c.inventory, jewel);
+      this.log('背包已滿，無法換下原本的珠寶。', '#ff8080');
+      return false;
+    }
+    host.abyss[index] = jewel;
+    this.events.emit('inventory', null);
+    this.recalc();
+    return true;
+  }
+
+  unsocketAbyss(host: Item, index: number): boolean {
+    const jewel = host.abyss?.[index];
+    if (!jewel) return false;
+    if (!addItem(this.char.inventory, jewel)) {
+      this.log('背包已滿。', '#ff8080');
+      return false;
+    }
+    host.abyss![index] = null;
     this.events.emit('inventory', null);
     this.recalc();
     return true;

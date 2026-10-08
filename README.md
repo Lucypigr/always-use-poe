@@ -145,6 +145,20 @@ Three jewel bases (緋紅 / 翠綠 / 蔚藍) drop from monsters as magic, rare a
 tiers (magic: 1 + 1 mods, rare: up to 2 + 2). The passive tree has **12 jewel sockets** (diamond nodes on the
 outer ring). Allocate one, click it and pick a jewel from your inventory; its mods apply while the socket is
 allocated. Unidentified jewels need a Scroll of Insight first. Take a jewel out before refunding its socket.
+The vendor sells magic jewels.
+
+- **Radius jewels** (廣域之眼, 蠻力核心, 顯赫之光): boost the allocated small / attribute / notable passives
+  within a radius of their socket (a ring is drawn when you hover the socket).
+- **Cluster jewels** (小／中／大型星團珠寶): a themed bundle of 2 / 4 / 6 small passives plus 1 / 2 / 3 notables
+  (8 themes such as 活力, 堡壘, 奧術, 亡靈). They can't be crafted on.
+- **Abyss jewels** (深淵珠寶): flat-stat jewels that go into the **abyssal sockets** some helmets, body armour,
+  gloves, boots and belts drop with (選單 or 角色資訊 → 深淵珠寶).
+
+## Essences (精髓)
+
+12 kinds × 3 strengths (微弱的／穩定的／強大的, `src/data/essences.ts`). Use one on a **normal** item to make it
+rare with a guaranteed modifier (life, mana, shield, the resistances, crit, speed, accuracy, damage or
+attributes — whichever the item can roll); stronger essences guarantee a higher tier of that modifier.
 
 ## Builds (流派)
 

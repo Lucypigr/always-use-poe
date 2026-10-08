@@ -1,6 +1,7 @@
 import { fromTouch } from './touch';
 import { canRefund, pathToNode, PASSIVE_TREE, type PassiveNode } from '../data/passives';
-import { displayName, modText } from '../items/item';
+import { JEWEL_RADIUS, RADIUS_MODS } from '../data/jewels';
+import { clusterContents, displayName, modText } from '../items/item';
 import { passivePointsUnspent } from '../game/character';
 import { clear, h } from './dom';
 import type { UI } from './ui';
@@ -127,6 +128,16 @@ export class PassiveTreeView {
         ctx.stroke();
       }
     }
+    // radius of a radius jewel in the hovered socket
+    const hovered = this.hover?.kind === 'jewel' ? this.ui.game.char.jewels?.[this.hover.id] : undefined;
+    if (this.hover && hovered?.prefixes.some((m) => RADIUS_MODS[m.id])) {
+      const [hx, hy] = this.toScreen(this.hover.x, this.hover.y);
+      ctx.strokeStyle = 'rgba(122,224,208,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(hx, hy, JEWEL_RADIUS * this.scale, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     // nodes
     const reachable = (n: PassiveNode) => n.links.some((l) => allocated.has(l));
     for (const n of PASSIVE_TREE.nodes) {
@@ -250,6 +261,7 @@ export class PassiveTreeView {
     const jewel = n.kind === 'jewel' ? char.jewels?.[n.id] : undefined;
     if (jewel) {
       const lines = [...jewel.implicits, ...jewel.prefixes, ...jewel.suffixes].flatMap((m) => modText(m));
+      for (const e of clusterContents(jewel)) lines.push(e.name, ...e.text);
       this.tip.append(h('div', { class: `nt-body jewel-tip ${jewel.rarity}` }, h('b', {}, displayName(jewel)), ...(jewel.identified || jewel.rarity === 'normal' ? lines : ['未鑑定']).flatMap((t) => [h('br'), t])));
     }
     let foot = '';
