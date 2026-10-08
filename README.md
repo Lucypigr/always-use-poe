@@ -300,5 +300,5 @@ and areas in `src/data/areas.ts`. Balance curves live in `src/data/scaling.ts`.
 
 - Names of currencies, classes, uniques and keystones are original so the project doesn't ship
   another game's trademarks; the mechanics intentionally mirror Path of Exile.
-- Not (yet) implemented: trading, vaal skills and essences. Dual-wielded
+- Not (yet) implemented: trading and vaal skills. Dual-wielded
   off-hand weapons contribute their stats but attacks use the main hand.
