@@ -228,7 +228,7 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 | Orb of Unlearning | Regret | Passive refund point |
 
 ### Gems, sockets and links
-- **64 active skills** (incl. 17 auras & heralds) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+- **91 active skills** (incl. 17 auras & heralds; the newest batch is in `src/data/gems2.ts`) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
   novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
   and **53 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
   controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).

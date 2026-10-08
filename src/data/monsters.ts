@@ -213,6 +213,9 @@ export const MONSTERS: MonsterDef[] = [
   // Heist guards
   m({ id: 'heist_guard', name: '金庫守衛', model: 'humanoid', color: '#6a6a78', life: 1.3, damage: 1.15, speed: 3.4, armour: 2 }),
   m({ id: 'heist_archer', name: '守衛弓手', model: 'humanoid', color: '#5a5a48', life: 0.9, damage: 1.05, speed: 3.2, skills: [arrow()], kite: 7 }),
+  m({ id: 'minion_archer', name: '骷髏弓手', model: 'skeleton', color: '#d8d0b0', life: 0.6, damage: 1.1, speed: 4.4, attackSpeed: 1.2, skills: [arrow({ range: 10, cooldown: 1 })], kite: 6 }),
+  m({ id: 'minion_ice_mage', name: '冰霜術士', model: 'caster', color: '#7ab8e8', life: 0.55, damage: 1.35, speed: 4, attackSpeed: 1, types: { cold: 1 }, skills: [bolt('#8fd8ff', { cold: 1 }, { cooldown: 1.1 })], kite: 6 }),
+  m({ id: 'minion_golem', name: '石魔像', model: 'brute', color: '#8a8478', life: 5, damage: 1.6, speed: 3.4, attackSpeed: 0.8, scale: 1.5, radius: 0.8, armour: 3 }),
   m({ id: 'zombie_minion', name: '殭屍', model: 'zombie', color: '#7a8a6a', life: 2.4, damage: 1.3, speed: 3.6, attackSpeed: 0.9, scale: 1.15, radius: 0.55 }),
 ];
 
