@@ -1,3 +1,4 @@
+import { ASCENDANCY_BY_ID, ascendancyUnlocked, ascPointsTotal, ascPointsUnspent } from '../data/ascendancy';
 import { CLASS_BY_ID } from '../data/classes';
 import { monsterAccuracy, monsterDamage } from '../data/scaling';
 import { armourReduction, chanceToHit } from '../game/combat';
@@ -33,7 +34,7 @@ export class CharacterSheet {
     clear(el);
     el.append(h('div', { class: 'panel-title' }, '角色', h('button', { class: 'panel-close small', onclick: () => this.ui.closePanel('character') }, '×')));
     const box = h('div', { class: 'charsheet' });
-    box.append(h('div', { class: 'hdr' }, h('span', { class: 'nm' }, c.name), h('span', {}, `等級 ${c.level} ${CLASS_BY_ID[c.classId].name}`)));
+    box.append(h('div', { class: 'hdr' }, h('span', { class: 'nm' }, c.name), h('span', {}, `等級 ${c.level} ${c.ascendancy ? ASCENDANCY_BY_ID[c.ascendancy].name : CLASS_BY_ID[c.classId].name}`)));
     const row = (k: string, v: string, cls = '') => box.append(h('div', { class: 'row' }, h('span', { class: 'k' }, k), h('span', { class: `v ${cls}` }, v)));
     const title = (t: string) => box.append(h('div', { class: 'section-title' }, t));
 
@@ -94,6 +95,8 @@ export class CharacterSheet {
     row('物品稀有度增加', `${fmt(s.itemRarity)}%`);
     row('物品數量增加', `${fmt(s.itemQuantity)}%`);
     row('生命偷取', `${fmt(s.sheet.flat('life_leech'), 1)}%`);
+    box.append(h('div', { class: 'row' }, h('span', { class: 'k' }, '深淵插槽'), h('button', { class: 'small', onclick: () => this.ui.modals.abyss() }, '深淵珠寶')));
+    row('昇華點數', c.ascendancy ? `剩餘 ${ascPointsUnspent(c)} / ${ascPointsTotal(c)}` : ascendancyUnlocked(c) ? '可以昇華了（按 U）' : '尚未解鎖');
     row('天賦點數', `已配置 ${c.passives.length - 1}，重置點數 ${c.refundPoints}`);
     row('死亡次數', fmt(c.deaths));
     row('遊戲時間', `${Math.floor(c.playTime / 3600)} 小時 ${Math.floor((c.playTime % 3600) / 60)} 分`);

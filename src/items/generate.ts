@@ -1,12 +1,15 @@
 import { rng as defaultRng, uid, type RNG } from '../core/rng';
 import { allMods, getMod, type ModDef, type ModType } from '../data/affixes';
-import { EQUIPMENT_BASES, getBase } from '../data/bases';
+import { BASES, EQUIPMENT_BASES, getBase } from '../data/bases';
 import { CURRENCY, CURRENCY_BY_ID, type CurrencyId } from '../data/currency';
 import { GEMS, getGem } from '../data/gems';
+import { ABYSS_SOCKET_CLASSES, CLUSTER_SIZES, CLUSTER_THEMES } from '../data/jewels';
 import { UNIQUES, UNIQUE_BY_ID, type UniqueDef } from '../data/uniques';
 import { explicitMods } from './item';
 import { rareName } from './names';
 import type { Attr, Item, ItemBase, ModRoll, Rarity, Socket, SocketColor } from './types';
+
+const JEWEL_BASES = BASES.filter((b) => b.cls === 'jewel' && b.id.startsWith('jewel_') && !(b.id in CLUSTER_SIZES));
 
 // ---------------------------------------------------------------------------------------------
 // Construction helpers
@@ -56,11 +59,34 @@ export const mapAreaLevel = (tier: number): number => 40 + tier * 2;
 export function createItem(baseId: string, ilvl: number, rarity: Rarity = 'normal', r: RNG = defaultRng): Item {
   const base = getBase(baseId);
   const it = blank(baseId, ilvl);
+  if (baseId in CLUSTER_SIZES) {
+    rollCluster(it, r);
+    return it;
+  }
   rollImplicits(it, r);
   if (maxSockets(it) > 0) rollSockets(it, r, 'drop');
   if (base.flask) it.flask = { charges: base.flask.maxCharges };
   if (rarity !== 'normal') applyRarity(it, rarity, r);
+  rollAbyssSockets(it);
   return it;
+}
+
+function rollCluster(it: Item, r: RNG): void {
+  const size = CLUSTER_SIZES[it.baseId];
+  const theme = r.pick(CLUSTER_THEMES);
+  const pool = [...theme.notables];
+  const notables: string[] = [];
+  while (notables.length < size.notables && pool.length) notables.push(pool.splice(r.int(0, pool.length - 1), 1)[0].name);
+  it.cluster = { theme: theme.id, notables };
+  it.rarity = 'rare';
+  it.name = `${theme.name}星團`;
+}
+
+/** Some gear drops with abyssal sockets (uses the global RNG so seeded item streams stay unchanged). */
+function rollAbyssSockets(it: Item): void {
+  const cls = getBase(it.baseId).cls;
+  if (!ABYSS_SOCKET_CLASSES.includes(cls) || !defaultRng.chance(0.1)) return;
+  it.abyss = Array.from({ length: cls === 'body_armour' && defaultRng.chance(0.5) ? 2 : 1 }, () => null);
 }
 
 export function rollImplicits(it: Item, r: RNG = defaultRng): void {
@@ -209,7 +235,7 @@ export function modCandidates(it: Item, type: ModType): Candidate[] {
 
 export function affixLimit(it: Item): number {
   if (it.rarity === 'magic') return 1;
-  if (it.rarity === 'rare') return 3;
+  if (it.rarity === 'rare') return it.baseId.startsWith('jewel_') || it.baseId === 'abyss_jewel' ? 2 : 3;
   return 0;
 }
 
@@ -338,6 +364,26 @@ export function randomEquipment(ilvl: number, rarity: Rarity, r: RNG = defaultRn
     rarity = 'rare';
   }
   const base = randomBase(ilvl, r);
+  const it = createItem(base.id, ilvl, rarity, r);
+  if (it.rarity !== 'normal') it.identified = false;
+  return it;
+}
+
+/** A random jewel: mostly magic and rare tree jewels, with some cluster, abyss and unique jewels. */
+export function randomJewel(ilvl: number, r: RNG = defaultRng): Item {
+  const roll = r.next();
+  if (roll < 0.06) {
+    const ok = UNIQUES.filter((u) => u.base.startsWith('jewel_') && (u.level ?? 0) <= ilvl + 5);
+    const u = r.weighted(ok, (x) => x.dropWeight ?? 50);
+    if (u) return createUnique(u, ilvl, r);
+  }
+  if (roll < 0.18) {
+    const ids = Object.keys(CLUSTER_SIZES).filter((id) => getBase(id).level <= ilvl);
+    return createItem(r.pick(ids), ilvl, 'normal', r);
+  }
+  const abyss = roll < 0.4;
+  const base = abyss ? getBase('abyss_jewel') : r.pick(JEWEL_BASES);
+  const rarity: Rarity = r.chance(0.35) ? 'rare' : r.chance(0.7) ? 'magic' : 'normal';
   const it = createItem(base.id, ilvl, rarity, r);
   if (it.rarity !== 'normal') it.identified = false;
   return it;

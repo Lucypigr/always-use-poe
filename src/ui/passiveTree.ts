@@ -1,10 +1,14 @@
 import { fromTouch } from './touch';
 import { canRefund, pathToNode, PASSIVE_TREE, type PassiveNode } from '../data/passives';
+import { JEWEL_RADIUS, RADIUS_MODS } from '../data/jewels';
+import { clusterContents, displayName, modText } from '../items/item';
 import { passivePointsUnspent } from '../game/character';
 import { clear, h } from './dom';
 import type { UI } from './ui';
 
-const RADIUS: Record<PassiveNode['kind'], number> = { start: 30, attr: 8, small: 10, notable: 17, keystone: 26 };
+const RADIUS: Record<PassiveNode['kind'], number> = { start: 30, attr: 8, small: 10, notable: 17, keystone: 26, jewel: 16 };
+
+const JEWEL_COLORS: Record<string, string> = { jewel_red: '#e04a3a', jewel_green: '#4ac04a', jewel_blue: '#4a7ae0' };
 
 /** Full-screen passive skill tree with PoE-style path allocation. */
 export class PassiveTreeView {
@@ -41,7 +45,7 @@ export class PassiveTreeView {
       h('div', { class: 'tree-hud' }, this.hudPts, this.hudRef),
       h('div', { class: 'tree-search' }, this.search),
       h('div', { class: 'tree-close' }, h('button', { onclick: () => ui.closePanel('passives') }, '關閉 (P)')),
-      h('div', { class: 'tree-help' }, '點擊：配置（自動走最短路徑）· 右鍵／長按：重置（需要後悔石）· 拖曳：平移 · 滾輪／雙指：縮放'),
+      h('div', { class: 'tree-help' }, '點擊：配置（自動走最短路徑；點擊已配置的珠寶插槽可放入珠寶）· 右鍵／長按：重置（需要後悔石）· 拖曳：平移 · 滾輪／雙指：縮放'),
     );
     document.body.append(this.tip);
     this.canvas.addEventListener('mousedown', (e) => !fromTouch() && this.onDown(e));
@@ -124,6 +128,16 @@ export class PassiveTreeView {
         ctx.stroke();
       }
     }
+    // radius of a radius jewel in the hovered socket
+    const hovered = this.hover?.kind === 'jewel' ? this.ui.game.char.jewels?.[this.hover.id] : undefined;
+    if (this.hover && hovered?.prefixes.some((m) => RADIUS_MODS[m.id])) {
+      const [hx, hy] = this.toScreen(this.hover.x, this.hover.y);
+      ctx.strokeStyle = 'rgba(122,224,208,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(hx, hy, JEWEL_RADIUS * this.scale, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     // nodes
     const reachable = (n: PassiveNode) => n.links.some((l) => allocated.has(l));
     for (const n of PASSIVE_TREE.nodes) {
@@ -149,9 +163,27 @@ export class PassiveTreeView {
           else ctx.moveTo(px, py);
         }
         ctx.closePath();
+      } else if (n.kind === 'jewel') {
+        ctx.moveTo(x, y - r);
+        ctx.lineTo(x + r, y);
+        ctx.lineTo(x, y + r);
+        ctx.lineTo(x - r, y);
+        ctx.closePath();
+        if (!a && !preview.has(n.id)) ctx.fillStyle = reachable(n) ? '#2a3a40' : '#16211f';
+        ctx.strokeStyle = a ? '#7ae0d0' : '#4a7a78';
       } else ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      const jewel = n.kind === 'jewel' ? this.ui.game.char.jewels?.[n.id] : undefined;
+      if (jewel) {
+        ctx.fillStyle = JEWEL_COLORS[jewel.baseId] ?? '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = jewel.rarity === 'unique' ? '#e08a30' : jewel.rarity === 'rare' ? '#e0d060' : jewel.rarity === 'magic' ? '#7a8aff' : '#c0c0c0';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
       if (this.matches.has(n.id)) {
         ctx.strokeStyle = '#40e0ff';
         ctx.lineWidth = 3;
@@ -226,8 +258,15 @@ export class PassiveTreeView {
     clear(this.tip);
     this.tip.append(h('div', { class: `nt-head ${n.kind}` }, n.name));
     if (n.text.length) this.tip.append(h('div', { class: 'nt-body' }, ...n.text.flatMap((t, i) => (i ? [h('br'), t] : [t]))));
+    const jewel = n.kind === 'jewel' ? char.jewels?.[n.id] : undefined;
+    if (jewel) {
+      const lines = [...jewel.implicits, ...jewel.prefixes, ...jewel.suffixes].flatMap((m) => modText(m));
+      for (const e of clusterContents(jewel)) lines.push(e.name, ...e.text);
+      this.tip.append(h('div', { class: `nt-body jewel-tip ${jewel.rarity}` }, h('b', {}, displayName(jewel)), ...(jewel.identified || jewel.rarity === 'normal' ? lines : ['未鑑定']).flatMap((t) => [h('br'), t])));
+    }
     let foot = '';
     if (n.kind === 'start') foot = '職業起點';
+    else if (n.kind === 'jewel' && allocated.has(n.id)) foot = this.ui.touch ? '再點一次以放入／取下珠寶' : jewel ? '點擊更換或取下珠寶（取下後可按右鍵重置）' : '點擊放入珠寶（背包中的珠寶）';
     else if (allocated.has(n.id)) foot = canRefund(PASSIVE_TREE, allocated, n.id, PASSIVE_TREE.startOf[char.classId]) ? (this.ui.touch ? '再點一次以重置（消耗 1 重置點數）' : '按右鍵重置') : '已配置';
     else if (this.preview.length) foot = this.ui.touch ? `再點一次以配置（需要 ${this.preview.length} 點）` : `點擊配置（需要 ${this.preview.length} 點）`;
     else foot = '無法連接';
@@ -252,6 +291,10 @@ export class PassiveTreeView {
     const wasDrag = this.drag.moved;
     this.drag = null;
     if (!wasDrag && e.button === 0 && this.hover && this.visible) {
+      if (this.hover.kind === 'jewel' && this.ui.game.char.passives.includes(this.hover.id)) {
+        this.ui.modals.jewelSocket(this.hover.id);
+        return;
+      }
       if (this.ui.game.allocatePassive(this.hover.id)) {
         this.preview = [];
         this.render();
@@ -315,7 +358,14 @@ export class PassiveTreeView {
     const char = this.ui.game.char;
     const allocated = new Set(char.passives);
     if (n && n === this.touchSel) {
-      // second tap on the same node: allocate, or refund an allocated one
+      // second tap on the same node: allocate, or refund an allocated one (jewel sockets open the jewel picker)
+      if (allocated.has(n.id) && n.kind === 'jewel') {
+        this.touchSel = null;
+        this.hover = null;
+        this.tip.style.display = 'none';
+        this.ui.modals.jewelSocket(n.id);
+        return;
+      }
       if (allocated.has(n.id)) this.ui.game.refundPassive(n.id);
       else this.ui.game.allocatePassive(n.id);
       this.touchSel = null;

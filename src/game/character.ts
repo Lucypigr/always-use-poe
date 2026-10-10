@@ -23,6 +23,11 @@ export interface CharacterData {
   equipment: Partial<Record<EquipSlot, Item>>;
   inventory: Grid;
   passives: number[];
+  /** Chosen ascendancy class id and its allocated node ids (missing on older saves). */
+  /** Jewels socketed in the passive tree, by jewel-socket node id (missing on older saves). */
+  jewels?: Record<number, Item>;
+  ascendancy?: string;
+  ascNodes?: string[];
   refundPoints: number;
   bonusPassivePoints: number;
   /** Skill bar: gem uid per slot, or 'default_attack'. */

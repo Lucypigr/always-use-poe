@@ -1,5 +1,6 @@
 import type { WeaponClass } from '../items/types';
 import { flag, flat, inc, more, type DamageType, type StatMod } from '../stats/stats';
+import { GEMS_2 } from './gems2';
 import { lvl, spellDamage } from './scaling';
 
 /**
@@ -1380,6 +1381,7 @@ export const GEMS: GemDef[] = [
     },
     quality: [inc('area_damage', 0.5)], qualityText: '增加 {0}% 範圍傷害',
   },
+  ...GEMS_2,
 ];
 
 /** Flat added damage for '附加傷害' supports, derived from the spell damage curve. */

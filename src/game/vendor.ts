@@ -49,6 +49,11 @@ export function vendorStock(level: number, rng: RNG): VendorOffer[] {
     const it = createItem(base.id, Math.max(1, level), 'magic', rng);
     out.push({ item: it, price: { currency: 'alteration', amount: rng.int(1, 3) } });
   }
+  for (let i = 0; i < 3; i++) {
+    const jewel = createItem(rng.pick(['jewel_red', 'jewel_green', 'jewel_blue']), Math.max(1, level), 'magic', rng);
+    out.push({ item: jewel, price: { currency: 'alteration', amount: rng.int(2, 3) } });
+  }
+  out.push({ item: createItem('abyss_jewel', Math.max(1, level), 'magic', rng), price: { currency: 'alteration', amount: 2 } });
   out.push({ item: createCurrency('portal', 1), price: { currency: 'identify', amount: 1 } });
   return out;
 }

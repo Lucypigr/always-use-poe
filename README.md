@@ -126,6 +126,40 @@ exiled by the Empire, wash up on the Drowned Shore and take refuge in Duskhaven.
   falling — or **take their gear** for two rares, currency and a chance at a unique. Manage / dismiss
   them on the character sheet.
 
+## Ascendancy classes (昇華)
+
+Every class has **three ascendancies** (18 in total, `src/data/ascendancy.ts`): 蠻兵 → 不朽者 / 狂戰士 / 酋長
+(Juggernaut / Berserker / Chieftain), 追獵者 → 銳眼 / 掠奪者 / 開路者, 秘術師 → 元素使 / 祕儀者 / 死靈師,
+劍術大師 → 斬殺者 / 角鬥士 / 衛士, 狂信者 → 審判官 / 護法 / 守護者, 夜刃 → 刺客 / 詐欺師 / 破壞者.
+
+- Beat the boss of 灰燼森林 (the first trial) to unlock it, then press **U** (or 選單 → 昇華) and pick one for good.
+- Each trial boss (灰燼森林, 廢墟要塞, 餘燼神殿, 被遺棄者王座) grants **2 ascendancy points**, 8 in total.
+- Each ascendancy is a 10-node tree (a root plus three 3-node branches ending in a big notable), so you
+  can't take everything. Click to allocate (parent first); click an allocated node to refund it for a
+  refund point, if nothing depends on it.
+
+## Jewels (珠寶)
+
+Three jewel bases (緋紅 / 翠綠 / 蔚藍) drop from monsters as magic, rare and a few unique jewels
+(`src/data/jewels.ts`, uniques in `src/data/uniques.ts`): 13 prefixes and 20 suffixes with three item-level
+tiers (magic: 1 + 1 mods, rare: up to 2 + 2). The passive tree has **12 jewel sockets** (diamond nodes on the
+outer ring). Allocate one, click it and pick a jewel from your inventory; its mods apply while the socket is
+allocated. Unidentified jewels need a Scroll of Insight first. Take a jewel out before refunding its socket.
+The vendor sells magic jewels.
+
+- **Radius jewels** (廣域之眼, 蠻力核心, 顯赫之光): boost the allocated small / attribute / notable passives
+  within a radius of their socket (a ring is drawn when you hover the socket).
+- **Cluster jewels** (小／中／大型星團珠寶): a themed bundle of 2 / 4 / 6 small passives plus 1 / 2 / 3 notables
+  (8 themes such as 活力, 堡壘, 奧術, 亡靈). They can't be crafted on.
+- **Abyss jewels** (深淵珠寶): flat-stat jewels that go into the **abyssal sockets** some helmets, body armour,
+  gloves, boots and belts drop with (選單 or 角色資訊 → 深淵珠寶).
+
+## Essences (精髓)
+
+12 kinds × 3 strengths (微弱的／穩定的／強大的, `src/data/essences.ts`). Use one on a **normal** item to make it
+rare with a guaranteed modifier (life, mana, shield, the resistances, crit, speed, accuracy, damage or
+attributes — whichever the item can roll); stronger essences guarantee a higher tier of that modifier.
+
 ## Builds (流派)
 
 A build guide in game (**B**, or 選單 → 流派指南; data in `src/data/builds.ts`) lists 11 archetypes
@@ -194,7 +228,7 @@ skill-specific ailment duration (Swift Affliction) and socketless items (Kaom's 
 | Orb of Unlearning | Regret | Passive refund point |
 
 ### Gems, sockets and links
-- **64 active skills** (incl. 17 auras & heralds) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
+- **91 active skills** (incl. 17 auras & heralds; the newest batch is in `src/data/gems2.ts`) (melee strikes, cleaves, slams, leap/dash movement, bow skills, fireball,
   novas, chaining lightning, erratic sparks, meteor-style rains, minions, blink, and reserved auras)
   and **53 support gems** (volley, pierce, chain, fork, multistrike, echo, elemental focus,
   controlled ruin, concentrated effect, added damage, penetration, efficiency, minion supports…).
@@ -266,5 +300,5 @@ and areas in `src/data/areas.ts`. Balance curves live in `src/data/scaling.ts`.
 
 - Names of currencies, classes, uniques and keystones are original so the project doesn't ship
   another game's trademarks; the mechanics intentionally mirror Path of Exile.
-- Not (yet) implemented: ascendancy classes, jewels, trading, vaal skills and essences. Dual-wielded
+- Not (yet) implemented: trading and vaal skills. Dual-wielded
   off-hand weapons contribute their stats but attacks use the main hand.

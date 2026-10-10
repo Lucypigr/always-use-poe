@@ -1,4 +1,5 @@
 import type { SocketColor } from '../items/types';
+import './jewels';
 import { defineMod, modFlag, modStat, registerMods, tier } from './affixes';
 
 /** Unique-only modifiers (regular affixes can also be reused by uniques). */
@@ -301,6 +302,51 @@ export const UNIQUES: UniqueDef[] = [
     id: 'thunderfist', name: '雷拳', base: 'gloves_str_1',
     mods: [{ mod: 'attack_lightning_added', values: [[1, 3], [30, 45]] }, { mod: 'attack_speed', values: [[8, 12]] }, { mod: 'life', values: [[30, 50]] }, { mod: 'lightning_res', values: [[20, 30]] }],
     flavour: '一拳下去，天空也跟著轟鳴。',
+  },
+  {
+    id: 'rage_eye', name: '狂怒之瞳', base: 'jewel_red', level: 30, dropWeight: 60,
+    mods: [{ mod: 'u_attack_more', values: [[6, 8]] }, { mod: 'jw_melee', values: [[12, 16]] }, { mod: 'u_damage_taken', values: [[6, 6]] }],
+    flavour: '凝視它的人，先看見了自己的怒火。',
+  },
+  {
+    id: 'still_pool', name: '靜謐之池', base: 'jewel_blue', level: 20, dropWeight: 60,
+    mods: [{ mod: 'jw_es', values: [[12, 16]] }, { mod: 'jw_mana_regen', values: [[20, 30]] }, { mod: 'jw_cast_speed', values: [[3, 5]] }],
+    flavour: '水面無波，深處卻有星辰。',
+  },
+  {
+    id: 'gale_stone', name: '疾風之石', base: 'jewel_green', level: 20, dropWeight: 60,
+    mods: [{ mod: 'u_move_speed', values: [[3, 5]] }, { mod: 'jw_evasion', values: [[12, 16]] }, { mod: 'jw_projectile', values: [[10, 14]] }],
+    flavour: '握緊它，連風都要追不上你。',
+  },
+  {
+    id: 'dead_tear', name: '亡者之淚', base: 'jewel_blue', level: 40, dropWeight: 50,
+    mods: [{ mod: 'u_minion_life', values: [[14, 18]] }, { mod: 'jw_minion', values: [[12, 16]] }, { mod: 'u_minion_speed', values: [[4, 6]] }],
+    flavour: '連死者也會為主人落淚。',
+  },
+  {
+    id: 'rot_seed', name: '腐化之種', base: 'jewel_green', level: 40, dropWeight: 50,
+    mods: [{ mod: 'u_chaos_damage', values: [[12, 16]] }, { mod: 'jw_chaos_res', values: [[10, 14]] }, { mod: 'u_poison_chance', values: [[8, 10]] }],
+    flavour: '種下它，連枯骨上也會開出花。',
+  },
+  {
+    id: 'blood_heart', name: '血池之心', base: 'jewel_red', level: 40, dropWeight: 50,
+    mods: [{ mod: 'u_life_leech', values: [[0.2, 0.4]] }, { mod: 'jw_life', values: [[5, 7]] }, { mod: 'jw_phys', values: [[10, 14]] }],
+    flavour: '它還在跳動，且渴望更多。',
+  },
+  {
+    id: 'wide_eye', name: '廣域之眼', base: 'jewel_blue', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_small', values: [[40, 60]] }, { mod: 'jw_aoe', values: [[8, 12]] }],
+    flavour: '它看見的，不只是眼前的一點。',
+  },
+  {
+    id: 'brute_core', name: '蠻力核心', base: 'jewel_red', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_attr', values: [[80, 120]] }, { mod: 'jw_str', values: [[10, 15]] }],
+    flavour: '力量不問出處，只問夠不夠多。',
+  },
+  {
+    id: 'glory_light', name: '顯赫之光', base: 'jewel_green', level: 45, dropWeight: 40,
+    mods: [{ mod: 'jr_notable', values: [[25, 35]] }, { mod: 'jw_life', values: [[3, 5]] }],
+    flavour: '真正的光芒，從不需要多餘的火炬。',
   },
 ];
 

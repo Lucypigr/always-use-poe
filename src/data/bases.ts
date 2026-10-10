@@ -308,6 +308,19 @@ function makeFlaskBases(): ItemBase[] {
 // Special bases (currency, gems and maps are represented as items too)
 // ---------------------------------------------------------------------------------------------
 
+const JEWELS: ItemBase[] = [
+  { id: 'jewel_red', name: '緋紅珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['jewel', 'jewel_red'], dropWeight: 1 },
+  { id: 'jewel_green', name: '翠綠珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['jewel', 'jewel_green'], dropWeight: 1 },
+  { id: 'jewel_blue', name: '蔚藍珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['jewel', 'jewel_blue'], dropWeight: 1 },
+];
+
+const CLUSTERS: ItemBase[] = [
+  { id: 'jewel_cluster_s', name: '小型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'jewel_cluster_m', name: '中型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 30, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'jewel_cluster_l', name: '大型星團珠寶', cls: 'jewel', w: 1, h: 1, level: 55, req: {}, tags: ['cluster_jewel'], dropWeight: 0 },
+  { id: 'abyss_jewel', name: '深淵珠寶', cls: 'jewel', w: 1, h: 1, level: 1, req: {}, tags: ['abyss_jewel'], dropWeight: 0 },
+];
+
 const SPECIAL: ItemBase[] = [
   { id: 'gem', name: '寶石', cls: 'gem', w: 1, h: 1, level: 1, req: {}, tags: ['gem'] },
   { id: 'map', name: '地圖', cls: 'map', w: 1, h: 1, level: 40, req: {}, tags: ['map'] },
@@ -317,6 +330,8 @@ export const BASES: ItemBase[] = [
   ...makeWeaponBases(),
   ...makeArmourBases(),
   ...JEWELLERY,
+  ...JEWELS,
+  ...CLUSTERS,
   ...makeFlaskBases(),
   ...SPECIAL,
 ];
@@ -337,8 +352,8 @@ export const CLASS_LABEL: Record<ItemClass, string> = {
   two_hand_axe: '雙手斧', two_hand_mace: '雙手錘', helmet: '頭盔', body_armour: '胸甲',
   gloves: '手套', boots: '鞋子', shield: '盾牌', quiver: '箭袋', amulet: '護身符', ring: '戒指', belt: '腰帶',
   life_flask: '生命藥劑', mana_flask: '魔力藥劑', hybrid_flask: '複合藥劑', utility_flask: '功能藥劑',
-  currency: '通貨', gem: '寶石', map: '地圖',
+  jewel: '珠寶', currency: '通貨', gem: '寶石', map: '地圖',
 };
 
 /** Bases that can drop as random equipment (excludes gems/maps/currency). */
-export const EQUIPMENT_BASES = BASES.filter((b) => !['gem', 'map', 'currency'].includes(b.cls));
+export const EQUIPMENT_BASES = BASES.filter((b) => !['gem', 'map', 'currency', 'jewel'].includes(b.cls));

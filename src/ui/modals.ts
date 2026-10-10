@@ -1,10 +1,13 @@
 import { AREAS } from '../data/areas';
 import { HEIST_SITES, HEIST_TARGETS, HEIST_UNLOCK_LEVEL, MERC_ARCHETYPES } from '../data/activities';
 import type { Interactable } from '../game/entities';
+import { ASCENDANCY_BY_ID, ascendanciesFor, ascendancyUnlocked, ascPointsTotal, ascPointsUnspent, ASCENDANCY_TRIALS, type AscNode } from '../data/ascendancy';
+import { AREA_BY_ID } from '../data/areas';
 import { BUILDS, type BuildDef } from '../data/builds';
 import { CLASS_BY_ID } from '../data/classes';
 import { GEM_BY_ID } from '../data/gems';
 import { UNIQUE_BY_ID } from '../data/uniques';
+import { displayName, isAbyssJewel, isJewel } from '../items/item';
 import { createUnique } from '../items/generate';
 import { CURRENCY } from '../data/currency';
 import { SKILL_KEYS } from '../game/character';
@@ -312,6 +315,8 @@ export class Modals {
         h('button', { onclick: () => this.close() }, '繼續'),
         h('button', { onclick: () => this.help() }, '操作與指南'),
         h('button', { onclick: () => this.builds() }, '流派指南'),
+        h('button', { onclick: () => this.ascendancy() }, '昇華 (U)'),
+        h('button', { onclick: () => this.abyss() }, '深淵珠寶'),
       ),
       h('div', { class: 'row-buttons' }, h('button', { onclick: () => {
         this.close();
@@ -345,6 +350,8 @@ export class Modals {
         tr([k('RMB'), ' ', k('空白'), ' ', k('Q'), k('W'), k('E'), k('R'), k('T'), ' ', k('MMB')], '技能欄位（按住可連續施放，會朝游標或游標下的怪物施放）。按住左鍵移動時也能施放，移動速度會暫時降低。點擊技能列上的欄位可更換技能。'),
         tr([k('Shift'), '+', k('技能')], '站在原地施放，不移動'),
         tr([k('J')], '任務日誌'),
+        tr([k('U')], '昇華：完成試煉後選擇昇華職業並配置昇華天賦'),
+        tr(['珠寶'], '天賦樹上的菱形珠寶插槽放入珠寶；星團珠寶提供一組天賦；深淵珠寶鑲嵌在裝備的深淵插槽（選單 → 深淵珠寶）'),
         tr([k('B')], '流派指南：各種流派的核心技能、輔助寶石與傳奇裝備'),
         tr([k('1'), '–', k('5')], '飲用藥劑'),
         tr([k('I'), ' ', k('C'), ' ', k('P')], '背包、角色資訊、天賦樹'),
@@ -369,6 +376,153 @@ export class Modals {
   }
 
   /** Build guide (B): PoE-style build archetypes and the gems / uniques that enable them. */
+  /** Ascendancy: choose a class after the first trial, then spend ascendancy points. */
+  ascendancy(pick?: string): void {
+    const g = this.ui.game;
+    const c = g.char;
+    const body = h('div', { class: 'asc' });
+    const done = ASCENDANCY_TRIALS.filter((a) => c.completedAreas.includes(a)).length;
+    const trials = h('div', { class: 'asc-trials' }, '試煉（擊敗區域首領）：', ...ASCENDANCY_TRIALS.map((id) =>
+      h('span', { class: `asc-trial${c.completedAreas.includes(id) ? ' done' : ''}` }, AREA_BY_ID[id].name)));
+    const cur = c.ascendancy ? ASCENDANCY_BY_ID[c.ascendancy] : undefined;
+    if (!cur) {
+      body.append(h('h2', {}, '昇華'), trials);
+      if (!ascendancyUnlocked(c)) {
+        body.append(h('p', {}, `擊敗${AREA_BY_ID[ASCENDANCY_TRIALS[0]].name}的首領，完成第一次試煉後即可昇華。每次試煉提供 2 點昇華點數，共 ${ASCENDANCY_TRIALS.length * 2} 點。`));
+      } else {
+        body.append(h('p', {}, '選擇一條昇華之路。這個選擇無法更改。'));
+        const cards = h('div', { class: 'asc-cards' });
+        for (const a of ascendanciesFor(c.classId)) {
+          const card = h('div', { class: `asc-card${pick === a.id ? ' sel' : ''}` },
+            h('div', { class: 'asc-name' }, a.name),
+            h('div', { class: 'asc-desc' }, a.description),
+            h('div', { class: 'asc-br' }, a.branches.join(' · ')),
+          );
+          card.addEventListener('click', () => this.ascendancy(a.id));
+          cards.append(card);
+        }
+        body.append(cards);
+        if (pick) {
+          body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => {
+            if (g.chooseAscendancy(pick)) this.ascendancy();
+          } }, `確認昇華為${ASCENDANCY_BY_ID[pick].name}`)));
+        }
+      }
+    } else {
+      body.append(
+        h('h2', {}, `${cur.name}（${CLASS_BY_ID[cur.classId].name}）`),
+        h('p', { class: 'asc-desc' }, cur.description),
+        trials,
+        h('div', { class: 'asc-pts' }, `昇華點數：剩餘 ${ascPointsUnspent(c)} / ${ascPointsTotal(c)}（已完成 ${done}/${ASCENDANCY_TRIALS.length} 次試煉）　重置點數：${c.refundPoints}`),
+      );
+      const have = new Set(c.ascNodes ?? []);
+      const nodeEl = (n: AscNode) => {
+        const on = have.has(n.id);
+        const open = !on && (!n.requires || have.has(n.requires));
+        const el = h('div', { class: `asc-node${n.major ? ' major' : ''}${on ? ' on' : ''}${open ? ' open' : ''}` },
+          h('div', { class: 'an-name' }, n.name),
+          ...n.text.map((t) => h('div', { class: 'an-text' }, t)),
+        );
+        el.addEventListener('click', () => {
+          if (on) g.refundAscendancy(n.id);
+          else g.allocateAscendancy(n.id);
+          this.ascendancy();
+        });
+        return el;
+      };
+      const cols = h('div', { class: 'asc-cols' });
+      for (let b = 0; b < 3; b++) {
+        cols.append(h('div', { class: 'asc-col' },
+          h('div', { class: 'asc-branch' }, cur.branches[b]),
+          ...[1, 2, 3].map((i) => nodeEl(cur.nodes[b * 3 + i])),
+        ));
+      }
+      body.append(h('div', { class: 'asc-root' }, nodeEl(cur.nodes[0])), cols);
+      body.append(h('div', { class: 'asc-help' }, '點擊配置（需先配置上一個天賦）；點擊已配置的天賦可重置（消耗 1 點重置點數，且不能破壞相連的天賦）。'));
+    }
+    body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
+    this.show('ascendancy', body);
+  }
+
+  /** Abyssal sockets of equipped gear: socket abyss jewels from the inventory. */
+  abyss(): void {
+    const g = this.ui.game;
+    const c = g.char;
+    const body = h('div', { class: 'jewel-pick' }, h('h2', {}, '深淵珠寶'));
+    const gear = Object.values(c.equipment).filter((it) => it?.abyss?.length);
+    const jewels = c.inventory.items.map((e) => e.item).filter(isAbyssJewel);
+    if (!gear.length) body.append(h('p', {}, '身上的裝備沒有深淵插槽。頭盔、胸甲、手套、鞋子與腰帶有機率帶有深淵插槽。'));
+    const refresh = () => {
+      this.ui.refreshItems();
+      this.abyss();
+    };
+    for (const host of gear) {
+      body.append(h('div', { class: 'jp-sub' }, displayName(host!)));
+      host!.abyss!.forEach((cur, i) => {
+        const row = h('div', { class: 'jp-row' });
+        if (cur) {
+          row.append(tooltipEl(buildTooltip(cur, this.ui.tctx), false), h('button', { onclick: () => g.unsocketAbyss(host!, i) && refresh() }, '取下'));
+          body.append(row);
+        } else {
+          body.append(h('div', { class: 'jp-sub' }, `深淵插槽 ${i + 1}（空）`));
+          for (const j of jewels) {
+            body.append(h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(j, this.ui.tctx), false), h('button', { onclick: () => g.socketAbyss(host!, i, j) && refresh() }, '鑲嵌')));
+          }
+          if (!jewels.length) body.append(h('div', { class: 'jp-sub' }, '背包中沒有深淵珠寶。'));
+        }
+      });
+    }
+    body.append(h('div', { class: 'row-buttons' }, h('button', { onclick: () => this.close() }, '關閉')));
+    this.show('abyss', body);
+  }
+
+  /** Pick a jewel from the inventory for a jewel socket of the passive tree (or take the current one out). */
+  jewelSocket(nodeId: number): void {
+    const g = this.ui.game;
+    const c = g.char;
+    const cur = c.jewels?.[nodeId];
+    const done = () => {
+      this.ui.refreshItems();
+      this.ui.tree.render();
+    };
+    const body = h('div', { class: 'jewel-pick' }, h('h2', {}, '珠寶插槽'));
+    if (cur) {
+      body.append(
+        h('div', { class: 'jp-sub' }, '目前的珠寶'),
+        h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(cur, this.ui.tctx), false), h('button', { onclick: () => {
+          if (g.unsocketJewel(nodeId)) {
+            done();
+            this.jewelSocket(nodeId);
+          }
+        } }, '取下')),
+      );
+    }
+    const jewels = c.inventory.items.map((e) => e.item).filter(isJewel);
+    body.append(h('div', { class: 'jp-sub' }, jewels.length ? '背包中的珠寶（未鑑定的珠寶不會生效，請先鑑定）' : '背包中沒有珠寶。擊敗怪物有機會掉落珠寶。'));
+    const list = h('div', { class: 'jp-list' });
+    for (const j of jewels) {
+      list.append(h('div', { class: 'jp-row' }, tooltipEl(buildTooltip(j, this.ui.tctx), false), h('button', { onclick: () => {
+        if (g.socketJewel(nodeId, j)) {
+          done();
+          this.close();
+        }
+      } }, cur ? '更換' : '放入')));
+    }
+    body.append(list);
+    const buttons = h('div', { class: 'row-buttons' });
+    if (!cur) {
+      buttons.append(h('button', { onclick: () => {
+        if (g.refundPassive(nodeId)) {
+          done();
+          this.close();
+        }
+      } }, '重置此天賦點（消耗 1 重置點數）'));
+    }
+    buttons.append(h('button', { onclick: () => this.close() }, '關閉'));
+    body.append(buttons);
+    this.show('jewel', body);
+  }
+
   builds(selected?: BuildDef): void {
     const GEM_TEXT: Record<string, string> = { R: '#ff7070', G: '#70e070', B: '#80a0ff' };
     const gem = (id: string) => {

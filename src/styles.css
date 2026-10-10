@@ -521,3 +521,44 @@ body.touch-device, body.touch-device #app { position: fixed; inset: 0; overscrol
   .touch .build-detail { max-height: 44vh; }
   .touch .area-row { flex-wrap: wrap; gap: 4px; }
 }
+
+/* Ascendancy */
+.asc { min-width: 640px; max-width: 880px; }
+.asc h2 { margin: 0 0 6px; }
+.asc-desc { color: #b8b0a0; font-size: 13px; }
+.asc-trials { margin: 6px 0; font-size: 13px; color: #aa9e82; }
+.asc-trial { margin-left: 8px; padding: 1px 6px; border: 1px solid #3a3020; }
+.asc-trial.done { color: #ffd070; border-color: var(--gold); }
+.asc-pts { margin: 6px 0 10px; color: #ffd070; font-size: 14px; }
+.asc-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+.asc-card { padding: 10px; border: 1px solid #3a3020; background: rgba(20, 16, 12, 0.9); cursor: pointer; }
+.asc-card:hover, .asc-card.sel { border-color: var(--gold); }
+.asc-name { color: var(--gold); font-size: 17px; margin-bottom: 4px; }
+.asc-br { margin-top: 6px; font-size: 12px; color: #8fb0d8; }
+.asc-root { display: flex; justify-content: center; margin-bottom: 8px; }
+.asc-root .asc-node { width: 33%; }
+.asc-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.asc-col { display: flex; flex-direction: column; gap: 6px; }
+.asc-branch { text-align: center; color: #8fb0d8; font-size: 13px; }
+.asc-node { padding: 6px 8px; border: 1px solid #3a3020; background: rgba(20, 16, 12, 0.9); cursor: pointer; opacity: 0.55; }
+.asc-node.open { opacity: 1; border-color: #6a5a30; }
+.asc-node.on { opacity: 1; border-color: #ffd070; background: rgba(70, 52, 18, 0.9); }
+.asc-node.major { border-width: 2px; }
+.an-name { color: var(--gold); font-size: 14px; }
+.an-text { color: #8fb0d8; font-size: 12px; line-height: 1.35; }
+.asc-help { margin-top: 8px; font-size: 12px; color: #8a826e; }
+.modal-ascendancy { max-height: 92vh; overflow: auto; }
+.touch .asc { min-width: 0; }
+.touch .asc-cards, .touch .asc-cols { grid-template-columns: 1fr; }
+.touch .asc-root .asc-node { width: auto; }
+
+/* Jewels */
+.jewel-pick { min-width: 380px; max-width: 520px; max-height: 80vh; overflow: auto; }
+.jp-sub { margin: 10px 0 4px; color: #aa9e82; font-size: 13px; }
+.jp-list { display: flex; flex-direction: column; gap: 6px; }
+.jp-row { display: flex; gap: 10px; align-items: center; }
+.jp-row .tooltip { position: static; flex: 1; min-width: 0; pointer-events: auto; }
+.node-tip .jewel-tip { border-top: 1px solid #3a3020; margin-top: 4px; padding-top: 4px; }
+.node-tip .jewel-tip.magic b { color: #8a9aff; }
+.node-tip .jewel-tip.rare b { color: #f0e070; }
+.node-tip .jewel-tip.unique b { color: #e08a30; }
